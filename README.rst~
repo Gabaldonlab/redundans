@@ -15,8 +15,8 @@ It consists of three steps/modules:
 While just genome assembly is enough to proceed with reduction step, paired-end and/or mate-pair libraries are required for scaffolding and gap closing. 
 
 Redundans is: 
-*  **modular**, thus every step can be ommited or replaced with another tools. 
-*  **flexible** toward any sequencing technology (i.e. Illumina, 454 or Sanger). 
+-  **modular**, thus every step can be ommited or replaced with another tools. 
+-  **flexible** toward any sequencing technology (i.e. Illumina, 454 or Sanger). 
 
 Prerequisites
 ================
