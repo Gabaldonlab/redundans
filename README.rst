@@ -22,7 +22,7 @@ Redundans is:
 
 Prerequisites
 ================
-* [samtools](https://github.com/samtools/htslib)
+* [samtools!](https://github.com/samtools/htslib)
 * [BWA](http://bio-bwa.sourceforge.net/)
 * [SSPACE2](http://www.baseclear.com/genomics/bioinformatics/basetools/SSPACE)
 * some *de novo* genome assembler ie SOAPdenovo2 or SPAdes
