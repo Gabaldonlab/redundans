@@ -27,7 +27,7 @@ Prerequisites
 * BWA
 * pysam
 * SSPACE2
-* some **_de novo_** genome assembler ie SOAPdenovo2 or SPAdes
+* some *de novo* genome assembler ie SOAPdenovo2 or SPAdes
 
 
 Citation
