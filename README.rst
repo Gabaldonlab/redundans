@@ -28,7 +28,7 @@ Prerequisites
 * some *de novo* genome assembler ie SOAPdenovo2 or SPAdes
 * Python 2.7+
 * Biopython 1.6+ ```sudo easy_install -U biopython```
-* pysam ```sudo easy_install -U pysam`
+* pysam ```sudo easy_install -U pysam```
 
 
 Citation
