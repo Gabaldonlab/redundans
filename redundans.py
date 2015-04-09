@@ -7,6 +7,13 @@ It consists of three steps:
 
 Note, FASTQ libraries need to be
 
+PREREQUISITIES:
+- genome assembly (fasta)
+- BLAT
+- BWA
+- samtools & pysam
+- Biopython
+
 To be done:
 """
 epilog="""Author:
