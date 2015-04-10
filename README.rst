@@ -22,13 +22,12 @@ Redundans is:
 
 Prerequisites
 ================
-* samtools (https://github.com/samtools/htslib)
 * BWA (http://bio-bwa.sourceforge.net/)
-* SSPACE2 (http://www.baseclear.com/genomics/bioinformatics/basetools/SSPACE)
-* some *de novo* genome assembler ie. SOAPdenovo2 or SPAdes
+* SSPACE3 (http://www.baseclear.com/genomics/bioinformatics/basetools/SSPACE)
+* assembled contigs or *de novo* genome assembler ie. SOAPdenovo2 or SPAdes
+* GapCloser ()
 * Python 2.7+
 * Biopython 1.6+ `sudo easy_install -U biopython`
-* pysam `sudo easy_install -U pysam`
 
 
 Test
