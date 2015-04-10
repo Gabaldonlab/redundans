@@ -33,7 +33,7 @@ Prerequisites
 Test
 ================
 
-```{r, engine='bash', count_lines}  
+```
 cd test  
 mkdir redundans  
 cd redundans  
