@@ -34,10 +34,10 @@ Test
 ================
 
 ```
-    cd test
-    mkdir redundans
-    cd redundans
-    ~/src/redundans/redundans.py -v -i ../*.fastq.gz -f ../contigs.fasta
+cd test
+mkdir redundans
+cd redundans
+~/src/redundans/redundans.py -v -i ../*.fastq.gz -f ../contigs.fasta
 ```
 
 
