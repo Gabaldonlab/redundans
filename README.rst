@@ -30,8 +30,12 @@ Prerequisites
 * Biopython 1.6+ `sudo easy_install -U biopython`
 * pysam `sudo easy_install -U pysam`
 
+
 Test
 ================
+In the folder ./test you can find test dataset with 100kb genomic region and three libraries: pe300bp, pe600bp and mp5000bp. 
+To run the test example, just execute: 
+
 ```
 cd test; 
 mkdir redundans;
@@ -43,6 +47,7 @@ FAQ
 ================
 * SSPACE fails with error `Can't locate getopts.pl in @INC`
 This is due to missing getops in recent Perl. Just do:
+
 ```
  sudo cpan
  install Perl4::CoreLibs
