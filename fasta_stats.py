@@ -2,7 +2,7 @@
 desc="""Report FASTA statistics. Support gzipped files.
 
 TBD:
-Code need some polishing...
+- Code need some polishing...
 """
 epilog="""Author: l.p.pryszcz@gmail.com
 Mizerow, 26/08/2014

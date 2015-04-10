@@ -36,7 +36,7 @@ Test
 cd test
 mkdir redundans
 cd redundans
-~/src/redundans/redundans.py -v -i ../*.fastq.gz -f ../spades/300/contigs.fasta -o .
+~/src/redundans/redundans.py -v -i ../*.fastq.gz -f ../contigs.fasta -o .
 
 
 Citation
