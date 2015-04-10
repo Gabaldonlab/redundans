@@ -33,11 +33,11 @@ Prerequisites
 Test
 ================
 
-``` bash
-cd test 
-mkdir redundans 
-cd redundans 
-~/src/redundans/redundans.py -v -i ../*.fastq.gz -f ../contigs.fasta
+```sh
+cd test  
+mkdir redundans  
+cd redundans  
+~/src/redundans/redundans.py -v -i ../*.fastq.gz -f ../contigs.fasta  
 ```
 
 Citation
