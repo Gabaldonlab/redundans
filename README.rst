@@ -22,6 +22,8 @@ Redundans is:
 
 Prerequisites
 ================
+
+* BLAT ()
 * BWA (http://bio-bwa.sourceforge.net/)
 * SSPACE3 (http://www.baseclear.com/genomics/bioinformatics/basetools/SSPACE)
 * assembled contigs or *de novo* genome assembler ie. SOAPdenovo2 or SPAdes
@@ -44,6 +46,7 @@ cd redundans;
 
 FAQ
 ================
+
 * SSPACE fails with error `Can't locate getopts.pl in @INC`
 This is due to missing getops in recent Perl. Just do:
 
