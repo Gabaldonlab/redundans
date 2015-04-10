@@ -33,7 +33,7 @@ Prerequisites
 Test
 ================
 
-```sh
+``` sh
 cd test  
 mkdir redundans  
 cd redundans  
