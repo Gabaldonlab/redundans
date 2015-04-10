@@ -27,21 +27,21 @@ Prerequisites
 * SSPACE2 (http://www.baseclear.com/genomics/bioinformatics/basetools/SSPACE)
 * some *de novo* genome assembler ie. SOAPdenovo2 or SPAdes
 * Python 2.7+
-* Biopython 1.6+ ```sudo easy_install -U biopython```
-* pysam ```sudo easy_install -U pysam```
+* Biopython 1.6+ `sudo easy_install -U biopython`
+* pysam `sudo easy_install -U pysam`
 
 Test
 ================
 
- cd test  
+` cd test  
  mkdir redundans
   cd redundans
   ~/src/redundans/redundans.py -v -i ../*.fastq.gz -f ../contigs.fasta
-
+`
 
 FAQ
 ================
-* SSPACE fails with error ```Can't locate getopts.pl in @INC```
+* SSPACE fails with error `Can't locate getopts.pl in @INC`
 This is due to missing getops in recent Perl. Just do:
 
   sudo cpan
