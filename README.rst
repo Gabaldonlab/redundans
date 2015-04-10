@@ -40,6 +40,14 @@ cd redundans
 ~/src/redundans/redundans.py -v -i ../*.fastq.gz -f ../contigs.fasta
 ```
 
+FAQ
+================
+* SSPACE fails with error ```Can't locate getopts.pl in @INC```
+This is due to missing getops in recent Perl. Just do:
+```
+sudo cpan
+install  Perl4::CoreLibs
+```
 
 Citation
 ================
