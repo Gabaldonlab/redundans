@@ -10,7 +10,7 @@ l.p.pryszcz@gmail.com
 Mizerow, 10/04/2015
 """
 
-import os, sys, subprocess
+import os, sys, commands, subprocess
 from datetime import datetime
 from scipy import stats#, signal
 import numpy as np
@@ -41,13 +41,13 @@ def get_bwa_subprocess(fq1, fq2, fasta, threads, verbose):
     # generate index if missing
     if not os.path.isfile(fasta+".bwt"):
         cmd = "bwa index %s"%fasta
-        if verbose:
-            sys.stderr.write(" %s\n"%cmd)
-        os.system(cmd)
+        #if verbose:
+        #    sys.stderr.write(" %s\n"%cmd)
+        bwtmessage = commands.getoutput(cmd)
     # start BWA alignment stream
     cmd = ["bwa", "mem", "-S", "-t %s"%threads, fasta, fq1, fq2]
-    if verbose:
-        sys.stderr.write(" %s\n"%" ".join(cmd))
+    #if verbose:
+    #    sys.stderr.write(" %s\n"%" ".join(cmd))
     bwa = subprocess.Popen(cmd, bufsize=-1, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     return bwa
         
@@ -57,12 +57,12 @@ def get_isize_stats(fq1, fq2, fasta, mapqTh=10, threads=1,
     pairing orientation counts (FF, FR, RF, RR). 
     Ignore bottom and up percentile for insert size statistics. 
     """
-    if verbose:
-        sys.stderr.write("Starting alignment...\n")
+    #if verbose:
+    #    sys.stderr.write("Starting alignment...\n")
     bwa = get_bwa_subprocess(fq1, fq2, fasta, threads, verbose)
     # parse alignments
-    if verbose:
-        sys.stderr.write("Estimating insert size stats...\n")
+    #if verbose:
+    #    sys.stderr.write("Estimating insert size stats...\n")
     isizes = []
     pairs = [0, 0, 0, 0]
     #read from stdin
@@ -103,7 +103,8 @@ def fastq2insert_size(out, fastq, fasta, mapq, threads, limit, verbose):
         ismedian, ismean, isstd, pairs = get_isize_stats(fq1, fq2, fasta, mapq, threads, limit, verbose)
         # report
         out.write(line%(fq1, fq2, ismedian, ismean, isstd, "\t".join(map(str, pairs))))
-        data.append((ismedian, ismean, isstd, pairs))
+        # store data
+        data.append((fq1, fq2, ismedian, ismean, isstd, pairs))
     return data
     
 def main():

@@ -138,7 +138,7 @@ def hits2skip(hits, faidx, verbose):
     return contig2skip, identity
 
 def fasta2homozygous(out, fasta, identity, overlap, minLength, \
-                     joinOverlap, endTrimming, verbose):
+                     joinOverlap=200, endTrimming=0, verbose=0):
     """Parse alignments and report homozygous contigs"""
     #create/load fasta index
     if verbose:

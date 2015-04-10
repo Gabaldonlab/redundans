@@ -119,7 +119,8 @@ def _get_bwamem_proc(fn1,fn2,ref,maxins,cores,upto,verbose,bufsize=-1):
     if verbose:
         sys.stderr.write( "  %s\n" % " ".join(bwaArgs) )
     #select ids
-    bwaProc = subprocess.Popen(bwaArgs, bufsize=bufsize, stdout=subprocess.PIPE)
+    bwaProc = subprocess.Popen(bwaArgs, bufsize=bufsize, \
+                               stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     return bwaProc
     
 def get_tab_files( outdir,reffile,libNames,fReadsFnames,rReadsFnames,inserts,iBounds,cores,mapqTh,upto,verbose ):
