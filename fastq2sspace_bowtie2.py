@@ -14,26 +14,11 @@ from datetime import datetime
 
 def parse_sam( handle ):
     """Return sam tuple"""
-    q1 = q2 = ""
     for l in handle:
         l = l.strip()
         if not l or l.startswith('@'):
             continue
-        sam = l.split('\t')
-        #first in pair
-        if int(sam[1]) & 64:
-            #skip multiple matches
-            if sam[0] == q1:
-                continue
-            q1,flag1,ref1,start1,mapq1,len1 = sam[0],int(sam[1]),sam[2],int(sam[3]),int(sam[4]),len(sam[9])
-        else:
-            #skip multiple matches
-            if sam[0] == q2:
-                continue
-            q2,flag2,ref2,start2,mapq2,len2 = sam[0],int(sam[1]),sam[2],int(sam[3]),int(sam[4]),len(sam[9])
-        #report
-        if q1 == q2:
-            yield q1,flag1,ref1,start1,mapq1,len1,q2,flag2,ref2,start2,mapq2,len2
+        yield l.split('\t')
 
 def get_start_stop( start,length,flag ):
     """Return start-end read boundaries.
@@ -43,41 +28,12 @@ def get_start_stop( start,length,flag ):
         start += length
     else:
         end    = start + length
-    return start, end
+    return start,end
 
-def sam2sspace_tab(inhandle,outhandle,mapqTh=0,upto=float('inf'),verbose=False):
+def sam2sspace_tab( inhandle,outhandle,mapqTh=0,verbose=False ):
     """Convert SAM to SSPACE TAB file."""
     i = j = k = pq1 = 0
-    for q1,flag1,ref1,start1,mapq1,len1,q2,flag2,ref2,start2,mapq2,len2 in parse_sam(inhandle):
-        i   += 1
-        if i>upto:
-            break        
-        '''#gem uses entire fasta header as seq name
-        ref1 = ref1.split()[0]
-        ref2 = ref2.split()[0]'''
-        #skip 0 quality pair
-        if mapqTh:
-            if mapq1<mapqTh or mapq2<mapqTh:
-                continue  
-        if q1!=q2:
-            sys.stderr.write("Warning: Queries have different names: %s vs %s\n" % (q1,q2) )
-            continue
-        j   += 1
-        #skip self matches
-        if ref1==ref2:
-            continue
-        k += 1
-        #define start-stop ranges
-        start1,end1 = get_start_stop(start1,len1,flag1)
-        start2,end2 = get_start_stop(start2,len2,flag2)    
-        #print output
-        outhandle.write( "%s\t%s\t%s\t%s\t%s\t%s\n" % ( ref1,start1,end1,ref2,start2,end2 ) )
-    sys.stderr.write( "   %s pairs. %s passed filtering [%.2f%s]. %s in different contigs [%.2f%s].\n" % (i,j,j*100.0/i,'%',k,k*100.0/i,'%') )
-    
-def sam2sspace_tab_OLD(inhandle,outhandle,mapqTh=0,verbose=False):
-    """Convert SAM to SSPACE TAB file."""
-    i = j = k = pq1 = 0
-    sam = parse_sam(inhandle)
+    sam = parse_sam( inhandle )
     while 1:
         try:
             #read pair sam
@@ -95,7 +51,7 @@ def sam2sspace_tab_OLD(inhandle,outhandle,mapqTh=0,verbose=False):
                 if mapq1<mapqTh or mapq2<mapqTh:
                     continue  
             if q1!=q2:
-                sys.stderr.write("Warning: Queries have different names: %s vs %s\n" % (q1,q2) )
+                sys.stderr.write("Warning: Queries has different names: %s vs %s\n" % (q1,q2) )
                 continue
             j   += 1
             #skip self matches
@@ -111,29 +67,60 @@ def sam2sspace_tab_OLD(inhandle,outhandle,mapqTh=0,verbose=False):
             break
     sys.stderr.write( "   %s pairs. %s passed filtering [%.2f%s]. %s in different contigs [%.2f%s].\n" % (i,j,j*100.0/i,'%',k,k*100.0/i,'%') )
 
-def _get_bwamem_proc(fn1,fn2,ref,maxins,cores,upto,verbose,bufsize=-1):
-    """Return bwamem subprocess.
+def _get_bowtie2_proc( fn1,fn2,ref,maxins,cores,upto,verbose,bufsize=-1):
+    """Return bowtie subprocess.
     bufsize: 0 no buffer; 1 buffer one line; -1 set system default.
     """
-    bwaArgs = ['bwa', 'mem', '-t', str(cores), ref, fn1, fn2 ]
+    fformat = "-q"
+    if fn1.endswith(('.fa','.fasta','.fa.gz','.fasta.gz')):
+        fformat = "-f"
+    bwtArgs = ['bowtie2','--quiet','--very-fast-local','-p',str(cores),'-x',ref, fformat,"-1", fn1, "-2", fn2,"--maxins",str(maxins) ]
+    if upto:
+        bwtArgs += [ "--upto",str(upto) ]
     if verbose:
-        sys.stderr.write( "  %s\n" % " ".join(bwaArgs) )
+        sys.stderr.write( "  %s\n" % " ".join(bwtArgs) )
     #select ids
-    bwaProc = subprocess.Popen(bwaArgs, bufsize=bufsize, stdout=subprocess.PIPE)
-    return bwaProc
+    bwtProc = subprocess.Popen( bwtArgs,bufsize=bufsize,stdout=subprocess.PIPE )
+    return bwtProc
     
+def _get_gem_proc( fn1,fn2,ref,maxins,upto,cores,verbose,bufsize=-1):
+    """Return bowtie subprocess.
+    bufsize: 0 no buffer; 1 buffer one line; -1 set system default.
+    """
+    preArgs = [ 'fastq2shuffledFastQ.py', fn1, fn2 ]
+    if upto:
+        preArgs += [ '-u',str(upto) ]    
+    gemArgs = [ 'gem-mapper','-I',ref+'.gem','--unique-mapping','--threads',str(cores),'-q','offset-33','--max-insert-size',str(maxins)]#,'2>','/dev/null' ]
+    gem2samArgs = [ 'gem-2-sam','-I',ref,'--expect-paired-end-reads','-q','offset-33']#,'2>','/dev/null']
+    sam2uniqArgs = [ 'samgem2unique.py', ]
+    if verbose:
+        sys.stderr.write( "%s | %s | %s | %s\n" % (" ".join(preArgs)," ".join(gemArgs)," ".join(gem2samArgs)," ".join(sam2uniqArgs)) )
+    #select ids
+    preProc = subprocess.Popen( preArgs,bufsize=bufsize,stdout=subprocess.PIPE )
+    gemProc = subprocess.Popen( gemArgs,bufsize=bufsize,stdout=subprocess.PIPE,stdin=preProc.stdout )
+    gem2samProc = subprocess.Popen( gem2samArgs,bufsize=bufsize,stdout=subprocess.PIPE,stdin=gemProc.stdout )
+    sam2uniqProc = subprocess.Popen( sam2uniqArgs,bufsize=bufsize,stdout=subprocess.PIPE,stdin=gem2samProc.stdout )
+    return sam2uniqProc
+
 def get_tab_files( outdir,reffile,libNames,fReadsFnames,rReadsFnames,inserts,iBounds,cores,mapqTh,upto,verbose ):
     """Prepare genome index, align all libs and save TAB file"""
     #create genome index
     ref = reffile.name
     #'''
-    idxfn = ref + ".pac"
-    if not os.path.isfile(idxfn):
-        cmd = "bwa index %s" % (ref,)
+    idxfn = ref + ".1.bt2"
+    if not os.path.isfile( idxfn ):
+        cmd = "bowtie2-build %s %s" % (ref,ref)
         if verbose:
-            sys.stderr.write(" Creating index...\n  %s\n" % cmd)
-        bwtmessage = commands.getoutput(cmd)
-       
+            sys.stderr.write( " Creating index...\n  %s\n" % cmd )
+        bwtmessage = commands.getoutput( cmd )
+    '''
+    idxfn = ref + ".gem"
+    if not os.path.isfile( idxfn ):
+        cmd = "gem-indexer -i %s -o %s" % (ref,ref)
+        if verbose:
+            sys.stderr.write( " Creating index...\n  %s\n" % cmd )
+        bwtmessage = commands.getoutput( cmd )#'''
+        
     tabFnames = []
     #process all libs
     for libName,f1,f2,iSize,iFrac in zip( libNames,fReadsFnames,rReadsFnames,inserts,iBounds ):
@@ -150,10 +137,10 @@ def get_tab_files( outdir,reffile,libNames,fReadsFnames,rReadsFnames,inserts,iBo
         #define max insert size allowed
         maxins = ( 1.0+iFrac ) * iSize
         #run bowtie2 for all libs        
-        proc = _get_bwamem_proc( f1.name,f2.name,ref,maxins,cores,upto,verbose )
+        proc = _get_bowtie2_proc( f1.name,f2.name,ref,maxins,cores,upto,verbose )
         #proc = _get_gem_proc( f1.name,f2.name,ref,maxins,upto,cores,verbose )
         #parse botwie output
-        sam2sspace_tab( proc.stdout,out,mapqTh,upto )
+        sam2sspace_tab( proc.stdout,out,mapqTh )
         #close file
         out.close()
         tabFnames.append( outfn )

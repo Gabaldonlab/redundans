@@ -14,11 +14,26 @@ from datetime import datetime
 
 def parse_sam( handle ):
     """Return sam tuple"""
+    q1 = q2 = ""
     for l in handle:
         l = l.strip()
         if not l or l.startswith('@'):
             continue
-        yield l.split('\t')
+        sam = l.split('\t')
+        #first in pair
+        if int(sam[1]) & 64:
+            #skip multiple matches
+            if sam[0] == q1:
+                continue
+            q1,flag1,ref1,start1,mapq1,len1 = sam[0],int(sam[1]),sam[2],int(sam[3]),int(sam[4]),len(sam[9])
+        else:
+            #skip multiple matches
+            if sam[0] == q2:
+                continue
+            q2,flag2,ref2,start2,mapq2,len2 = sam[0],int(sam[1]),sam[2],int(sam[3]),int(sam[4]),len(sam[9])
+        #report
+        if q1 == q2:
+            yield q1,flag1,ref1,start1,mapq1,len1,q2,flag2,ref2,start2,mapq2,len2
 
 def get_start_stop( start,length,flag ):
     """Return start-end read boundaries.
@@ -28,12 +43,41 @@ def get_start_stop( start,length,flag ):
         start += length
     else:
         end    = start + length
-    return start,end
+    return start, end
 
-def sam2sspace_tab( inhandle,outhandle,mapqTh=0,verbose=False ):
+def sam2sspace_tab(inhandle,outhandle,mapqTh=0,upto=float('inf'),verbose=False):
     """Convert SAM to SSPACE TAB file."""
     i = j = k = pq1 = 0
-    sam = parse_sam( inhandle )
+    for q1,flag1,ref1,start1,mapq1,len1,q2,flag2,ref2,start2,mapq2,len2 in parse_sam(inhandle):
+        i   += 1
+        if i>upto:
+            break        
+        '''#gem uses entire fasta header as seq name
+        ref1 = ref1.split()[0]
+        ref2 = ref2.split()[0]'''
+        #skip 0 quality pair
+        if mapqTh:
+            if mapq1<mapqTh or mapq2<mapqTh:
+                continue  
+        if q1!=q2:
+            sys.stderr.write("Warning: Queries have different names: %s vs %s\n" % (q1,q2) )
+            continue
+        j   += 1
+        #skip self matches
+        if ref1==ref2:
+            continue
+        k += 1
+        #define start-stop ranges
+        start1,end1 = get_start_stop(start1,len1,flag1)
+        start2,end2 = get_start_stop(start2,len2,flag2)    
+        #print output
+        outhandle.write( "%s\t%s\t%s\t%s\t%s\t%s\n" % ( ref1,start1,end1,ref2,start2,end2 ) )
+    sys.stderr.write( "   %s pairs. %s passed filtering [%.2f%s]. %s in different contigs [%.2f%s].\n" % (i,j,j*100.0/i,'%',k,k*100.0/i,'%') )
+    
+def sam2sspace_tab_OLD(inhandle,outhandle,mapqTh=0,verbose=False):
+    """Convert SAM to SSPACE TAB file."""
+    i = j = k = pq1 = 0
+    sam = parse_sam(inhandle)
     while 1:
         try:
             #read pair sam
@@ -51,7 +95,7 @@ def sam2sspace_tab( inhandle,outhandle,mapqTh=0,verbose=False ):
                 if mapq1<mapqTh or mapq2<mapqTh:
                     continue  
             if q1!=q2:
-                sys.stderr.write("Warning: Queries has different names: %s vs %s\n" % (q1,q2) )
+                sys.stderr.write("Warning: Queries have different names: %s vs %s\n" % (q1,q2) )
                 continue
             j   += 1
             #skip self matches
@@ -67,60 +111,29 @@ def sam2sspace_tab( inhandle,outhandle,mapqTh=0,verbose=False ):
             break
     sys.stderr.write( "   %s pairs. %s passed filtering [%.2f%s]. %s in different contigs [%.2f%s].\n" % (i,j,j*100.0/i,'%',k,k*100.0/i,'%') )
 
-def _get_bowtie2_proc( fn1,fn2,ref,maxins,cores,upto,verbose,bufsize=-1):
-    """Return bowtie subprocess.
+def _get_bwamem_proc(fn1,fn2,ref,maxins,cores,upto,verbose,bufsize=-1):
+    """Return bwamem subprocess.
     bufsize: 0 no buffer; 1 buffer one line; -1 set system default.
     """
-    fformat = "-q"
-    if fn1.endswith(('.fa','.fasta','.fa.gz','.fasta.gz')):
-        fformat = "-f"
-    bwtArgs = ['bowtie2','--quiet','--very-fast-local','-p',str(cores),'-x',ref, fformat,"-1", fn1, "-2", fn2,"--maxins",str(maxins) ]
-    if upto:
-        bwtArgs += [ "--upto",str(upto) ]
+    bwaArgs = ['bwa', 'mem', '-t', str(cores), ref, fn1, fn2 ]
     if verbose:
-        sys.stderr.write( "  %s\n" % " ".join(bwtArgs) )
+        sys.stderr.write( "  %s\n" % " ".join(bwaArgs) )
     #select ids
-    bwtProc = subprocess.Popen( bwtArgs,bufsize=bufsize,stdout=subprocess.PIPE )
-    return bwtProc
+    bwaProc = subprocess.Popen(bwaArgs, bufsize=bufsize, stdout=subprocess.PIPE)
+    return bwaProc
     
-def _get_gem_proc( fn1,fn2,ref,maxins,upto,cores,verbose,bufsize=-1):
-    """Return bowtie subprocess.
-    bufsize: 0 no buffer; 1 buffer one line; -1 set system default.
-    """
-    preArgs = [ 'fastq2shuffledFastQ.py', fn1, fn2 ]
-    if upto:
-        preArgs += [ '-u',str(upto) ]    
-    gemArgs = [ 'gem-mapper','-I',ref+'.gem','--unique-mapping','--threads',str(cores),'-q','offset-33','--max-insert-size',str(maxins)]#,'2>','/dev/null' ]
-    gem2samArgs = [ 'gem-2-sam','-I',ref,'--expect-paired-end-reads','-q','offset-33']#,'2>','/dev/null']
-    sam2uniqArgs = [ 'samgem2unique.py', ]
-    if verbose:
-        sys.stderr.write( "%s | %s | %s | %s\n" % (" ".join(preArgs)," ".join(gemArgs)," ".join(gem2samArgs)," ".join(sam2uniqArgs)) )
-    #select ids
-    preProc = subprocess.Popen( preArgs,bufsize=bufsize,stdout=subprocess.PIPE )
-    gemProc = subprocess.Popen( gemArgs,bufsize=bufsize,stdout=subprocess.PIPE,stdin=preProc.stdout )
-    gem2samProc = subprocess.Popen( gem2samArgs,bufsize=bufsize,stdout=subprocess.PIPE,stdin=gemProc.stdout )
-    sam2uniqProc = subprocess.Popen( sam2uniqArgs,bufsize=bufsize,stdout=subprocess.PIPE,stdin=gem2samProc.stdout )
-    return sam2uniqProc
-
 def get_tab_files( outdir,reffile,libNames,fReadsFnames,rReadsFnames,inserts,iBounds,cores,mapqTh,upto,verbose ):
     """Prepare genome index, align all libs and save TAB file"""
     #create genome index
     ref = reffile.name
     #'''
-    idxfn = ref + ".1.bt2"
-    if not os.path.isfile( idxfn ):
-        cmd = "bowtie2-build %s %s" % (ref,ref)
+    idxfn = ref + ".pac"
+    if not os.path.isfile(idxfn):
+        cmd = "bwa index %s" % (ref,)
         if verbose:
-            sys.stderr.write( " Creating index...\n  %s\n" % cmd )
-        bwtmessage = commands.getoutput( cmd )
-    '''
-    idxfn = ref + ".gem"
-    if not os.path.isfile( idxfn ):
-        cmd = "gem-indexer -i %s -o %s" % (ref,ref)
-        if verbose:
-            sys.stderr.write( " Creating index...\n  %s\n" % cmd )
-        bwtmessage = commands.getoutput( cmd )#'''
-        
+            sys.stderr.write(" Creating index...\n  %s\n" % cmd)
+        bwtmessage = commands.getoutput(cmd)
+       
     tabFnames = []
     #process all libs
     for libName,f1,f2,iSize,iFrac in zip( libNames,fReadsFnames,rReadsFnames,inserts,iBounds ):
@@ -137,10 +150,10 @@ def get_tab_files( outdir,reffile,libNames,fReadsFnames,rReadsFnames,inserts,iBo
         #define max insert size allowed
         maxins = ( 1.0+iFrac ) * iSize
         #run bowtie2 for all libs        
-        proc = _get_bowtie2_proc( f1.name,f2.name,ref,maxins,cores,upto,verbose )
+        proc = _get_bwamem_proc( f1.name,f2.name,ref,maxins,cores,upto,verbose )
         #proc = _get_gem_proc( f1.name,f2.name,ref,maxins,upto,cores,verbose )
         #parse botwie output
-        sam2sspace_tab( proc.stdout,out,mapqTh )
+        sam2sspace_tab( proc.stdout,out,mapqTh,upto )
         #close file
         out.close()
         tabFnames.append( outfn )
@@ -164,6 +177,31 @@ def get_libs( outdir,libFn,libNames,tabFnames,inserts,iBounds,orientations,verbo
         sys.stderr.write( " Updated libs saved to: %s\n" % outfn )
     out   = open( outfn,"w" ); out.write( "".join(lines) ); out.close()
     return outfn
+
+def fastq2sspace(out, fasta, lib, libnames, libFs, libRs, orientations,  \
+                 libIS, libISStDev, cores, mapq, upto, minlinks, \
+                 sspacebin, verbose):
+    """Map reads onto contigs, prepare library file and execute SSPACE2"""
+    #generate outdirs if out contain dir and dir not exists
+    if os.path.dirname(out):
+        if not os.path.isdir(os.path.dirname(out)):
+            os.makedirs(os.path.dirname(out))
+    
+    #get tab files
+    if verbose:
+        sys.stderr.write("[%s] Generating TAB file(s) for %s library/ies...\n" % (datetime.ctime(datetime.now()),len(libnames)) )
+    tabFnames = get_tab_files(out, fasta, libnames, libFs, libRs, libIS, libISStDev, cores, mapq, upto, verbose)
+
+    #generate lib file
+    if  verbose:
+        sys.stderr.write("[%s] Generating libraries file...\n" % datetime.ctime(datetime.now()) )
+    libFn = get_libs(out, lib, libnames, tabFnames, libIS, libISStDev, orientations, verbose)
+
+    #print sspace cmd
+    cmd = "perl %s -l %s -a 0.7 -k %s -s %s -b %s > %s.sspace.log"%(sspacebin, libFn, minlinks, fasta.name, out, out)
+    if verbose:
+        sys.stderr.write(" %s\n"%cmd)
+    os.system(cmd)
     
 def main():
 
@@ -197,6 +235,8 @@ def main():
                        help="min map quality     [%(default)s]")
     parser.add_argument("-u", dest="upto",       default=0,  type=int,
                        help="process up to pairs [all]")
+    parser.add_argument("--sspacebin", default="~/src/SSPACE/SSPACE_Standard_v3.0.pl", 
+                       help="SSPACE2 perl script [%(default)s]")
     
     o = parser.parse_args()
     if o.verbose:
@@ -205,25 +245,10 @@ def main():
     if len(o.libnames)*6 != len(o.libnames)+len(o.libFs)+len(o.libRs)+len(o.libIS)+len(o.libISStDev)+len(o.orientations):
         parser.error("Wrong number of arguments!")
 
-    #generate outdirs if out contain dir and dir not exists
-    if os.path.dirname(o.out):
-        if not os.path.isdir( os.path.dirname(o.out) ):
-            os.makedirs( os.path.dirname(o.out) )
+    fastq2sspace(o.out, o.fasta, o.lib, o.libnames, o.libFs, o.libRs, o.orientations, \
+                 o.libIS, o.libISStDev, o.cores, o.mapq, o.upto, o.minlinks, \
+                 o.sspacebin, o.verbose)
     
-    #get tab files
-    if o.verbose:
-        sys.stderr.write("[%s] Generating TAB file(s) for %s library/ies...\n" % (datetime.ctime(datetime.now()),len(o.libnames)) )
-    tabFnames = get_tab_files( o.out,o.fasta,o.libnames,o.libFs,o.libRs,o.libIS,o.libISStDev,o.cores,o.mapq,o.upto,o.verbose )
-
-    #generate lib file
-    if o.verbose:
-        sys.stderr.write("[%s] Generating libraries file...\n" % datetime.ctime(datetime.now()) )
-    libFn = get_libs( o.out,o.lib,o.libnames,tabFnames,o.libIS,o.libISStDev,o.orientations,o.verbose )
-
-    #print sspace cmd
-    cmd = "perl /users/tg/lpryszcz/src/SSPACE-BASIC-2.0_linux-x86_64/SSPACE_Basic_v2.0.pl -l %s -a 0.7 -k %s -s %s -b %s > %s.sspace.log" % ( libFn,o.minlinks,o.fasta.name,o.out,o.out ); print cmd
-    os.system( cmd )
-          
 if __name__=='__main__': 
     t0  = datetime.now()
     try:

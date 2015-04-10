@@ -5,6 +5,7 @@ TO ADD:
 - scaffold extension based on overlapping matches (overlapping already recognised)
 - reporting of haplotypes
 - recognise heterozygous contigs with translocations
+- add min contig length, ignore shorter contigs
 """
 epilog="""Author: l.p.pryszcz@gmail.com
 Mizerow, 26/08/2014
@@ -19,15 +20,16 @@ def blat(fasta, identity, verbose):
     #prepare BLAT command
     identity = int(100*identity)
     args = ["-ooc=%s.11.ooc"%fasta, "-dots=1000", "-noHead", "-extendThroughN", \
-            "-minScore=%s"%identity, "-minIdentity=%s"%identity]
+            "-minMatch=5", "-repMatch=10", \
+            "-minScore=%s"%identity, "-minIdentity=%s"%identity] 
     cmd = "blat %s %s %s %s.psl"%(" ".join(args), fasta, fasta, fasta)
     if not verbose:
         cmd += " > /dev/null"
     else:
         sys.stderr.write(cmd+'\n')
     #generate overepresented 11mers if not exists
-    if not os.path.isfile(fasta+".11.ooc"):
-        os.system(cmd.replace("-ooc=", "-makeOoc="))
+    #if not os.path.isfile(fasta+".11.ooc"):
+    os.system(cmd.replace("-ooc=", "-makeOoc="))
     #run BLAT
     os.system(cmd)
     #sort and take into account only larger vs smaller
@@ -135,7 +137,8 @@ def hits2skip(hits, faidx, verbose):
         identity = 0
     return contig2skip, identity
 
-def fasta2homozygous(out, fasta, identity, overlap, joinOverlap, endTrimming, verbose):
+def fasta2homozygous(out, fasta, identity, overlap, minLength, \
+                     joinOverlap, endTrimming, verbose):
     """Parse alignments and report homozygous contigs"""
     #create/load fasta index
     if verbose:
@@ -161,7 +164,7 @@ def fasta2homozygous(out, fasta, identity, overlap, joinOverlap, endTrimming, ve
     
     #report homozygous fasta
     nsize, k, skipped, ssize, merged = merge_fasta(out, faidx, contig2skip, \
-                                                   overlapping, verbose)
+                                                   overlapping, minLength, verbose)
     
     #summary    
     info = "%s\t%s\t%s\t%s\t%.2f\t%s\t%.2f\t%.3f\t%s\t%s\t%.2f\t%s\t%.2f\n"
@@ -175,7 +178,7 @@ def get_name_abbrev(size, s, e):
        return "s"
     return "e"
     
-def merge_fasta(out, faidx, contig2skip, overlapping, verbose):
+def merge_fasta(out, faidx, contig2skip, overlapping, minLength, verbose):
     """Merged overlapping and report homozygous genome."""
     #merge
     joins = {}
@@ -217,7 +220,7 @@ def merge_fasta(out, faidx, contig2skip, overlapping, verbose):
     k = skipped = ssize = 0
     for i, c in enumerate(faidx, 1):
         #don't report skipped & merged
-        if contig2skip[c]:
+        if contig2skip[c] or len(faidx[c])<minLength:
             skipped += 1
             ssize   += len(faidx[c])
             continue
@@ -236,7 +239,7 @@ def main():
     parser  = argparse.ArgumentParser(description=desc, epilog=epilog, \
                                       formatter_class=argparse.RawTextHelpFormatter)
   
-    parser.add_argument('--version', action='version', version='1.0b')   
+    parser.add_argument('--version', action='version', version='1.01b')   
     parser.add_argument("-v", "--verbose", default=False, action="store_true",
                         help="verbose")    
     parser.add_argument("-i", "-f", "--fasta", nargs="+", type=file, 
@@ -251,6 +254,8 @@ def main():
                         help="min. end overlap to join two contigs [%(default)s]")
     parser.add_argument("--endTrimming", default=33, type=int, 
                         help="max. end trim on contig join [%(default)s]")
+    parser.add_argument("--minLength",   default=200, type=int, 
+                        help="min. contig length [%(default)s]")
     #parser.add_argument("-p", "--ploidy",    default=2, type=int, 
     #                    help="ploidy          [%(default)s]")
     
@@ -259,9 +264,11 @@ def main():
         sys.stderr.write("Options: %s\n"%str(o))
 
     #process fasta
+    sys.stderr.write("Homozygous assembly/ies will be written with input name + '.homozygous.fa.gz'\n")
+    sys.stderr.write("#file name\tgenome size\tcontigs\theterozygous size\t[%]\theterozygous contigs\t[%]\tidentity [%]\tpossible joins\thomozygous size\t[%]\thomozygous contigs\t[%]\n")
     for fasta in o.fasta:
         out = gzip.open(fasta.name+".homozygous.fa.gz", "w")
-        fasta2homozygous(out, fasta, o.identity, o.overlap, \
+        fasta2homozygous(out, fasta, o.identity, o.overlap, o.minLength, \
                          o.joinOverlap, o.endTrimming, o.verbose)
         out.close()
 

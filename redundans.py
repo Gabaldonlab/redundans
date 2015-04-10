@@ -11,10 +11,10 @@ PREREQUISITIES:
 - genome assembly (fasta)
 - BLAT
 - BWA
-- samtools & pysam
 - Biopython
 
 To be done:
+ - check if files exist
 """
 epilog="""Author:
 l.p.pryszcz@gmail.com
@@ -23,118 +23,103 @@ Mizerow/Warsaw, 17/10/2014
 """
 
 import os, resource, sys
-try:
-    import pysam
-except:
-    sys.stderr.write("Install pysam: `sudo easy_install -U pysam`!\n")
-    #sys.exit(1)
 from datetime import datetime
 import numpy as np
-#from scipy import stats, signal
 
-class redundants(object):
-    """Store BAM related data. Take BAM file name as input."""
-    def __init__(self, *args):
-        self._get_parameters(args)
-        self._prepare_streams()
+from fasta2homozygous import fasta2homozygous
+from fastq2sspace import fastq2sspace
+from fastq2insert_size import fastq2insert_size
 
-    def _get_params(self, libs, fasta, outdir, mapq, threads, \
-                    ident, joins, limit, iters, \
-                    reduction, scaffolding, gapclosing, \
-                    verbose, log):
-        """Set parameters"""
-        #general
-        self.libs   = libs
-        self.fasta  = fasta
-        self.outdir = outdir
-        self.mapq   = mapq
-        self.threads = threads
-        #specific options
-        self.ident  = ident
-        self.joins  = joins
-        self.limit  = limit
-        self.iters  = iters
-        #steps
-        self.reduction   = reduction
-        self.scaffolding = scaffolding
-        self.gapclosing  = gapclosing
-        
-    def _prepare_streams(self):
-        #prepare logging stream
-        if log:
-            self.log = log
-        elif verbose:
-            self.log = sys.stderr
-        else:
-            self.log     = None
-        #prepare outdir
-        if os.path.isdir(self.outdir):
-            sys.stderr.write("Directory %s exists!\n")
-            sys.exit(1)
-        os.makedirs(self.outdir)
-        
-    def get_isize_stats(self, limit=1e5): 
-        """Estimate insert size median, mean and stdev.
-        Also count pair orientations and select main orientation.
-        """
-        if self.log:
-            self.log.write("Estimating insert size stats...\n")
-        isizes = []
-        self.pairs = [0, 0, 0, 0]
-        #read from stdin
-        for alg in pysam.Samfile(self.bam):
-            #take only reads with good alg quality and one read per pair
-            if alg.mapq < self.mapq or alg.isize < 1:
-                continue
-            #store isize
-            isizes.append(alg.isize)
-            #store pair orientation
-            self.pairs[self.alg2orientation(alg)] += 1
-            #stop if limit reached
-            if len(isizes) >= limit:
-                break
-        #get rid of right 5 percentile
-        maxins = stats.scoreatpercentile(isizes, 100-self.q)
-        minins = stats.scoreatpercentile(isizes, self.q)
-        isizes = filter(lambda x: minins<x<maxins, isizes)
-        #store
-        self.isize_median = np.median(isizes)
-        self.isize_mean   = np.mean(isizes)
-        self.isize_stdev  = np.std(isizes)
-                
-    def parse(self, test=0):
-        """Parse sam alignments and store info"""
-        #parse algs
-        if self.log:
-            self.log.write("Parsing alignments...\n")
-        pchrom = ""
-        for i, alg in enumerate(self.sam, 1):
-            if test and i > test:
-                break
-            #write log
-            if self.log and not i % 1e5:
-                info = " %s [%.1f%s]  reads for dels: %s dups: %s ins: %s invs: %s trans: %s [%s Mb]\r"
-                self.log.write(info % (i, i*100.0/self.nalgs, '%', len(self.delReads), \
-                                len(self.dupReads), len(self.insReads), len(self.invReads), len(self.traReads), \
-                                resource.getrusage(resource.RUSAGE_SELF).ru_maxrss/1024))
-            #skip unmapped and secondary alignments
-            if alg.rname<0 or alg.is_secondary:
-                continue
-            #add read
-            self.add_read(alg)
-        if self.log:
-            self.log.write(" %s alignments parsed. \n"%i)
-        #dump all important info
-        if not self.nodump and not os.path.isfile(self.bamdump):
-            self.sv2bam()
-        #get mean rlen
-        if not self.rlen:
-            self.rlen = np.mean([alg.rlen for alg in self.delReads])
-            if self.log:
-                self.log.write(" Mean read length: %.2f \n"%self.rlen)
-        #call variants
-        self.call_variants()        
+def get_timestamp():
+    """Return formatted date-time string"""
+    return "\n%s\n[%s] "%("#"*15, datetime.ctime(datetime.now()))
+
+def symlink(file1, file2):
+    """Create symbolic link taking care of real path."""
+    os.symlink(os.path.join(os.path.realpath(os.path.curdir), file1), file2)
+
+def run_scaffolding(outdir, scaffoldsFname, fastq, reducedFname, mapq, threads, \
+                    joins, limit, iters, sspacebin, verbose, lib=""):
+    """Execute scaffolding step"""
+    # get libraries statistics using 2% of read limit
+    libdata = fastq2insert_size(sys.stderr, fastq, reducedFname, mapq, threads, \
+                                limit/50, verbose)
+    # separate paired-end & mate pairs
+    ## also separate 300 and 600 paired-ends
+    
+    # create symlink to reduced contigs
+    tmpname = os.path.join(outdir,"sspace.%s.%s.final.scaffolds.fasta")
+    symlink(reducedFname, tmpname%(0, iters))
+    
+    # run scaffolding using libraries with increasing insert size in multiple iterations
+    for i, data in enumerate(libraries, 1):
+        # init empty handles
+        libnames, libFs, libRs, orientations, libIS, libISStDev = [], [], [], [], [], []
+        for j in range(1, iters+1):
+            out = "sspace.%s.%3s"%(libType, i)
+            lib = ""
+            # run fastq scaffolding
+            fastq2sspace(out, open(reducedFname), lib, libnames, libFs, libRs, orientations, \
+                         libIS, libISStDev, threads, mapq, upto, joins, \
+                         sspacebin, verbose)
             
+    # create symlink to final scaffolds
+    symlink(tmpname%(i, iters), scaffoldsFname)
+    
+def redundants(libs, fasta, outdir="redundans", mapq=10, threads=1, \
+               identity=0.8, overlap=0.75, minLength=200, \
+               joins=5, limit=10e7, iters=3, spacebin, \
+               reduction=1, scaffolding=1, gapclosing=1, \
+               verbose=1, log=sys.stderr):
+    """Launch redundans pipeline."""
+    # redirect stderr
+    sys.stderr = log
+    
+    # prepare outdir or quit if exists
+    if os.path.isdir(outdir):
+        log.write("Directory %s exists!\n"%outdir)
+        #sys.exit(1)
+    else:
+        os.makedirs(outdir)
+
+    # check if all files exists
+    #_check_files(log, fasta, libs)
+    
+    # REDUCTION
+    contigsFname = os.path.join(outdir, "contigs.fa")
+    reducedFname = os.path.join(outdir, "contigs.reduced.fa")
+    # link contigs & genome
+    symlink(fasta, contigsFname)
+    if reduction:
+        if verbose:
+            sys.stderr.write("%sReduction...\n"%timestamp())
+            sys.stderr.write("#file name\tgenome size\tcontigs\theterozygous size\t[%]\theterozygous contigs\t[%]\tidentity [%]\tpossible joins\thomozygous size\t[%]\thomozygous contigs\t[%]\n")
+        with open(reducedFname, "w") as out:
+            fasta2homozygous(out, open(contigsFname), identity, overlap, minLength)
+    else:
+        symlink(contigsFname, reducedFname)
+
+    # SCAFFOLDING
+    scaffoldsFname = os.path.join(outdir, "scaffolds.fa")
+    if scaffolding:
+        if verbose:
+            sys.stderr.write("%sScaffolding...\n"%timestamp())
+        run_scaffolding()
+    else:
+        symlink(reducedFname, scaffoldsFname)
+        
+    # GAP CLOSING
+    nogapsFname = os.path.join(outdir, "scaffolds.fa")
+    if gapclosing:
+        if verbose:
+            sys.stderr.write("%sGap closing...\n"%timestamp())
+        #run_gapclosing()
+    else:
+        symlink(scaffoldsFname, nogapsFname)
+
+    # FASTA STATS
+    
+        
 def main():
     import argparse
     usage   = "%(prog)s -v" #usage=usage, 
@@ -145,7 +130,7 @@ def main():
     parser.add_argument('--version', action='version', version='1.0a')   
     parser.add_argument("-i", "--fastq", nargs="+", 
                         help="FASTQ PE/MP files")
-    parser.add_argument("-f", "--fasta", type=file, 
+    parser.add_argument("-f", "--fasta", 
                         help="assembly FASTA file")
     parser.add_argument("-o", "--outdir",  default="redundants", 
                         help="output directory")
@@ -156,16 +141,22 @@ def main():
     parser.add_argument("--log",           default=None, type=argparse.FileType('w'), 
                         help="save log to file [stderr]")
     redu = parser.add_argument_group('Reduction options')
-    redu.add_argument("--ident",        default=0.8, type=float,
-                      help="align l reads [%(default)s]")
+    redu.add_argument("--identity",        default=0.8, type=float,
+                      help="min. identity [%(default)s]")
+    redu.add_argument("--overlap",         default=0.75, type=float,
+                      help="min. overlap  [%(default)s]")
+    redu.add_argument("--minLength",       default=200, type=int, 
+                      help="min. contig length [%(default)s]")
     ##missing redu options
     scaf = parser.add_argument_group('Scaffolding options')
     scaf.add_argument("-j", "--joins",  default=5, type=int, 
                       help="min k pairs to join contigs [%(default)s]")
     scaf.add_argument("-l", "--limit",  default=5000000, type=int, 
-                      help="align l reads [%(default)s]")
+                      help="align at most l reads [%(default)s]")
     scaf.add_argument("-iters",         default=2, type=int, 
                       help="scaffolding iterations per library  [%(default)s]")
+    scaf.add_argument("--sspacebin",    default="~/src/SSPACE/SSPACE_Standard_v3.0.pl", 
+                       help="SSPACE path  [%(default)s]")
     gaps = parser.add_argument_group('Gap closing options')
     #gaps.add_argument("-l", "--limit",  default=7e, type=int, 
     #                  help="align l reads [%(default)s]")
@@ -178,10 +169,10 @@ def main():
     if o.verbose:
         sys.stderr.write("Options: %s\n"%str(o))
         
-    #initialise pipeline
+    # initialise pipeline
     redundants(o.fastq, o.fasta, o.outdir, o.mapq, o.threads, \
-               o.ident, \
-               o.joins, o.limit, o.iters, \
+               o.identity, o.overlap, o.minLength, \
+               o.joins, o.limit, o.iters, o.spacebin, \
                o.reduction, o.scaffolding, o.gapclosing, \
                o.verbose, o.log)
 
