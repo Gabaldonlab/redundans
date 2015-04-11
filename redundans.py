@@ -1,26 +1,6 @@
 #!/usr/bin/env python
-desc="""Heterozygous genome assembly pipeline.
-It consists of three steps:
-1. assembly reduction
-2. scaffolding
-3. gap closing
-
-Note, FASTQ libraries need to be
-
-PREREQUISITIES:
-- genome assembly (fasta)
-- BLAT
-- BWA
-- Biopython
-- SSPACE3
-
-GapClosing
-- only FR / RF libraries supported
-- reads as trimmed to 150bp
-- consider skipping mate-pairs libraries
-
-To be done:
-- check if files exist
+desc="""Heterozygous genome assembly pipeline. It consists of three steps:
+reduction, scaffolding and gap closing. 
 """
 epilog="""Author:
 l.p.pryszcz@gmail.com
