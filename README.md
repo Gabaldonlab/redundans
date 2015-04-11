@@ -23,14 +23,12 @@ Redundans is:
 Prerequisites
 ================
 
-* BLAT ()
+* BLAT (https://genome.ucsc.edu/FAQ/FAQblat.html#blat3)
 * BWA (http://bio-bwa.sourceforge.net/)
-* SSPACE3 (http://www.baseclear.com/genomics/bioinformatics/basetools/SSPACE)
-* assembled contigs or *de novo* genome assembler ie. SOAPdenovo2 or SPAdes
-* GapCloser ()
+* [SSPACE3](http://www.baseclear.com/genomics/bioinformatics/basetools/SSPACE)
+* [GapCloser from SOAPdenovo](http://sourceforge.net/projects/soapdenovo2/files/GapCloser/)
 * Python 2.7+
 * Biopython 1.6+ `sudo easy_install -U biopython`
-
 
 Test
 ================
