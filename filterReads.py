@@ -76,10 +76,12 @@ def checkQualityEncoding(inFile, number_reads, qual64offset, qseq):
 
     return True, ""
 
-def qseqparser(handle):
+def qseqparser(handle, limit=0):
     """Parse QSEQ fromat and yield name, sequence and qualities."""
 
     for l in handle:
+        if limit and i>limit:
+            break
         ## Example SOLEXA read
         ## SOLEXA 90403 4 1 23 1566 0 1 ACCGCTCTCGTGCTCGTCGCTGCGTTGAGGCTTGCG `aaaaa```aZa^`]a``a``a]a^`a\Y^`^^]V` 1
         qseq_element = l[:-1].split('\t')
@@ -95,11 +97,12 @@ def qseqparser(handle):
 
         yield name, seq, quals
 
-def fqparser(handle):
+def fqparser(handle, limit=0):
     """Parse FASTQ format and yield name, sequence and qualities."""
-
     fqlist = []
-    for l in handle:
+    for i, l in enumerate(handle, 1):
+        if limit and i>4*limit:
+            break
         fqlist.append(l[:-1])
         if len(fqlist) != 4:
             continue
@@ -115,8 +118,9 @@ def _clipSeq(seq, quals, sep='.'):
         seq, quals = seq[:pos], quals[:pos]
     return seq, quals
 
-def rawtrimmer(infile, minlen, minqual, qual64offset, qseq, stripHeaders, \
-    outformat, pi, pair=""):
+def rawtrimmer(infile, minlen, maxlen, limit, minqual, \
+               qual64offset, qseq, stripHeaders, outformat, \
+               pi, pair="", phixReads=[], logFile=sys.stderr):
     """Single process implementation of rawtrimmer.
     Open zcat subprocess and read from stdin."""
     handle = infile
@@ -127,7 +131,7 @@ def rawtrimmer(infile, minlen, minqual, qual64offset, qseq, stripHeaders, \
         handle = zcat.stdout
 
     ## Get parser
-    parser = qseqparser(handle) if qseq else fqparser(handle)
+    parser = qseqparser(handle, limit) if qseq else fqparser(handle, limit)
 
     ## Process entries
     phixs = 0
@@ -171,6 +175,10 @@ def rawtrimmer(infile, minlen, minqual, qual64offset, qseq, stripHeaders, \
             yield
             continue
 
+        # hard-trim read
+        if maxlen:
+            seq, quals = seq[:maxlen], quals[:maxlen]
+            
         ## Define fastQ line
         if stripHeaders:
             name = "@%s%s" % (seqi, pair)
@@ -180,16 +188,17 @@ def rawtrimmer(infile, minlen, minqual, qual64offset, qseq, stripHeaders, \
             fastq = '%s\n%s\n+\n%s\n' % (name, seq, quals)
         yield fastq
 
-def filter_paired(fpair, outfiles, minlen, minqual, qual64offset, qseq, \
-                  stripHeaders, outformat, pi):
+def filter_paired(fpair, outfiles, minlen, maxlen, limit, minqual, \
+                  qual64offset=0, qseq=0, stripHeaders=1, outformat='fastq', \
+                  pi=0, logFile=0):
     """Filter paired reads."""
     inF, inR = fpair
     outF, outR, outCombined, outUnpaired = outfiles
 
     ## Define parsers rawtrimmer fqtrimmer
-    fqparser1 = rawtrimmer(inF, minlen, minqual, qual64offset, qseq, \
+    fqparser1 = rawtrimmer(inF, minlen, maxlen, limit, minqual, qual64offset, qseq, \
         stripHeaders, outformat, pi)
-    fqparser2 = rawtrimmer(inR, minlen, minqual, qual64offset, qseq, \
+    fqparser2 = rawtrimmer(inR, minlen, maxlen, limit, minqual, qual64offset, qseq, \
         stripHeaders, outformat, pi)
 
     ## Process
@@ -218,22 +227,23 @@ def filter_paired(fpair, outfiles, minlen, minqual, qual64offset, qseq, \
             #count skipped reads
             filtered += 1
         #print stats
-        if not i % 10e3:
+        if logFile and not i % 10e3:
             info = "%9s processed [" % (locale.format("%d", i, grouping=True))
             info += '%6.2f%s ok] Both passed: %s Orphans F/R: %s/%s      \r'\
                 % ((i-filtered)*100.0/i, '%', both, fori, revi)
             logFile.write(info)
             logFile.flush()
 
-    info = "%9s processed [" % (locale.format("%d", i, grouping=True))
-    info += '%6.2f%s ok] Both passed: %s Orphans F/R: %s/%s      \r' \
-        % ((i-filtered)*100.0/i, '%', both, fori, revi)
-    logFile.write(info)
-    logFile.flush()
+    if logFile:
+        info = "%9s processed [" % (locale.format("%d", i, grouping=True))
+        info += '%6.2f%s ok] Both passed: %s Orphans F/R: %s/%s      \r' \
+                % ((i-filtered)*100.0/i, '%', both, fori, revi)
+        logFile.write(info)
+        logFile.flush()
 
     return i, filtered, fori+revi
 
-def process_paired(inputs, qseq, outdir, outprefix, unpaired, minlen, minqual, \
+def process_paired(inputs, qseq, outdir, outprefix, unpaired, minlen, maxlen, limit, minqual, \
                    noSeparate, combined, qual64offset, replace, \
                    stripHeaders, fasta, verbose):
     """Process paired libraries."""
@@ -278,7 +288,7 @@ def process_paired(inputs, qseq, outdir, outprefix, unpaired, minlen, minqual, \
             continue
 
         ## Process QSEQ files: GERALD->FASTA
-        i, pfiltered, psingle = filter_paired(fpair, outfiles, minlen, minqual,\
+        i, pfiltered, psingle = filter_paired(fpair, outfiles, minlen, maxlen, limit, minqual,\
             qual64offset, qseq, stripHeaders, outformat, pi)
         ## Print info
         if verbose:
@@ -304,11 +314,11 @@ def process_paired(inputs, qseq, outdir, outprefix, unpaired, minlen, minqual, \
     logFile.write('Orphans: %s [%.2f%c]\n' % (single, single*(100.0/i), '%'))
     logFile.flush()
 
-def filter_single(infile, out, minlen, minqual, qual64offset, qseq, \
+def filter_single(infile, out, minlen, maxlen, limit, minqual, qual64offset, qseq, \
                   stripHeaders, outformat, pi):
     """Filter single reads."""
     #define parser
-    fqparser = fqtrimmer(infile, minlen, minqual, qual64offset, qseq, stripHeaders, outformat, pi)
+    fqparser = fqtrimmer(infile, minlen, maxlen, limit, minqual, qual64offset, qseq, stripHeaders, outformat, pi)
     #process output of subprocesses
     both = filtered = 0
     for i, rec in enumerate(fqparser, pi+1):
@@ -332,7 +342,7 @@ def filter_single(infile, out, minlen, minqual, qual64offset, qseq, \
 
     return i, filtered
 
-def process_single(inputs, qseq, outdir, outprefix, minlen, minqual, \
+def process_single(inputs, qseq, outdir, outprefix, minlen, maxlen, limit, minqual, \
                    qual64offset, replace, stripHeaders, fasta, verbose):
     """Process single end libraries."""
 
@@ -353,7 +363,7 @@ def process_single(inputs, qseq, outdir, outprefix, minlen, minqual, \
     out = open(outfn, 'w')
     for fn in inputs:
         ## Process QSEQ files: GERALD->FASTA
-        i, pfiltered = filter_single(fn, out, minlen, minqual, qual64offset, \
+        i, pfiltered = filter_single(fn, out, minlen, maxlen, limit, minqual, qual64offset, \
             qseq, stripHeaders, outformat, pi)
         ## Print info
         if verbose:
@@ -384,7 +394,11 @@ def main():
     parser.add_argument("-g", "--qseq", action="store_true",  default=False,
                         help="input is QSEQ, not FastQ")
     parser.add_argument("-l", "--minlen", default=31, type=int,
-                        help="min read lenght (shorter after quality trimming are removed) [%(default)s]" )
+                        help="min read length (shorter after quality trimming are removed) [%(default)s]" )
+    parser.add_argument("-m", "--maxlen", default=0, type=int,
+                        help="max read length [entire read, unless quality trimming]" )
+    parser.add_argument("--limit", default=0, type=int,
+                        help="process subset of reads [all reads]" )
     parser.add_argument("-q", "--minqual", default=None, type=int,
                         help="read is clipped @ first base having PHRED quality lower than [%(default)s]" )
     parser.add_argument("-t", dest="qual64offset", default=False, action='store_true',
@@ -463,11 +477,11 @@ def main():
     ## Gerald2fastq
     if o.paired:
         process_paired(inputs, o.qseq, o.outdir, o.prefix, o.unpaired, \
-            o.minlen, o.minqual, o.noSeparate, o.combined, o.qual64offset, \
+            o.minlen, o.maxlen, o.limit, o.minqual, o.noSeparate, o.combined, o.qual64offset, \
             o.replace, o.stripHeaders, o.fasta, o.verbose)
     else:
         process_single(inputs, o.qseq, o.outdir, o.prefix, o.minlen, \
-            o.minqual, o.qual64offset, o.replace, o.stripHeaders, o.fasta, \
+            o.minqual, o.maxlen, o.limit, o.qual64offset, o.replace, o.stripHeaders, o.fasta, \
             o.verbose)
 
 if __name__=='__main__':

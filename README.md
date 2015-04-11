@@ -38,10 +38,10 @@ In the folder ./test you can find test dataset with 100kb genomic region and thr
 To run the test example, just execute: 
 
 ```
-cd test; 
-mkdir redundans;
-cd redundans;
-~/src/redundans/redundans.py -v -i ../*.fastq.gz -f ../contigs.fasta;
+cd test
+mkdir redundans 
+cd redundans
+~/src/redundans/redundans.py -v -i ../*.fastq.gz -f ../contigs.fasta
 ```
 
 FAQ
@@ -51,8 +51,8 @@ FAQ
 This is due to missing getops in recent Perl. Just do:
 
 ```
- sudo cpan
- install Perl4::CoreLibs
+sudo cpan
+install Perl4::CoreLibs
 ```
 
 Citation
