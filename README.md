@@ -23,12 +23,12 @@ Redundans is:
 Prerequisites
 ================
 
-* BLAT (https://genome.ucsc.edu/FAQ/FAQblat.html#blat3)
-* BWA (http://bio-bwa.sourceforge.net/)
-* [SSPACE3](http://www.baseclear.com/genomics/bioinformatics/basetools/SSPACE)
-* [GapCloser from SOAPdenovo](http://sourceforge.net/projects/soapdenovo2/files/GapCloser/)
 * Python 2.7+
 * Biopython 1.6+ `sudo easy_install -U biopython`
+* [BLAT](https://genome.ucsc.edu/FAQ/FAQblat.html#blat3)
+* [BWA](http://bio-bwa.sourceforge.net/)
+* [SSPACE3](http://www.baseclear.com/genomics/bioinformatics/basetools/SSPACE)
+* [GapCloser from SOAPdenovo](http://sourceforge.net/projects/soapdenovo2/files/GapCloser/)
 
 Test
 ================
@@ -45,7 +45,7 @@ cd redundans
 FAQ
 ================
 
-* SSPACE fails with error `Can't locate getopts.pl in @INC`
+* SSPACE fails with an error `Can't locate getopts.pl in @INC`.  
 This is due to missing getops in recent Perl. Just do:
 
 ```
