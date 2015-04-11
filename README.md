@@ -35,11 +35,11 @@ Test
 In the folder ./test you can find test dataset with 100kb genomic region and three libraries: pe300bp, pe600bp and mp5000bp. 
 To run the test example, just execute: 
 
-```
+```bash
 cd test
 mkdir redundans 
 cd redundans
-~/src/redundans/redundans.py -v -i ../*.fastq.gz -f ../contigs.fasta
+../../redundans.py -v -i ../*.fastq.gz -f ../contigs.fasta
 ```
 
 FAQ
@@ -48,7 +48,7 @@ FAQ
 * SSPACE fails with an error `Can't locate getopts.pl in @INC`.  
 This is due to missing getops in recent Perl. Just do:
 
-```
+```bash
 sudo cpan
 install Perl4::CoreLibs
 ```
