@@ -23,8 +23,7 @@ Redundans is:
 Prerequisites
 ================
 
-* Python 2.7+
-* Biopython 1.6+ `sudo easy_install -U biopython`
+* Python 2.7+ & Biopython 1.6+ `sudo easy_install -U biopython`
 * [BLAT](https://genome.ucsc.edu/FAQ/FAQblat.html#blat3)
 * [BWA](http://bio-bwa.sourceforge.net/)
 * [SSPACE3](http://www.baseclear.com/genomics/bioinformatics/basetools/SSPACE)
