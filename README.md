@@ -27,7 +27,7 @@ Prerequisites
 * [BLAT](https://genome.ucsc.edu/FAQ/FAQblat.html#blat3)
 * [BWA](http://bio-bwa.sourceforge.net/)
 * [SSPACE3](http://www.baseclear.com/genomics/bioinformatics/basetools/SSPACE)
-* [GapCloser from SOAPdenovo](http://sourceforge.net/projects/soapdenovo2/files/GapCloser/)
+* [Gap2Seq](http://www.cs.helsinki.fi/u/lmsalmel/Gap2Seq/)
 
 Test
 ================

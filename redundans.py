@@ -100,80 +100,7 @@ def run_scaffolding(outdir, scaffoldsFname, fastq, reducedFname, mapq, threads, 
     
     return libraries
 
-def filter_reads(i, outdir, fq1, fq2, minlen, maxlen, limit, minqual):
-    """Filter FastQ files and return output fnames."""
-    fastq = (fq1, fq2)
-    # generate output files
-    fn1 = os.path.join(outdir, "_gapcloser.%s.%s.fq"%(i, os.path.basename(fq1.name)))
-    fn2 = os.path.join(outdir, "_gapcloser.%s.%s.fq"%(i, os.path.basename(fq2.name)))
-    out1 = open(fn1, "w")
-    out2 = open(fn2, "w")
-    outfiles = (out1, out2, 0, 0)
-    # run filtering
-    filter_paired(fastq, outfiles, minlen, maxlen, limit, minqual)
-    out1.close()
-    out2.close()
-    return fn1, fn2
-    
-def prepare_gapcloser(outdir, mapq, configFn, libFs, libRs, orientations, libIS, libISStDev, \
-                      minlen, maxlen, limit, verbose): 
-    """Return SOAPdenovo2 config file needed by GapCloser."""
-    lines  = "[LIB]\navg_ins=%s\nreverse_seq=%s\nasm_flags=3\nrank=%s\npair_num_cutoff=5\nmap_len=35\nq1=%s\nq2=%s\n"
-    config = ["max_rd_len=%s"%maxlen]
-    for i, (fq1, fq2, orient, iSize, iFrac) in enumerate(zip(libFs, libRs, orientations, \
-                                                             libIS, libISStDev), 1):
-        # consider skipping mate-pairs is libIS>1kb
-        # skip orientations other than FR RF
-        if orient == "FR":
-            reverse_seq = 0
-        elif orient == "RF":
-            reverse_seq = 1
-        else:
-            if verbose:
-                info = "  Skipping unsupported library %s in: %s - %s!\n"
-                sys.stderr.write(info%(orient, fq1, fq2))
-            continue
-        # filter reads
-        fn1, fn2 = filter_reads(i, outdir, fq1, fq2, minlen, maxlen, limit, mapq)
-        #store config info
-        config.append(lines%(iSize, reverse_seq, i, fn1, fn2))
-        
-    # store config only if some libs passed filtering
-    if len(config)>1:
-        with open(configFn, "w") as out:
-            out.write("\n".join(config))
-        return True
-    
 def run_gapclosing(outdir, mapq, libraries, nogapsFname, scaffoldsFname, threads, limit, iters, \
-                   verbose, overlap=25, maxReadLen=150, minReadLen=40):
-    """Execute gapclosing step."""
-    pout = scaffoldsFname
-    
-    for i, (libnames, libFs, libRs, orientations, libIS, libISStDev) in enumerate(libraries, 1):
-        # prepare config file and filter reads
-        configFn = os.path.join(outdir, "_gapcloser.%s.conf"%i)
-        # skip if not suitable libraries
-        if not prepare_gapcloser(outdir, mapq, configFn, libFs, libRs, orientations, libIS, libISStDev, \
-                                 minReadLen, maxReadLen, limit, verbose):
-            continue
-        # run iterations
-        for j in range(1, iters+1):
-            out = os.path.join(outdir, "_gapcloser.%s.%s.fa"%(i,j))
-            # run GapCloser
-            cmd = ["GapCloser", "-t %s"%threads, "-p %s"%overlap, "-l %s"%maxReadLen, \
-                   "-a", pout, "-b", configFn, "-o", out]
-            if verbose:
-                sys.stderr.write(" iteration %s.%s ...\n"%(i,j))
-                #sys.stderr.write( "  %s\n" % " ".join(cmd) )
-            with open(out+".log", "w") as log:
-                GapCloser = subprocess.Popen(cmd, bufsize=-1, stdout=log, stderr=log)
-                GapCloser.wait()
-            # store out info
-            pout = out
-    # create symlink to final scaffolds or pout
-    symlink(pout, nogapsFname)
-
-def run_gapclosing2(outdir, mapq, libraries, nogapsFname, scaffoldsFname, threads, limit, iters, \
                    verbose):
     """Execute gap closing using Gap2Seq."""
     pout = scaffoldsFname
@@ -259,11 +186,11 @@ def redundants(fastq, fasta, outdir, mapq, threads, identity, overlap, minLength
         
     # GAP CLOSING
     ## gapclosing is only necessary after scaffolding 
-    nogapsFname = os.path.join(outdir, "scaffolds.nogaps.fa")
+    nogapsFname = os.path.join(outdir, "scaffolds.filled.fa")
     if gapclosing and libraries:
         if verbose:
             sys.stderr.write("%sGap closing...\n"%timestamp())
-        run_gapclosing2(outdir, mapq, libraries, nogapsFname, scaffoldsFname, threads, \
+        run_gapclosing(outdir, mapq, libraries, nogapsFname, scaffoldsFname, threads, \
                        limit, iters, verbose)
     else:
         symlink(scaffoldsFname, nogapsFname)
