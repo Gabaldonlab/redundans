@@ -167,10 +167,50 @@ def run_gapclosing(outdir, mapq, libraries, nogapsFname, scaffoldsFname, threads
                 #sys.stderr.write( "  %s\n" % " ".join(cmd) )
             with open(out+".log", "w") as log:
                 GapCloser = subprocess.Popen(cmd, bufsize=-1, stdout=log, stderr=log)
+                GapCloser.wait()
             # store out info
             pout = out
-            # calm down a little as too fast GapCloser iterations caused problems
-            time.sleep(1)
+    # create symlink to final scaffolds or pout
+    symlink(pout, nogapsFname)
+
+def run_gapclosing2(outdir, mapq, libraries, nogapsFname, scaffoldsFname, threads, limit, iters, \
+                   verbose):
+    """Execute gap closing using Gap2Seq."""
+    pout = scaffoldsFname
+    # iterate sets of libraries
+    for i, (libnames, libFs, libRs, orientations, libIS, libISStDev) in enumerate(libraries, 1):
+        reads = ""
+        # iterate libraries withing the set
+        for j, (fq1, fq2, orient, iSize, iFrac) in enumerate(zip(libFs, libRs, orientations, \
+                                                                 libIS, libISStDev), 1):
+            # consider skipping mate-pairs is libIS>1kb
+            # skip orientations other than FR RF
+            if orient == "FR":
+                reverse_seq = 0
+            elif orient == "RF":
+                reverse_seq = 1
+            else:
+                if verbose:
+                    info = "  Skipping unsupported library %s in: %s - %s!\n"
+                    sys.stderr.write(info%(orient, fq1, fq2))
+                continue
+            # add reads
+            reads += "%s,%s" % (fq1.name, fq2.name)
+        # skip if not reads
+        if not reads:
+            continue
+        out = os.path.join(outdir, "_gap2seq.%s.%s.fa"%(i,j))
+        # run Gap2Seq
+        cmd = ["Gap2Seq", "-nb-cores %s"%threads, "-scaffolds", pout, \
+               "-filled", out, "-reads", reads]
+        if verbose:
+            sys.stderr.write(" iteration %s.%s ...\n"%(i,j))
+            #sys.stderr.write( "  %s\n" % " ".join(cmd) )
+        with open(out+".log", "w") as log:
+            Gap2Seq = subprocess.Popen(cmd, bufsize=-1, stdout=log, stderr=log)
+            Gap2Seq.wait()
+        # store out info
+        pout = out
 
     # create symlink to final scaffolds or pout
     symlink(pout, nogapsFname)
@@ -223,7 +263,7 @@ def redundants(fastq, fasta, outdir, mapq, threads, identity, overlap, minLength
     if gapclosing and libraries:
         if verbose:
             sys.stderr.write("%sGap closing...\n"%timestamp())
-        run_gapclosing(outdir, mapq, libraries, nogapsFname, scaffoldsFname, threads, \
+        run_gapclosing2(outdir, mapq, libraries, nogapsFname, scaffoldsFname, threads, \
                        limit, iters, verbose)
     else:
         symlink(scaffoldsFname, nogapsFname)
@@ -233,7 +273,7 @@ def redundants(fastq, fasta, outdir, mapq, threads, identity, overlap, minLength
         sys.stderr.write("%sReporting statistics...\n"%timestamp())
     # itermediate fasta files    
     otherfastas  = sorted(glob.glob("_sspace*/*.final.scaffolds.fasta"))
-    otherfastas += sorted(glob.glob("_gapcloser.*.fa"))
+    otherfastas += sorted(glob.glob("_gap*.fa"))
     # report stats
     sys.stderr.write('#fname\tcontigs\tbases\tGC [%]\tcontigs >1kb\tbases in contigs >1kb\tN50\tN90\tNs\tlongest\n')
     for fn in [contigsFname, reducedFname] + otherfastas + [scaffoldsFname, nogapsFname]:
