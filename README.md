@@ -64,10 +64,12 @@ The only mandatory parameters required at the runtime are: assembled contigs (Fa
   --sspacebin SSPACEBIN
                         SSPACE path  [~/src/SSPACE/SSPACE_Standard_v3.0.pl]
 ```
-You can skip some pipeline steps (all performed by default):
+You can skip some pipeline steps (all performed by default) using:
+```
   --noreduction
   --noscaffolding
   --nogapclosing
+```
 
 ### Test set run
 In the folder [./test](https://github.com/lpryszcz/redundans/tree/master/test) you can find test dataset with 100kb genomic region and three simulated Illumina libraries: 
