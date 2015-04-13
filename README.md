@@ -40,7 +40,7 @@ Nevertheless, most of the pipeline parameters can be adjusted manually (default 
   -f FASTA, --fasta FASTA
                         assembly FASTA file
   -o OUTDIR, --outdir OUTDIR
-                        output directory
+                        output directory [.]
   -q MAPQ, --mapq MAPQ  min mapping quality for variants [10]
   -t THREADS, --threads THREADS
                         max threads to run [2]
