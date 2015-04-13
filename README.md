@@ -1,11 +1,11 @@
 ### Table of Contents
 **[Redundans](#redundans)**  
 **[Prerequisites](#prerequisites)**  
-**[Running the pipeline](#running-the-pipeline)**
-**[Parameters](#parameters)**
-**[Test run](#test-run)**
-**[FAQ](#faq)**
-**[Citation](#citation)**
+**[Running the pipeline](#running-the-pipeline)**  
+**[Parameters](#parameters)**  
+**[Test run](#test-run)**  
+**[FAQ](#faq)**  
+**[Citation](#citation)**  
 
 # Redundans
 
