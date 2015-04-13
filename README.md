@@ -29,7 +29,7 @@ Redundans will return **homozygous genome assembly** in `scaffolds.filled.fa` (F
 
 ### Parameters
 For the user convinience, Redundans is equipped with a wrapper that automatically execute all the steps/modules and estimates most of the run parameters. The only **mandatory parameters** required at the runtime are: **assembled contigs** (FastA) and **paired-end and/or mate pairs reads** (FastQ). 
-Nevertheless, most of the pipeline parameters can be adjusted manually:  
+Nevertheless, most of the pipeline parameters can be adjusted manually (default values are given in square brackets []):  
 - Genral options:
 ```
   -h, --help            show this help message and exit
