@@ -37,7 +37,7 @@ Redundans input consists of **assembled contigs** (FastA) and **paired-end and/o
 In addition, the program reports statistics for every pipeline step, including number of contigs that were removed, GC content, N50, N90 and size of gap regions.   
 
 ### Parameters
-For the user convinience, Redundans is equipped with a wrapper that automatically execute all the steps/modules and estimates most of the run parameters. The only **mandatory parameters** required at the runtime are: **assembled contigs** (FastA) and **paired-end and/or mate pairs reads** (FastQ). 
+For the user convinience, Redundans is equipped with a wrapper that **automatically estimates run parameters** and executes all steps/modules. The only **mandatory parameters** required at the runtime are: **assembled contigs** (FastA) and **paired-end and/or mate pairs reads** (FastQ). 
 Nevertheless, most of the pipeline parameters can be adjusted manually (default values are given in square brackets []):  
 - Genral options:
 ```
