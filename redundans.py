@@ -220,7 +220,7 @@ def main():
     parser.add_argument("-f", "--fasta", required=1, 
                         help="assembly FASTA file")
     parser.add_argument("-o", "--outdir",  default=".", 
-                        help="output directory")
+                        help="output directory [%(default)s]")
     parser.add_argument("-q", "--mapq",    default=10, type=int, 
                         help="min mapping quality for variants [%(default)s]")
     parser.add_argument("-t", "--threads", default=2, type=int, 
@@ -273,7 +273,10 @@ if __name__=='__main__':
         main()
     except KeyboardInterrupt:
         sys.stderr.write("\nCtrl-C pressed!      \n")
-    #except IOError as e:
-    #    sys.stderr.write("I/O error({0}): {1}\n".format(e.errno, e.strerror))
+    except IOError as e:
+        sys.stderr.write("I/O error({0}): {1}\n".format(e.errno, e.strerror))
+    #[Errno 95] Operation not supported
+    except OSError:
+        sys.stderr.write("OS error({0}): {1}\n".format(e.errno, e.strerror))
     dt = datetime.now()-t0
     sys.stderr.write("#Time elapsed: %s\n"%dt)
