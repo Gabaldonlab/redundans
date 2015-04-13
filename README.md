@@ -1,10 +1,6 @@
-================
- Redundans
-================
+# Redundans
 
-
-Summary
-================
+# Summary
 
 Redundans pipeline assist assembly of heterozygous genomes. 
 It consists of three steps/modules: 
@@ -33,7 +29,11 @@ Prerequisites
 * [SSPACE3](http://www.baseclear.com/genomics/bioinformatics/basetools/SSPACE)
 * [Gap2Seq](http://www.cs.helsinki.fi/u/lmsalmel/Gap2Seq/)
 
-Test
+Running
+================
+
+
+Test set
 ================
 In the folder [./test](https://github.com/lpryszcz/redundans/tree/master/test) you can find test dataset with 100kb genomic region and three simulated Illumina libraries: 
 * paired-end with 300bp insert (300_?.fastq.gz), 
