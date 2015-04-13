@@ -1,6 +1,6 @@
 ### Table of Contents
-**[Redundans](#redundans)**
-**[Prerequisites](#prerequisites)**
+**[Redundans](#redundans)** 
+**[Prerequisites](#prerequisites)** 
 **[Running the pipeline](#running-the-pipeline)**
 **[Parameters](#parameters)**
 **[Test run](#test-run)**
