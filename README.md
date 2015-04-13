@@ -81,6 +81,7 @@ In [./test](https://github.com/lpryszcz/redundans/tree/master/test) directory yo
 - paired-end with 300bp insert (300_1.fastq.gz, 300_2.fastq.gz), 
 - paired-end with 600bp insert (600_1.fastq.gz, 600_2.fastq.gz),  
 - mate pairs with 5kb insert (5000_1.fastq.gz, 5000_2.fastq.gz).  
+
 To run the test example, just execute: 
 ```bash
 cd test
