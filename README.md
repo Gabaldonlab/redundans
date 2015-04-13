@@ -22,7 +22,7 @@ Redundans is:
 
 Every step of Redundans pipeline may be skipped i.e. if you wish to skip reduction, execute the program with `--noreduction` parameter.  
 
-For more information, have a look at the [poster](https://github.com/lpryszcz/redundans/blob/master/docs/poster.pdf). 
+For more information have a look at the [poster](https://github.com/lpryszcz/redundans/blob/master/docs/poster.pdf). 
 
 Prerequisites
 ================
@@ -35,7 +35,7 @@ Prerequisites
 
 Test
 ================
-In the folder [./test](https://github.com/lpryszcz/redundans/tree/master/test) you can find test dataset with 100kb genomic region and three libraries: pe300bp, pe600bp and mp5000bp. 
+In the folder [./test](https://github.com/lpryszcz/redundans/tree/master/test) you can find test dataset with 100kb genomic region and three simulated Illumina libraries: paired-end with 300bp insert (300_?.fastq.gz), paired-end with 600bp insert (600_?.fastq.gz) and mate pairs with 5kb insert (5000_?.fastq.gz). 
 To run the test example, just execute: 
 
 ```bash
