@@ -10,8 +10,9 @@ The pipeline consists of three steps/modules:
 - gap closing
 
 Redundans is: 
-- **modular**: every step can be ommited or replaced with another tools i.e. if you wish to skip reduction, execute the program with `--noreduction` parameter,     
-- **flexible** toward many sequencing technologies i.e. Illumina, 454 or Sanger. 
+- **fast** & **lightweight**: multi-core support and memory-optimised, so it can be run by modern laptops on small-to-medium size genomes
+- **flexible** toward many sequencing technologies (Illumina, 454 or Sanger) and library types (paired-end, mate pairs, fosmids)
+- **modular**: every step can be ommited or replaced with another tools
 
 For more information have a look at the [poster](https://github.com/lpryszcz/redundans/blob/master/docs/poster.pdf).
 
