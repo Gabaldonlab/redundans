@@ -1,3 +1,12 @@
+### Table of Contents
+**[Redundans](#redundans)**
+**[Prerequisites](#prerequisites)**
+**[Running the pipeline](#running-the-pipeline)**
+**[Parameters](#parameters)**
+**[Test run](#test-run)**
+**[FAQ](#faq)**
+**[Citation](#citation)**
+
 # Redundans
 
 Redundans pipeline assists **an assembly of heterozygous genomes**.  
