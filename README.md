@@ -1,37 +1,39 @@
 # Redundans
 
-Redundans pipeline **assists assembly of heterozygous genomes**. Redundans takes as input **assembled contigs**, **paired-end and/or mate pairs sequencing libraries**. Redundans will return **homozygous genome assembly** (FastA), that should be **less fragmented** and with total **size smaller** than the input contigs. In addition, Redundans will automatically **close the gaps** resulting from genome assembly or scaffolding. 
+Redundans pipeline assists **an assembly of heterozygous genomes**. 
+Program takes as input **assembled contigs**, **paired-end and/or mate pairs sequencing libraries**. Redundans returns **scaffolded homozygous genome assembly**, that should be **less fragmented** and with total **size smaller** than the input contigs. In addition, Redundans will automatically **close the gaps** resulting from genome assembly or scaffolding. 
 
-It consists of three steps/modules: 
+The pipeline consists of three steps/modules: 
 
 - redundancy reduction: detection and selectively removal of redundant contigs from an initial **de novo** assembly
 - scaffolding: joining of genome fragments using paired-end and/or mate-pairs reads
 - gap closing
 
 Redundans is: 
-
 - **modular**: every step can be ommited or replaced with another tools i.e. if you wish to skip reduction, execute the program with `--noreduction` parameter,     
 - **flexible** toward many sequencing technology i.e. Illumina, 454 or Sanger. 
 
 For more information have a look at the [poster](https://github.com/lpryszcz/redundans/blob/master/docs/poster.pdf).
 
 # Prerequisites
-
 - Python 2.7+ & Biopython 1.6+ `sudo easy_install -U biopython`
 - [BLAT](https://genome.ucsc.edu/FAQ/FAQblat.html#blat3)
 - [BWA](http://bio-bwa.sourceforge.net/)
 - [SSPACE3](http://www.baseclear.com/genomics/bioinformatics/basetools/SSPACE)
 - [Gap2Seq](http://www.cs.helsinki.fi/u/lmsalmel/Gap2Seq/)
 
-# Running
+# Running the pipeline
 Redundans input consists of: 
 - FastA-formatted **assembled contigs**
 - FastQ-formatted **paired-end and/or mate pairs reads** - gzipped reads are supported ie .fastq.gz or .fq.gz 
+
 Redundans will return FastA-formatted **homozygous genome assembly** as `scaffolds.filled.fa`. In addition, the program by default reports statistics of every step and iteration of its process.  
 
 ## Parameters
-Mandatory parameters are marked **in bold**: 
+Most of the pipeline parameters can be adjusted. **For the user convinience**, Redundans is equipped with a wrapper that automatically execute all the steps/modules and estimates most of the run parameters. 
+The only mandatory parameters required at the runtime are: assembled contigs (FastA) and paired-end and/or mate pairs reads (FastQ) (marked **in bold**): 
 - Genral options:
+```
   -h, --help            show this help message and exit
   -v                    verbose
   --version             show program's version number and exit
@@ -51,8 +53,9 @@ Mandatory parameters are marked **in bold**:
   --overlap OVERLAP     min. overlap  [0.75]
   --minLength MINLENGTH
                         min. contig length [200]
-
+```
 - Scaffolding options:
+```
   -j JOINS, --joins JOINS
                         min k pairs to join contigs [5]
   -l LIMIT, --limit LIMIT
@@ -60,7 +63,7 @@ Mandatory parameters are marked **in bold**:
   -iters ITERS          scaffolding iterations per library  [2]
   --sspacebin SSPACEBIN
                         SSPACE path  [~/src/SSPACE/SSPACE_Standard_v3.0.pl]
-
+```
 You can skip some pipeline steps (all performed by default):
   --noreduction
   --noscaffolding
