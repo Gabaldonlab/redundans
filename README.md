@@ -74,7 +74,7 @@ Nevertheless, most of the pipeline parameters can be adjusted manually (default 
   --sspacebin SSPACEBIN
                         SSPACE path  [~/src/SSPACE/SSPACE_Standard_v3.0.pl]
 ```
-Redundans is extremely flexible. All steps of the pipeline can be ommited using: `--noreduction`, `--noscaffolding` and/or `--nogapclosing` parameters. 
+Redundans is **extremely flexible**. All steps of the pipeline can be ommited using: `--noreduction`, `--noscaffolding` and/or `--nogapclosing` parameters. 
 
 ### Test run
 In [./test](https://github.com/lpryszcz/redundans/tree/master/test) directory you can find test dataset with 100 kb genomic region from *C. parapsilosis* CDC317 and three Illumina libraries simulated using [GemSIM](http://sourceforge.net/projects/gemsim/): 
