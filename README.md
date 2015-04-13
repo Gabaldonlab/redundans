@@ -47,8 +47,9 @@ The only mandatory parameters required at the runtime are: assembled contigs (Fa
   -t THREADS, --threads THREADS
                         max threads to run [2]
   --log LOG             output log to [stderr]
-
+```
 - Reduction options:
+```
   --identity IDENTITY   min. identity [0.8]
   --overlap OVERLAP     min. overlap  [0.75]
   --minLength MINLENGTH
