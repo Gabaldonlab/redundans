@@ -33,7 +33,7 @@ For more information have a look at the [poster](https://github.com/lpryszcz/red
 - [Gap2Seq](http://www.cs.helsinki.fi/u/lmsalmel/Gap2Seq/)
 
 ## Running the pipeline
-Redundans input consists of **assembled contigs** (FastA) and **paired-end and/or mate pairs reads** (FastQ). Gzipped FastQ files are also accepted. Redundans will return **homozygous genome assembly** in `scaffolds.filled.fa` (FastA). 
+Redundans input consists of **assembled contigs** (FastA) and **paired-end and/or mate pairs reads** (FastQ). Gzipped FastQ files are also accepted. Redundans will return **homozygous genome assembly** in `scaffolds.filled.fa` (FastA).  
 In addition, the program reports statistics for every pipeline step, including number of contigs that were removed, GC content, N50, N90 and size of gap regions.   
 
 ### Parameters
