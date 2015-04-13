@@ -35,7 +35,7 @@ Prerequisites
 
 Test
 ================
-In the folder ./test you can find test dataset with 100kb genomic region and three libraries: pe300bp, pe600bp and mp5000bp. 
+In the folder [./test](https://github.com/lpryszcz/redundans/tree/master/test) you can find test dataset with 100kb genomic region and three libraries: pe300bp, pe600bp and mp5000bp. 
 To run the test example, just execute: 
 
 ```bash
