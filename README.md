@@ -14,9 +14,9 @@ Program takes as input **assembled contigs**, **paired-end and/or mate pairs seq
 
 The pipeline consists of three steps/modules: 
 
-- redundancy reduction: detection and selectively removal of redundant contigs from an initial **de novo** assembly
-- scaffolding: joining of genome fragments using paired-end and/or mate-pairs reads
-- gap closing
+- **redundancy reduction**: detection and selectively removal of redundant contigs from an initial *de novo* assembly
+- **scaffolding**: joining of genome fragments using paired-end and/or mate-pairs reads
+- **gap closing**
 
 Redundans is: 
 - **fast** & **lightweight**: with multi-core support and memory-optimised, so it can be run by modern laptops on small-to-medium size genomes
