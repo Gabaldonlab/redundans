@@ -15,21 +15,21 @@ Redundans is:
 
 For more information have a look at the [poster](https://github.com/lpryszcz/redundans/blob/master/docs/poster.pdf).
 
-# Prerequisites
+## Prerequisites
 - Python 2.7+ & Biopython 1.6+ `sudo easy_install -U biopython`
 - [BLAT](https://genome.ucsc.edu/FAQ/FAQblat.html#blat3)
 - [BWA](http://bio-bwa.sourceforge.net/)
 - [SSPACE3](http://www.baseclear.com/genomics/bioinformatics/basetools/SSPACE)
 - [Gap2Seq](http://www.cs.helsinki.fi/u/lmsalmel/Gap2Seq/)
 
-# Running the pipeline
+## Running the pipeline
 Redundans input consists of: 
 - FastA-formatted **assembled contigs**
 - FastQ-formatted **paired-end and/or mate pairs reads** - gzipped reads are supported ie .fastq.gz or .fq.gz 
 
 Redundans will return FastA-formatted **homozygous genome assembly** as `scaffolds.filled.fa`. In addition, the program by default reports statistics of every step and iteration of its process.  
 
-## Parameters
+### Parameters
 Most of the pipeline parameters can be adjusted. **For the user convinience**, Redundans is equipped with a wrapper that automatically execute all the steps/modules and estimates most of the run parameters. 
 The only mandatory parameters required at the runtime are: assembled contigs (FastA) and paired-end and/or mate pairs reads (FastQ) (marked **in bold**): 
 - Genral options:
@@ -69,7 +69,7 @@ You can skip some pipeline steps (all performed by default):
   --noscaffolding
   --nogapclosing
 
-## Test set run
+### Test set run
 In the folder [./test](https://github.com/lpryszcz/redundans/tree/master/test) you can find test dataset with 100kb genomic region and three simulated Illumina libraries: 
 - paired-end with 300bp insert (300_?.fastq.gz), 
 - paired-end with 600bp insert (600_?.fastq.gz),  
@@ -84,7 +84,7 @@ cd redundans
 
 Note, the **order of libraries is not important**, as long as `_read1` and `_read2` from each library are given one after another i.e. `-i 600_1.fastq.gz 600_2.fastq.gz 300_1.fastq.gz 300_2.fastq.gz` would be interpreted the same as `-i 300_1.fastq.gz 300_2.fastq.gz 600_1.fastq.gz 600_2.fastq.gz`. 
 
-# FAQ
+## FAQ
 
 - SSPACE fails with an error `Can't locate getopts.pl in @INC`.  
 This is due to missing getops in recent Perl. Just do:
@@ -93,5 +93,5 @@ sudo cpan
 install Perl4::CoreLibs
 ```
 
-# Citation
+## Citation
 Leszek P. Pryszcz and Toni Gabaldón (Submitted) Redundans: an assembly pipeline for highly heterozygous genomes 
