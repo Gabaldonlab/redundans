@@ -1,6 +1,6 @@
 # Redundans
 
-Redundans pipeline assists **an assembly of heterozygous genomes**. 
+Redundans pipeline assists **an assembly of heterozygous genomes**.  
 Program takes as input **assembled contigs**, **paired-end and/or mate pairs sequencing libraries**. Redundans returns **scaffolded homozygous genome assembly**, that should be **less fragmented** and with total **size smaller** than the input contigs. In addition, Redundans will automatically **close the gaps** resulting from genome assembly or scaffolding. 
 
 The pipeline consists of three steps/modules: 
@@ -11,7 +11,7 @@ The pipeline consists of three steps/modules:
 
 Redundans is: 
 - **modular**: every step can be ommited or replaced with another tools i.e. if you wish to skip reduction, execute the program with `--noreduction` parameter,     
-- **flexible** toward many sequencing technology i.e. Illumina, 454 or Sanger. 
+- **flexible** toward many sequencing technologies i.e. Illumina, 454 or Sanger. 
 
 For more information have a look at the [poster](https://github.com/lpryszcz/redundans/blob/master/docs/poster.pdf).
 
@@ -65,18 +65,13 @@ The only mandatory parameters required at the runtime are: assembled contigs (Fa
   --sspacebin SSPACEBIN
                         SSPACE path  [~/src/SSPACE/SSPACE_Standard_v3.0.pl]
 ```
-You can skip some pipeline steps (all performed by default) using:
-```
-  --noreduction
-  --noscaffolding
-  --nogapclosing
-```
+You can skip some pipeline steps (all performed by default) using: `--noreduction`, `--noscaffolding` and/or `--nogapclosing`. 
 
-### Test set run
-In the folder [./test](https://github.com/lpryszcz/redundans/tree/master/test) you can find test dataset with 100kb genomic region and three simulated Illumina libraries: 
-- paired-end with 300bp insert (300_?.fastq.gz), 
-- paired-end with 600bp insert (600_?.fastq.gz),  
-- mate pairs with 5kb insert (5000_?.fastq.gz). 
+### Test run
+In [./test](https://github.com/lpryszcz/redundans/tree/master/test) directory you can find test dataset with 100 kb genomic region from *C. parapsilosis* CDC317 and three Illumina libraries simulated using [GemSIM](http://sourceforge.net/projects/gemsim/): 
+- paired-end with 300bp insert (300_1.fastq.gz, 300_2.fastq.gz), 
+- paired-end with 600bp insert (600_1.fastq.gz, 600_2.fastq.gz),  
+- mate pairs with 5kb insert (5000_1.fastq.gz, 5000_1.fastq.gz). 
 To run the test example, just execute: 
 ```bash
 cd test
@@ -88,7 +83,6 @@ cd redundans
 Note, the **order of libraries is not important**, as long as `_read1` and `_read2` from each library are given one after another i.e. `-i 600_1.fastq.gz 600_2.fastq.gz 300_1.fastq.gz 300_2.fastq.gz` would be interpreted the same as `-i 300_1.fastq.gz 300_2.fastq.gz 600_1.fastq.gz 600_2.fastq.gz`. 
 
 ## FAQ
-
 - SSPACE fails with an error `Can't locate getopts.pl in @INC`.  
 This is due to missing getops in recent Perl. Just do:
 ```bash
