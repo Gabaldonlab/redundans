@@ -23,23 +23,21 @@ For more information have a look at the [poster](https://github.com/lpryszcz/red
 - [Gap2Seq](http://www.cs.helsinki.fi/u/lmsalmel/Gap2Seq/)
 
 ## Running the pipeline
-Redundans input consists of: 
-- FastA-formatted **assembled contigs**
-- FastQ-formatted **paired-end and/or mate pairs reads** - gzipped reads are supported ie .fastq.gz or .fq.gz 
+Redundans input consists of: **assembled contigs** (FastA) and **paired-end and/or mate pairs reads** (FastQ). Gzipped FastQ files are also accepted.  
 
-Redundans will return FastA-formatted **homozygous genome assembly** as `scaffolds.filled.fa`. In addition, the program by default reports statistics of every step and iteration of its process.  
+Redundans will return **homozygous genome assembly** in `scaffolds.filled.fa` (FastA). In addition, the program reports statistics for every pipeline step, including number of contigs that were removed, GC content, N50, N90 and size of gap regions.   
 
 ### Parameters
-Most of the pipeline parameters can be adjusted. **For the user convinience**, Redundans is equipped with a wrapper that automatically execute all the steps/modules and estimates most of the run parameters. 
-The only mandatory parameters required at the runtime are: assembled contigs (FastA) and paired-end and/or mate pairs reads (FastQ) (marked **in bold**): 
+For the user convinience, Redundans is equipped with a wrapper that automatically execute all the steps/modules and estimates most of the run parameters. The only **mandatory parameters** required at the runtime are: **assembled contigs** (FastA) and **paired-end and/or mate pairs reads** (FastQ). 
+Nevertheless, most of the pipeline parameters can be adjusted manually:  
 - Genral options:
 ```
   -h, --help            show this help message and exit
   -v                    verbose
   --version             show program's version number and exit
-  **-i FASTQ [FASTQ ...], --fastq FASTQ [FASTQ ...]**
+  -i FASTQ [FASTQ ...], --fastq FASTQ [FASTQ ...]
                         FASTQ PE/MP files
-  **-f FASTA, --fasta FASTA**
+  -f FASTA, --fasta FASTA
                         assembly FASTA file
   -o OUTDIR, --outdir OUTDIR
                         output directory
@@ -65,7 +63,7 @@ The only mandatory parameters required at the runtime are: assembled contigs (Fa
   --sspacebin SSPACEBIN
                         SSPACE path  [~/src/SSPACE/SSPACE_Standard_v3.0.pl]
 ```
-You can skip some pipeline steps (all performed by default) using: `--noreduction`, `--noscaffolding` and/or `--nogapclosing`. 
+Given steps of the pipeline can skipped using: `--noreduction`, `--noscaffolding` and/or `--nogapclosing` parameters. 
 
 ### Test run
 In [./test](https://github.com/lpryszcz/redundans/tree/master/test) directory you can find test dataset with 100 kb genomic region from *C. parapsilosis* CDC317 and three Illumina libraries simulated using [GemSIM](http://sourceforge.net/projects/gemsim/): 
