@@ -69,7 +69,7 @@ Given steps of the pipeline can skipped using: `--noreduction`, `--noscaffolding
 In [./test](https://github.com/lpryszcz/redundans/tree/master/test) directory you can find test dataset with 100 kb genomic region from *C. parapsilosis* CDC317 and three Illumina libraries simulated using [GemSIM](http://sourceforge.net/projects/gemsim/): 
 - paired-end with 300bp insert (300_1.fastq.gz, 300_2.fastq.gz), 
 - paired-end with 600bp insert (600_1.fastq.gz, 600_2.fastq.gz),  
-- mate pairs with 5kb insert (5000_1.fastq.gz, 5000_1.fastq.gz). 
+- mate pairs with 5kb insert (5000_1.fastq.gz, 5000_2.fastq.gz).  
 To run the test example, just execute: 
 ```bash
 cd test
