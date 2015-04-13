@@ -20,6 +20,10 @@ Redundans is:
 * modular - every step can be ommited or replaced with another tools. 
 * flexible toward any sequencing technology (i.e. Illumina, 454 or Sanger). 
 
+Every step of Redundans pipeline may be skipped i.e. if you wish to skip reduction, execute the program with `--noreduction` parameter.  
+
+For more information, have a look at the [poster](https://github.com/lpryszcz/redundans/blob/master/docs/poster.pdf). 
+
 Prerequisites
 ================
 

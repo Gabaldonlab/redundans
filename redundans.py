@@ -247,9 +247,9 @@ def main():
     #gaps.add_argument("-l", "--limit",  default=7e, type=int, 
     #                  help="align l reads [%(default)s]")
     skip = parser.add_argument_group('Skip below steps (all performed by default)')
-    skip.add_argument('--reduction',   action='store_false', default=True)   
-    skip.add_argument('--scaffolding', action='store_false', default=True)   
-    skip.add_argument('--gapclosing',  action='store_false', default=True)   
+    skip.add_argument('--noreduction',   action='store_false', default=True)   
+    skip.add_argument('--noscaffolding', action='store_false', default=True)   
+    skip.add_argument('--nogapclosing',  action='store_false', default=True)   
     
     o = parser.parse_args()
     if o.verbose:
@@ -259,7 +259,7 @@ def main():
     redundants(o.fastq, o.fasta, o.outdir, o.mapq, o.threads, \
                o.identity, o.overlap, o.minLength, \
                o.joins, o.limit, o.iters, o.sspacebin, \
-               o.reduction, o.scaffolding, o.gapclosing, \
+               o.noreduction, o.noscaffolding, o.nogapclosing, \
                o.verbose, o.log)
 
 if __name__=='__main__': 
