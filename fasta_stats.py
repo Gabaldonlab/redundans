@@ -14,13 +14,14 @@ import gzip, os, sys
 from datetime import datetime
 from Bio import SeqIO
 
-def fasta_stats(f):
+def fasta_stats(f, header=''):
     """Report fasta statistics."""
     fn=f.name
     statsFn=fn+'.stats'
     #return content of .stats file if exists and younger than fasta
     if os.path.isfile(statsFn) and os.stat(fn).st_mtime < os.stat(statsFn).st_mtime:
-        line=open(statsFn).readline()
+        line=filter(lambda x: not x.startswith('#'), \
+                    open(statsFn).readlines())[0]
         line=line.strip()
         line='%s\t%s\n' % (fn, '\t'.join( line.split('\t')[1:] ))
         return line
@@ -66,7 +67,7 @@ def fasta_stats(f):
     #print output
     line='%s\t%s\t%s\t%.3f\t%s\t%s\t%s\t%s\t%s\t%s\n' % ( fn,contigs,size,GC,contigs1000,sum(lengths1000),n50,n90,bases['N'],lengths[0] )
     try:
-        out=open(statsFn,'wb'); out.write( line ); out.close()
+        out=open(statsFn,'wb'); out.write(header+line); out.close()
     except IOError as e:
         sys.stderr.write("%s\n" % e)
     return line
@@ -90,13 +91,14 @@ def main():
         sys.stderr.write("Options: %s\n"%str(o))
 
     #header
-    o.out.write('#fname\tcontigs\tbases\tGC [%]\tcontigs >1kb\tbases in contigs >1kb\tN50\tN90\tNs\tlongest\n')
+    header = '#fname\tcontigs\tbases\tGC [%]\tcontigs >1kb\tbases in contigs >1kb\tN50\tN90\tNs\tlongest\n'
+    o.out.write(header)
     for f in o.fasta:
         if not os.path.isfile(f.name):
             continue
         if f.name.endswith('.gz'):
             f=gzip.open(f.name)
-        o.out.write(fasta_stats(f))
+        o.out.write(fasta_stats(f), header)
 	
 if __name__=='__main__': 
     t0 = datetime.now()
@@ -106,6 +108,9 @@ if __name__=='__main__':
         sys.stderr.write("\nCtrl-C pressed!		\n")
     except IOError as e:
         sys.stderr.write("I/O error({0}): {1}\n".format(e.errno, e.strerror))
+    #[Errno 95] Operation not supported
+    except OSError:
+        sys.stderr.write("OS error({0}): {1}\n".format(e.errno, e.strerror))        
     dt = datetime.now()-t0
     sys.stderr.write("#Time elapsed: %s\n"%dt)
 

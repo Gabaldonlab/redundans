@@ -152,7 +152,8 @@ def redundants(fastq, fasta, outdir, mapq, threads, identity, overlap, minLength
     
     # prepare outdir or quit if exists
     if os.path.isdir(outdir):
-        sys.stderr.write("Directory %s exists!\n"%outdir)
+        pass
+        #sys.stderr.write("Directory %s exists!\n"%outdir)
         #sys.exit(1)
     else:
         os.makedirs(outdir)
@@ -213,10 +214,10 @@ def main():
                                       formatter_class=argparse.RawTextHelpFormatter)
   
     parser.add_argument("-v", dest="verbose",  default=False, action="store_true", help="verbose")    
-    parser.add_argument('--version', action='version', version='1.0a')   
-    parser.add_argument("-i", "--fastq", nargs="+", 
+    parser.add_argument('--version', action='version', version='0.10a')   
+    parser.add_argument("-i", "--fastq", nargs="+", required=1, 
                         help="FASTQ PE/MP files")
-    parser.add_argument("-f", "--fasta", 
+    parser.add_argument("-f", "--fasta", required=1, 
                         help="assembly FASTA file")
     parser.add_argument("-o", "--outdir",  default=".", 
                         help="output directory")
@@ -244,8 +245,6 @@ def main():
     scaf.add_argument("--sspacebin",    default="~/src/SSPACE/SSPACE_Standard_v3.0.pl", 
                        help="SSPACE path  [%(default)s]")
     gaps = parser.add_argument_group('Gap closing options')
-    #gaps.add_argument("-l", "--limit",  default=7e, type=int, 
-    #                  help="align l reads [%(default)s]")
     skip = parser.add_argument_group('Skip below steps (all performed by default)')
     skip.add_argument('--noreduction',   action='store_false', default=True)   
     skip.add_argument('--noscaffolding', action='store_false', default=True)   
@@ -254,6 +253,12 @@ def main():
     o = parser.parse_args()
     if o.verbose:
         sys.stderr.write("Options: %s\n"%str(o))
+
+    # check if input files exists
+    for fn in [o.fasta,] + o.fastq: 
+        if not os.path.isfile(fn):
+            sys.stderr.write("No such file: %s\n"%fn)
+            sys.exit(1)
         
     # initialise pipeline
     redundants(o.fastq, o.fasta, o.outdir, o.mapq, o.threads, \
