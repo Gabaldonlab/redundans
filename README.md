@@ -35,7 +35,10 @@ Prerequisites
 
 Test
 ================
-In the folder [./test](https://github.com/lpryszcz/redundans/tree/master/test) you can find test dataset with 100kb genomic region and three simulated Illumina libraries: paired-end with 300bp insert (300_?.fastq.gz), paired-end with 600bp insert (600_?.fastq.gz) and mate pairs with 5kb insert (5000_?.fastq.gz). 
+In the folder [./test](https://github.com/lpryszcz/redundans/tree/master/test) you can find test dataset with 100kb genomic region and three simulated Illumina libraries: 
+* paired-end with 300bp insert (300_?.fastq.gz), 
+* paired-end with 600bp insert (600_?.fastq.gz),  
+* mate pairs with 5kb insert (5000_?.fastq.gz). 
 To run the test example, just execute: 
 
 ```bash
@@ -44,6 +47,8 @@ mkdir redundans
 cd redundans
 ../../redundans.py -v -i ../*.fastq.gz -f ../contigs.fasta
 ```
+
+Note, the *order of libraries is not important*, as long as `_read1` and `_read2` from each library are given one after another i.e. `-i 600_1.fastq.gz 600_2.fastq.gz 300_1.fastq.gz 300_2.fastq.gz` would be interpreted the same as `-i 300_1.fastq.gz 300_2.fastq.gz 600_1.fastq.gz 600_2.fastq.gz`. 
 
 FAQ
 ================
