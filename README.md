@@ -87,10 +87,11 @@ To run the test example, just execute:
 cd test
 mkdir redundans 
 cd redundans
-../../redundans.py -v -i ../**.fastq.gz -f ../contigs.fasta
+../../redundans.py -v -i ../*.fastq.gz -f ../contigs.fasta
 ```
 
-Note, the **order of libraries is not important**, as long as `_read1` and `_read2` from each library are given one after another i.e. `-i 600_1.fastq.gz 600_2.fastq.gz 300_1.fastq.gz 300_2.fastq.gz` would be interpreted the same as `-i 300_1.fastq.gz 300_2.fastq.gz 600_1.fastq.gz 600_2.fastq.gz`. 
+Note, the **order of libraries is not important**, as long as `read1` and `read2` from each library are given one after another 
+i.e. `-i 600_1.fastq.gz 600_2.fastq.gz 300_1.fastq.gz 300_2.fastq.gz` would be interpreted the same as `-i 300_1.fastq.gz 300_2.fastq.gz 600_1.fastq.gz 600_2.fastq.gz`. 
 
 ## FAQ
 - SSPACE fails with an error `Can't locate getopts.pl in @INC`.  
