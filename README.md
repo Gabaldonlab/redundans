@@ -81,20 +81,20 @@ Redundans is **extremely flexible**. All steps of the pipeline can be ommited us
 
 ### Test run
 In [./test](https://github.com/lpryszcz/redundans/tree/master/test) directory you can find test dataset with 100 kb genomic region from *C. parapsilosis* CDC317 and three Illumina libraries simulated using [GemSIM](http://sourceforge.net/projects/gemsim/): 
-- paired-end with 300bp insert (300_1.fastq.gz, 300_2.fastq.gz), 
-- paired-end with 600bp insert (600_1.fastq.gz, 600_2.fastq.gz),  
-- mate pairs with 5kb insert (5000_1.fastq.gz, 5000_2.fastq.gz).  
+- paired-end with 300bp insert (300_1.fq.gz, 300_2.fq.gz), 
+- paired-end with 600bp insert (600_1.fq.gz, 600_2.fq.gz),  
+- mate pairs with 5kb insert (5000_1.fq.gz, 5000_2.fq.gz).  
 
 To run the test example, just execute: 
 ```bash
 cd test
 mkdir redundans 
 cd redundans
-../../redundans.py -v -i ../*.fastq.gz -f ../contigs.fasta
+../../redundans.py -v -i ../*.fq.gz -f ../contigs.fasta
 ```
 
 Note, the **order of libraries is not important**, as long as `read1` and `read2` from each library are given one after another 
-i.e. `-i 600_1.fastq.gz 600_2.fastq.gz 300_1.fastq.gz 300_2.fastq.gz` would be interpreted the same as `-i 300_1.fastq.gz 300_2.fastq.gz 600_1.fastq.gz 600_2.fastq.gz`. 
+i.e. `-i 600_1.fq.gz 600_2.fq.gz 300_1.fq.gz 300_2.fq.gz` would be interpreted the same as `-i 300_1.fq.gz 300_2.fq.gz 600_1.fq.gz 600_2.fq.gz`. 
 
 ## FAQ
 - SSPACE fails with an error `Can't locate getopts.pl in @INC`.  

@@ -17,7 +17,7 @@ aminos = 'ACDEFGHIKLMNPQRSTVWY'
 nucleotides = 'ACGT'
 
 def get_heterozygous(positions, divergence):
-    """Return fraction of chromosome being heterozygous"""
+    """Return fraction of chromosome being heterozygous."""
     #count hetero SNPs within 100bp
     hetero = []
     pp = 0.0
