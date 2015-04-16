@@ -1,0 +1,4 @@
+Contig r9 (size = 1109) has 2 multiple links;
+	with r5 (links = 11)
+	with r6 (links = 12)
+

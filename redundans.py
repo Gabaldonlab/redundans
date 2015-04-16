@@ -219,6 +219,11 @@ def redundants(fastq, fasta, outdir, mapq, threads, identity, overlap, minLength
     sys.stderr.write('#fname\tcontigs\tbases\tGC [%]\tcontigs >1kb\tbases in contigs >1kb\tN50\tN90\tNs\tlongest\n')
     for fn in [contigsFname, reducedFname] + otherfastas + [scaffoldsFname, nogapsFname]:
         sys.stderr.write(fasta_stats(open(fn)))
+
+def _check_executable(cmd):
+    """Check if executable exists."""
+    p = subprocess.Popen("type " + cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    return "".join(p.stdout.readlines())
         
 def main():
     import argparse
@@ -249,7 +254,7 @@ def main():
     scaf = parser.add_argument_group('Scaffolding options')
     scaf.add_argument("-j", "--joins",  default=5, type=int, 
                       help="min pairs to join contigs [%(default)s]")
-    scaf.add_argument("-l", "--limit",  default=0.1, type=float, 
+    scaf.add_argument("-l", "--limit",  default=0.2, type=float, 
                       help="align subset of reads [%(default)s]")
     scaf.add_argument("-q", "--mapq",    default=10, type=int, 
                       help="min mapping quality [%(default)s]")
@@ -272,7 +277,14 @@ def main():
         if not os.path.isfile(fn):
             sys.stderr.write("No such file: %s\n"%fn)
             sys.exit(1)
-        
+
+    # check if all executables exists
+    for cmd in ('blat', 'bwa', o.sspacebin, 'Gap2Seq'):
+        info = _check_executable(cmd)
+        if "not found" in info:
+            sys.stderr.write("[ERROR] %s"%info)
+            sys.exit(1)
+
     # initialise pipeline
     redundants(o.fastq, o.fasta, o.outdir, o.mapq, o.threads, \
                o.identity, o.overlap, o.minLength, \
@@ -289,7 +301,7 @@ if __name__=='__main__':
     except IOError as e:
         sys.stderr.write("I/O error({0}): {1}\n".format(e.errno, e.strerror))
     #[Errno 95] Operation not supported
-    except OSError:
+    except OSError as e:
         sys.stderr.write("OS error({0}): {1}\n".format(e.errno, e.strerror))
     dt = datetime.now()-t0
     sys.stderr.write("#Time elapsed: %s\n"%dt)

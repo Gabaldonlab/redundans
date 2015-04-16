@@ -1,0 +1,10 @@
+r6 has 12 links with f9 and gap of 85 bases
+r7 has 5 links with r12 and gap of 102 bases
+r8 has 5 links with r9 and gap of 4 bases
+r9 has 12 links with f6 and gap of 85 bases
+f9 has 5 links with f8 and gap of 4 bases
+f10 has 5 links with f2 and gap of -4 bases
+f12 has 5 links with f7 and gap of 102 bases
+r2 has 5 links with r10 and gap of -4 bases
+f2 has 15 links with r3 and gap of 52 bases
+f3 has 15 links with r2 and gap of 52 bases

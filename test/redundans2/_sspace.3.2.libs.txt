@@ -1,0 +1,1 @@
+lib1	TAB	_sspace.3.2.lib1.tab	4871	0.144976877	FR

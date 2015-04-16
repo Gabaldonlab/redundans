@@ -1,0 +1,1 @@
+lib1	TAB	_sspace.1.1.lib1.tab	302	0.0803883581483	FR

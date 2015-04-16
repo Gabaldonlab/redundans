@@ -1,0 +1,4 @@
+Contig r6 (size = 2207) has 2 multiple links;
+	with r3 (links = 11)
+	with r4 (links = 12)
+
