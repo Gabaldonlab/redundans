@@ -44,11 +44,15 @@ def get_orientation(pairs, fq1, fq2):
         sys.stderr.write(info%(orientation, maxcfrac, '%', fq1, fq2, str(pairs)))
     return orientation 
 
-def get_libraries(fastq, reducedFname, mapq, threads, limit, verbose):
+def get_libraries(fastq, fasta, mapq, threads, limit, verbose):
     """Return libraries"""
+    # otherwise process all reads
+    if not limit:
+        limit = 10e4
+    
     # get libraries statistics using 1% of mapped read limit
-    libdata = fastq2insert_size(sys.stderr, fastq, reducedFname, mapq, threads, \
-                                limit/100, verbose)
+    libdata = fastq2insert_size(sys.stderr, fastq, fasta, mapq, threads, \
+                                limit, verbose)
     # separate paired-end & mate pairs
     ## also separate 300 and 600 paired-ends
     libraries = []
@@ -69,48 +73,45 @@ def get_libraries(fastq, reducedFname, mapq, threads, limit, verbose):
         # insert size information
         libraries[-1][4].append(int(ismean))
         stdfrac = isstd / ismean
+        # capture large stdev
+        if stdfrac > 0.66:
+            sys.stderr.write("[WARNING] Highly variable insert size (%.f +- %.2f) in %s - %s!\n"%(ismean, isstd, fq1, fq2))
+        # SSSPACE accepts stdfrac 0-1.0
+        if stdfrac > 1:
+            stdfrac = 1.0
         libraries[-1][5].append(stdfrac)
         # update counter
         i += 1
     return libraries
     
-def run_scaffolding(outdir, scaffoldsFname, fastq, reducedFname, mapq, threads, \
-                    joins, readLimit, iters, sspacebin, verbose, lib=""):
-    """Execute scaffolding step."""
-    # limit no. of reads to align as fraction of genome 
-    if readLimit:
-        stats = fasta_stats(open(reducedFname))
-        reducedSize = int(stats.split('\t')[2])
-        limit = int(readLimit * reducedSize)
-        if verbose:
-            sys.stderr.write(" Aligning %s mates per library...\n"%limit)
-    else:
-        # otherwise process all reads
-        limit = 0
-        
-    # get libraries
-    libraries = get_libraries(fastq, reducedFname, mapq, threads, limit, verbose)
-        
+def run_scaffolding(outdir, scaffoldsFname, fastq, libraries, reducedFname, mapq, threads, \
+                    joins, limit, iters, sspacebin, verbose, lib=""):
+    """Execute scaffolding step."""        
     # run scaffolding using libraries with increasing insert size in multiple iterations
-    pout = reducedFname    
-    for i, (libnames, libFs, libRs, orientations, libIS, libISStDev) in enumerate(libraries, 1):
+    pout = reducedFname
+    i = 0
+    #for i, (libnames, libFs, libRs, orients, libIS, libISStDev) in enumerate(libraries, 1):
+    while i < len(libraries):
+        libnames, libFs, libRs, orients, libIS, libISStDev = libraries[i]
+        i += 1
         for j in range(1, iters+1):
             if verbose:
                 sys.stderr.write(" iteration %s.%s ...\n"%(i,j))
             out = "_sspace.%s.%s"%(i, j)
             lib = ""
             # run fastq scaffolding
-            fastq2sspace(out, open(pout), lib, libnames, libFs, libRs, orientations, \
+            fastq2sspace(out, open(pout), lib, libnames, libFs, libRs, orients, \
                          libIS, libISStDev, threads, mapq, limit, joins, \
                          sspacebin, verbose=0)
             # store out info
             pout = os.path.join(out, "_sspace.%s.%s"%(i, j)+".final.scaffolds.fasta")
-            
+        # update library insert size estimation, especially for mate-pairs
+        libraries = get_libraries(fastq, pout, mapq, threads, limit, verbose)
     # create symlink to final scaffolds or pout
     symlink(pout, scaffoldsFname)
-    
-    return libraries
 
+    return libraries
+    
 def run_gapclosing(outdir, mapq, libraries, nogapsFname, scaffoldsFname, threads, limit, iters, \
                    verbose):
     """Execute gap closing using Gap2Seq."""
@@ -142,7 +143,7 @@ def run_gapclosing(outdir, mapq, libraries, nogapsFname, scaffoldsFname, threads
         cmd = ["Gap2Seq", "-nb-cores %s"%threads, "-scaffolds", pout, \
                "-filled", out, "-reads", reads]
         if verbose:
-            sys.stderr.write(" iteration %s.%s ...\n"%(i,j))
+            sys.stderr.write(" iteration %s ...\n"%i)
             #sys.stderr.write( "  %s\n" % " ".join(cmd) )
         with open(out+".log", "w") as log:
             Gap2Seq = subprocess.Popen(cmd, bufsize=-1, stdout=log, stderr=log)
@@ -154,10 +155,21 @@ def run_gapclosing(outdir, mapq, libraries, nogapsFname, scaffoldsFname, threads
     symlink(pout, nogapsFname)
     
 def redundants(fastq, fasta, outdir, mapq, threads, identity, overlap, minLength, \
-               joins, limit, iters, sspacebin, reduction=1, scaffolding=1, gapclosing=1, \
+               joins, readLimit, iters, sspacebin, reduction=1, scaffolding=1, gapclosing=1, \
                verbose=1, log=sys.stderr):
     """Launch redundans pipeline."""
-    libraries = []
+    # limit no. of reads to align as fraction of genome size
+    limit = 0
+    if readLimit:
+        stats = fasta_stats(open(fasta))
+        fastaSize = int(stats.split('\t')[2])
+        limit = int(readLimit * fastaSize)
+        if verbose:
+            sys.stderr.write(" Aligning %s mates per library...\n"%limit)
+
+    # get libraries
+    libraries = get_libraries(fastq, fasta, mapq, threads, limit, verbose)
+    
     # redirect stderr
     #sys.stderr = log
     
@@ -192,8 +204,7 @@ def redundants(fastq, fasta, outdir, mapq, threads, identity, overlap, minLength
         if verbose:
             sys.stderr.write("%sScaffolding...\n"%timestamp())
         # estimate read limit
-        
-        libraries = run_scaffolding(outdir, scaffoldsFname, fastq, reducedFname, mapq, \
+        libraries = run_scaffolding(outdir, scaffoldsFname, fastq, libraries, reducedFname, mapq, \
                                     threads, joins, limit, iters, sspacebin, verbose)
     else:
         symlink(reducedFname, scaffoldsFname)
@@ -214,7 +225,7 @@ def redundants(fastq, fasta, outdir, mapq, threads, identity, overlap, minLength
         sys.stderr.write("%sReporting statistics...\n"%timestamp())
     # itermediate fasta files    
     otherfastas  = sorted(glob.glob("_sspace*/*.final.scaffolds.fasta"))
-    otherfastas += sorted(glob.glob("_gap*.fa"))
+    otherfastas += sorted(glob.glob(os.path.join(outdir, "_gap*.fa")))
     # report stats
     sys.stderr.write('#fname\tcontigs\tbases\tGC [%]\tcontigs >1kb\tbases in contigs >1kb\tN50\tN90\tNs\tlongest\n')
     for fn in [contigsFname, reducedFname] + otherfastas + [scaffoldsFname, nogapsFname]:
@@ -227,7 +238,7 @@ def main():
                                       formatter_class=argparse.RawTextHelpFormatter)
   
     parser.add_argument("-v", dest="verbose",  default=False, action="store_true", help="verbose")    
-    parser.add_argument('--version', action='version', version='0.10b')   
+    parser.add_argument('--version', action='version', version='0.11a')   
     parser.add_argument("-i", "--fastq", nargs="+", required=1, 
                         help="FASTQ PE/MP files")
     parser.add_argument("-f", "--fasta", required=1, 
@@ -253,7 +264,7 @@ def main():
                       help="align subset of reads [%(default)s]")
     scaf.add_argument("-q", "--mapq",    default=10, type=int, 
                       help="min mapping quality [%(default)s]")
-    scaf.add_argument("-iters",         default=2, type=int, 
+    scaf.add_argument("--iters",         default=2, type=int, 
                       help="scaffolding iterations per library [%(default)s]")
     scaf.add_argument("--sspacebin",    default="~/src/SSPACE/SSPACE_Standard_v3.0.pl", 
                        help="SSPACE path  [%(default)s]")
@@ -288,7 +299,7 @@ if __name__=='__main__':
         sys.stderr.write("\nCtrl-C pressed!      \n")
     except IOError as e:
         sys.stderr.write("I/O error({0}): {1}\n".format(e.errno, e.strerror))
-    #[Errno 95] Operation not supported
+    #[Errno 95] Operation not supported ie symlinks over samba or in NFS shares
     except OSError:
         sys.stderr.write("OS error({0}): {1}\n".format(e.errno, e.strerror))
     dt = datetime.now()-t0
