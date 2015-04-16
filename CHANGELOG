@@ -1,4 +1,4 @@
-0.11a
+0.11a 
 	-depth-of-coverage is used in reduction step
 	-iterative insert size estimation refining for mate pairs
 	-calculate insert size from global distribution maximun, not mean
