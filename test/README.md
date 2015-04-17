@@ -95,7 +95,7 @@ At the beginning, Redundans estimates number of parameters:
 ```
 ###### Table 1: Library statistics
 
-
+----- + ----- + ----- + ----- | ----- + ----- + ----- + ----- 
 Insert size statistics | Mates orientation stats
 ----- + ----- + ----- + ----- | ----- + ----- + ----- + ----- 
 FastQ files | median | mean | stdev | FF | FR | RF | RR
