@@ -109,7 +109,7 @@ Above, you can see, there are two libraries:
   - paired-end with 600 bp insert size +/- 39 bp
 
 Based on these statistics, the program will perform scaffolding and gap closing starting from libraries with the smallest insert size.  
-Here, the user is notified about libraries with poor statistics i.e. large stdev or not consisted orientation. For these cases, the statistics are updated before every scaffolding iteration. 
+Also at this stage, the user is notified about libraries with poor statistics i.e. large stdev or not consisted orientation. For these cases, the statistics are updated before every scaffolding iteration. This is done, because for libraries with large insert size, the estimation of insert size may be highly affected by the fragmentation of the assembly. 
 
 ##### Reduction
 In the first step, Redundans will recognise and selectively remove heterozygous contigs from initial assembly.

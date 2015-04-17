@@ -57,7 +57,7 @@ def get_libraries(fastq, fasta, mapq, threads, limit, verbose):
     
     # get libraries statistics using 1% of mapped read limit
     libdata = fastq2insert_size(sys.stderr, fastq, fasta, mapq, threads, \
-                                limit, verbose)
+                                limit/100, verbose)
     # separate paired-end & mate pairs
     ## also separate 300 and 600 paired-ends
     libraries = []
