@@ -89,7 +89,7 @@ To run the test example, execute:
 Note, the **order of libraries (`-i/--input`) is not important**, as long as `read1` and `read2` from each library are given one after another 
 i.e. `-i 600_1.fq.gz 600_2.fq.gz 5000_1.fq.gz 5000_2.fq.gz` would be interpreted the same as `-i 5000_1.fq.gz 5000_2.fq.gz 600_1.fq.gz 600_2.fq.gz`.
 
-For more details have a look at [test/ directory](/lpryszcz/redundans/tree/master/test). 
+For more details have a look at [test/ directory](/test). 
 
 ## FAQ
 - SSPACE fails with an error `Can't locate getopts.pl in @INC`.  
