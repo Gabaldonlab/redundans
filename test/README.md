@@ -80,9 +80,9 @@ At the beginning, Redundans estimates number of parameters:
 ###### Table 1: Library statistics
 
 FastQ files | median | mean | stdev | FF | FR | RF | RR
------ | ----- | ----- | ----- | ----- | ----- | ----- | ----- 
-test/5000_1.fq.gz test/5000_2.fq.gz | 5028 | 5031.51 | 600.93 | 5 | 17494 | 159 | 1
-test/600_1.fq.gz test/600_2.fq.gz | 598 | 598.28 | 39.26 | 0 | 32778 | 1 | 0
+----- | -----: | -----: | -----: | ----- | ----- | ----- | ----- 
+test/5000_1.fq.gz test/5000_2.fq.gz | 5,028 | 5,031.51 | 600.93 | 5 | 17,494 | 159 | 1
+test/600_1.fq.gz test/600_2.fq.gz | 598 | 598.28 | 39.26 | 0 | 32,778 | 1 | 0
 
 Above, you can see, there are two libraries:
 - FR: paired-end with 600 bp insert size +/- 39 bp
@@ -102,8 +102,8 @@ At the end of this step, the user will be notified about:
 ###### Table 2: Reduction statistics
 
 file name | genome size | contigs | heterozygous size | [%] | heterozygous contigs | [%] | identity [%] | possible joins | homozygous size | [%] | homozygous contigs | [%]
------ | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- 
-run1/contigs.fa | 163897 | 245 | 65287 | 39.83 | 217 | 88.57 | 95.243 | 0 | 98610 | 60.17 | 28 | 11.43
+----- | -----: | -----: | -----: | ----- | -----: | ----- | -----: | ----- | -----: | ----- | -----: | ----- 
+run1/contigs.fa | 163,897 | 245 | 65,287 | 39.83 | 217 | 88.57 | 95.243 | 0 | 98,610 | 60.17 | 28 | 11.43
 
 Above, you can see that:
 - initial SPAdes assembly was fragmented (245 contigs) and larger (163 Kb) than reference sequence (100 Kb)
@@ -150,16 +150,16 @@ At the end, the program reports details of each step:
 
 fname | contigs | bases | GC [%] | contigs >1kb | bases in contigs >1kb | N50 | N90 | Ns | longest
 :----- | -----: | -----: | :-----: | -----: | -----: | -----: | -----: | -----: | -----: 
-run1/contigs.fa | 245 | 163897 | 40.298 | 24 | 117391 | 3975 | 233 | 0 | 29603
-run1/contigs.reduced.fa | 28 | 98610 | 39.516 | 17 | 94157 | 7321 | 1858 | 0 | 29603
-run1/_sspace.1.1.fa | 6 | 98479 | 39.507 | 4 | 97405 | 87549 | 4745 | 584 | 87549
-run1/_sspace.1.2.fa | 4 | 98937 | 39.507 | 4 | 98937 | 88627 | 4745 | 1042 | 88627
-run1/_sspace.2.1.fa | 1 | 100747 | 39.507 | 1 | 100747 | 100747 | 100747 | 2852 | 100747
-run1/_sspace.2.2.fa | 1 | 100747 | 39.507 | 1 | 100747 | 100747 | 100747 | 2852 | 100747
-run1/scaffolds.fa | 1 | 100747 | 39.507 | 1 | 100747 | 100747 | 100747 | 2852 | 100747
-run1/_gap2seq.1.1.fa | 1 | 100818 | 39.762 | 1 | 100818 | 100818 | 100818 | 38 | 100818
-run1/_gap2seq.2.1.fa | 1 | 100818 | 39.762 | 1 | 100818 | 100818 | 100818 | 38 | 100818
-run1/scaffolds.filled.fa | 1 | 100818 | 39.762 | 1 | 100818 | 100818 | 100818 | 38 | 100818
+run1/contigs.fa | 245 | 163,897 | 40.298 | 24 | 117,391 | 3975 | 233 | 0 | 29,603
+run1/contigs.reduced.fa | 28 | 98,610 | 39.516 | 17 | 94,157 | 7321 | 1858 | 0 | 29603
+run1/_sspace.1.1.fa | 6 | 98,479 | 39.507 | 4 | 97,405 | 87,549 | 4745 | 584 | 87,549
+run1/_sspace.1.2.fa | 4 | 98,937 | 39.507 | 4 | 98,937 | 88,627 | 4745 | 1042 | 88,627
+run1/_sspace.2.1.fa | 1 | 100,747 | 39.507 | 1 | 100747 | 100,747 | 100,747 | 2,852 | 100,747
+run1/_sspace.2.2.fa | 1 | 100,747 | 39.507 | 1 | 100747 | 100,747 | 100,747 | 2,852 | 100,747
+run1/scaffolds.fa | 1 | 100,747 | 39.507 | 1 | 100747 | 100,747 | 100747 | 2,852 | 100,747
+run1/_gap2seq.1.1.fa | 1 | 100,818 | 39.762 | 1 | 100,818 | 100,818 | 100,818 | 38 | 100,818
+run1/_gap2seq.2.1.fa | 1 | 100,818 | 39.762 | 1 | 100,818 | 100,818 | 100,818 | 38 | 100,818
+run1/scaffolds.filled.fa | 1 | 100,818 | 39.762 | 1 | 100,818 | 100,818 | 100,818 | 38 | 100,818
 
 ## Accuracy estimation
 Accuracy of recovered contigs can be assessed by alignment of final scaffolds (`run1/scaffolds.filled.fa`) back onto reference (`ref.fa`).
