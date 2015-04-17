@@ -67,13 +67,56 @@ Finally, heterozygous genome assembly pipeline can be applied to simulated heter
 ```
 
 #### Run statistics
-##### Reduction
+##### Parameters estimation
+At the beginning, Redundans estimates number of parameters:
+- number of reads that it's going to align (based on `-l/--limit` parameter
+- library statistics:
+ - insert size: median, mean, stdev
+ - mates orientation: FF, FR, RF, RR
 
-file name | genome size | contigs | heterozygous size | [%] | heterozygous contigs | [%] | identity [%] | possible joins | homozygous size | [%] | homozygous contigs | [%]
+```bash
+ Aligning 32779 mates per library...
+```
+###### Table 1: Library statistics
+
+**Insert size statistics |  |  |  | Mates orientation stats
+FastQ files | median | mean | stdev | FF | FR | RF | RR**
+----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- 
+test/5000_1.fq.gz test/5000_2.fq.gz | 5028 | 5031.51 | 600.93 | 5 | 17494 | 159 | 1
+test/600_1.fq.gz test/600_2.fq.gz | 598 | 598.28 | 39.26 | 0 | 32778 | 1 | 0
+
+Above, you can see, there are two libraries:
+- FR: paired-end with 600 bp insert size +/- 39 bp
+- FR: mate-pairs with 5000 bp insert size +/- 600 bp
+
+Based on these statistics, the program will perform scaffolding and gap closing starting from libraries with the smallest insert size.
+Here, the user is notified about libraries with poor statistics i.e. large stdev or not consisted orientation. For these cases, the statistics are updated before every scaffolding iteration. 
+
+##### Reduction
+In the first step, Redundans will recognise and selectively remove heterozygous contigs from initial assembly.
+At the end of this step, the user will be notified about:
+- initial assembly size and fragmentation
+- what portion of the the initial assembly have been recognised as heterozygous
+- identity between heterozygous regions
+- size and fragmentation of reduced assembly
+
+###### Table 2: Reduction statistics
+
+**file name | genome size | contigs | heterozygous size | [%] | heterozygous contigs | [%] | identity [%] | possible joins | homozygous size | [%] | homozygous contigs | [%]**
 ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- 
 run1/contigs.fa | 163897 | 245 | 65287 | 39.83 | 217 | 88.57 | 95.243 | 0 | 98610 | 60.17 | 28 | 11.43
 
+Above, you can see that:
+- initial SPAdes assembly was fragmented (245 contigs) and larger (163 Kb) than reference sequence (100 Kb)
+- Redundans:
+ - removed 217 heterozygous contigs, resulting in reduced assembly of 98 Kb (very similar to reference) in 28 contigs
+ - estimated 95.2% identity between heterozygous regions, which is very similar to the divergence that was used for simulations (5%)
+
 ##### Scaffolding
+Redundans repeat scaffolding on each library several times (`--iters`). For each scaffolding iteration, the program reports number of:
+- processed pairs
+- pairs passing alignement quality
+- pairs that aligned in different contigs
 
 ```bash
  iteration 1.1 ...
@@ -86,7 +129,25 @@ run1/contigs.fa | 163897 | 245 | 65287 | 39.83 | 217 | 88.57 | 95.243 | 0 | 9861
    20000 pairs. 18862 passed filtering [94.31%]. 0 in different contigs [0.00%].
 ```
 
+Above, you can see that in iteration 1.1 above 10% of reads aligned in different contigs, while in subsequent iteration, less than 2% reads. This informs that in general it's enough to use 1-2 iterations of scaffolding per library. 
+
+##### Gap closing
+For the time-being, only the iteration number is reported.
+
+```bash
+ iteration 1 ...
+ iteration 2 ...
+```
+
 ##### Summary statistics
+At the end, the program reports details of each step:
+- file name
+- fragmentation and size of the assembly at this stage
+- %GC content
+- fragmentation and size of assembly in contigs >1 Kb
+- N50 & N90
+- cumulative size of gaps
+- the size of the longest contig
 
 fname | contigs | bases | GC [%] | contigs >1kb | bases in contigs >1kb | N50 | N90 | Ns | longest
 :----- | -----: | -----: | :-----: | -----: | -----: | -----: | -----: | -----: | -----: 
