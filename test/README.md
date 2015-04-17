@@ -108,7 +108,7 @@ Above, you can see, there are two libraries:
   - FR orientation
   - paired-end with 600 bp insert size +/- 39 bp
 
-Based on these statistics, the program will perform scaffolding and gap closing starting from libraries with the smallest insert size.
+Based on these statistics, the program will perform scaffolding and gap closing starting from libraries with the smallest insert size.  
 Here, the user is notified about libraries with poor statistics i.e. large stdev or not consisted orientation. For these cases, the statistics are updated before every scaffolding iteration. 
 
 ##### Reduction
