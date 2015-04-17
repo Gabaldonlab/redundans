@@ -115,7 +115,7 @@ mummerplot --png --large nucmer.ref.delta -p nucmer.ref.plot
 eog nucmer.ref.plot.png
 ```
 
-[Figure 1: Pair-wise alignment of reference sequence and redundans scaffolds ](docs/nucmer.ref.plot.png)
+[Figure 1: Pair-wise alignment of reference sequence and redundans scaffolds ](/docs/nucmer.ref.plot.png)
 
 You may want to compare final redundans scaffolds (`run1/scaffolds.filled.fa`) with initial SPAdes contigs (`contigs.fa`). 
 
@@ -129,7 +129,7 @@ mummerplot --png --large nucmer.contigs.delta -p nucmer.contigs.plot
 eog nucmer.contigs.plot.png
 ```
 
-[Figure 2: Pair-wise alignment of reference sequence and redundans scaffolds ](docs/nucmer.contigs.plot.png)
+[Figure 2: Pair-wise alignment of reference sequence and redundans scaffolds ](/docs/nucmer.contigs.plot.png)
 
 
 All programs/scripts not disclosed in this repository (i.e.  fasta2diverged.py), can be found in https://github.com/lpryszcz/bin. 
