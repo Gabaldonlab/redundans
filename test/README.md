@@ -105,7 +105,7 @@ test/run1/scaffolds.filled.fa | 1 | 100818 | 39.762 | 1 | 100818 | 100818 | 1008
 Accuracy of recovered contigs can be assessed by alignment of final scaffolds (`run1/scaffolds.filled.fa`) back onto reference (`ref.fa`).
 This can be quickly achieved with nucmer:
 
-[Figure 1: Pairwise alignment of reference sequence and redundans scaffolds ](https://raw.githubusercontent.com/lpryszcz/redundans/v0.11a/docs/nucmer.ref.plot.png)
+[Figure 1: Pairwise alignment of reference sequence and redundans scaffolds ](/docs/nucmer.ref.plot.png)
 
 ```bash
 cd run1
@@ -119,7 +119,7 @@ eog nucmer.ref.plot.png
 
 You may want to compare final redundans scaffolds (`run1/scaffolds.filled.fa`) with initial SPAdes contigs (`contigs.fa`). 
 
-[Figure 2: Pairwise alignment of redundans scaffolds and SPAdes contigs ](https://raw.githubusercontent.com/lpryszcz/redundans/v0.11a/docs/nucmer.contigs.plot.png)
+[Figure 2: Pairwise alignment of redundans scaffolds and SPAdes contigs ](/docs/nucmer.contigs.plot.png)
 
 ```bash
 cd run1
@@ -133,7 +133,7 @@ eog nucmer.contigs.plot.png
 
 Finally, comparison of consensus contigs from dipSPAdes (`consensus_contigs.fa`) and reference sequnece (`ref.fa`) informs about missing regions in dipSPAdes reconstruction.
 
-[Figure 3: Pairwise alignment of reference sequence and dipSPAdes consensus contigs ](https://raw.githubusercontent.com/lpryszcz/redundans/v0.11a/docs/nucmer.ref_dipspades.plot.png)
+[Figure 3: Pairwise alignment of reference sequence and dipSPAdes consensus contigs ](/docs/nucmer.ref_dipspades.plot.png)
 
 ```bash
 # align
