@@ -7,25 +7,25 @@ To run the test example, execute:
 ```
 
 **Table of contents**  
-- [Generation of test set](#Generation-of-test-set)  
-  - [Simulations](#simulations)  
-    - [Heterozygous genome](#heterozygous-genome)  
-    - [Short reads](#short-reads)  
-  - [*De novo* genome assembly](#de-novo-genome-assembly)  
-  - [Redundans pipeline](#redundans-pipeline)  
-    - [Run statistics](#run-statistics)  
-      - [Parameters estimation](#parameters-estimation)  
-      - [Reduction](#reduction)  
-      - [Scaffolding](#scaffolding)  
-      - [Gap closing](#gap-closing)  
-      - [Summary statistics](#summary-statistics)  
-- [Accuracy estimation](#accuracy-estimation)  
+- [Generation of test set](#Generation-of-test-set)
+  - [Simulations](#simulations)
+    - [Heterozygous genome](#heterozygous-genome)
+    - [Short reads](#short-reads)
+  - [*De novo* genome assembly](#de-novo-genome-assembly)
+  - [Redundans pipeline](#redundans-pipeline)
+    - [Run statistics](#run-statistics)
+      - [Parameters estimation](#parameters-estimation)
+      - [Reduction](#reduction)
+      - [Scaffolding](#scaffolding)
+      - [Gap closing](#gap-closing)
+      - [Summary statistics](#summary-statistics)
+- [Accuracy estimation](#accuracy-estimation)
 
 ## Generation of test set
 Below, you can find detailed description for regeneration of test dataset with any input genome.  
 
 ### Simulations
-Entire test dataset is based on 100 Kb region from *C. parapsilosis* CDC317 (REF!). 
+Test dataset is based on 100 Kb region from [*C. parapsilosis* CDC317](http://www.ncbi.nlm.nih.gov/pmc/articles/PMC2834264/?report=classic) HE605202:100000-200000. 
 ```bash
 samtools faidx CANPA.fa HE605202:100000-200000 > ref.fa
 ```
@@ -37,11 +37,11 @@ fasta2diverged.py -v -i ref.fa --loh 0.40 --dna -d 0.05 > ref.d05.l40.fa
 ```
 
 #### Short reads
-Two Illumina libraries were simulated using [GemSIM](http://sourceforge.net/projects/gemsim/): 
-- paired-end with 600bp insert:
+Two shotgun sequencing libraries including typical Illumina-related errors were simulated using [GemSIM](http://sourceforge.net/projects/gemsim/): 
+- 100 bp paired-end reads with 600 bp insert [200X coverage]:
  - 600_1.fq.gz
  - 600_2.fq.gz
-- mate pairs with 5kb insert:
+- 50 bp mate-pair reads with 5 kb insert [20X coverage]:
  - 5000_1.fq.gz
  - 5000_2.fq.gz
 
@@ -95,8 +95,11 @@ At the beginning, Redundans estimates number of parameters:
 ```
 ###### Table 1: Library statistics
 
+
+Insert size statistics | Mates orientation stats
+----- + ----- + ----- + ----- | ----- + ----- + ----- + ----- 
 FastQ files | median | mean | stdev | FF | FR | RF | RR
------ | -----: | -----: | -----: | ----- | ----- | ----- | ----- 
+===== | =====: | =====: | =====: | ===== | ===== | ===== | ===== 
 test/5000_1.fq.gz test/5000_2.fq.gz | 5,028 | 5,031.51 | 600.93 | 5 | 17,494 | 159 | 1
 test/600_1.fq.gz test/600_2.fq.gz | 598 | 598.28 | 39.26 | 0 | 32,778 | 1 | 0
 
