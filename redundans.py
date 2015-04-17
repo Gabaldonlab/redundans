@@ -75,8 +75,19 @@ def get_libraries(fastq, reducedFname, mapq, threads, limit, verbose):
     return libraries
     
 def run_scaffolding(outdir, scaffoldsFname, fastq, reducedFname, mapq, threads, \
-                    joins, limit, iters, sspacebin, verbose, lib=""):
+                    joins, readLimit, iters, sspacebin, verbose, lib=""):
     """Execute scaffolding step."""
+    # limit no. of reads to align as fraction of genome 
+    if readLimit:
+        stats = fasta_stats(open(reducedFname))
+        reducedSize = int(stats.split('\t')[2])
+        limit = int(readLimit * reducedSize)
+        if verbose:
+            sys.stderr.write(" Aligning %s mates per library...\n"%limit)
+    else:
+        # otherwise process all reads
+        limit = 0
+        
     # get libraries
     libraries = get_libraries(fastq, reducedFname, mapq, threads, limit, verbose)
         
@@ -180,6 +191,8 @@ def redundants(fastq, fasta, outdir, mapq, threads, identity, overlap, minLength
     if scaffolding:
         if verbose:
             sys.stderr.write("%sScaffolding...\n"%timestamp())
+        # estimate read limit
+        
         libraries = run_scaffolding(outdir, scaffoldsFname, fastq, reducedFname, mapq, \
                                     threads, joins, limit, iters, sspacebin, verbose)
     else:
@@ -214,15 +227,13 @@ def main():
                                       formatter_class=argparse.RawTextHelpFormatter)
   
     parser.add_argument("-v", dest="verbose",  default=False, action="store_true", help="verbose")    
-    parser.add_argument('--version', action='version', version='0.10a')   
+    parser.add_argument('--version', action='version', version='0.10b')   
     parser.add_argument("-i", "--fastq", nargs="+", required=1, 
                         help="FASTQ PE/MP files")
     parser.add_argument("-f", "--fasta", required=1, 
                         help="assembly FASTA file")
     parser.add_argument("-o", "--outdir",  default=".", 
                         help="output directory [%(default)s]")
-    parser.add_argument("-q", "--mapq",    default=10, type=int, 
-                        help="min mapping quality for variants [%(default)s]")
     parser.add_argument("-t", "--threads", default=2, type=int, 
                         help="max threads to run [%(default)s]")
     parser.add_argument("--log",           default=None, type=argparse.FileType('w'), 
@@ -237,11 +248,13 @@ def main():
     ##missing redu options
     scaf = parser.add_argument_group('Scaffolding options')
     scaf.add_argument("-j", "--joins",  default=5, type=int, 
-                      help="min k pairs to join contigs [%(default)s]")
-    scaf.add_argument("-l", "--limit",  default=5000000, type=int, 
-                      help="align at most l reads [%(default)s]")
+                      help="min pairs to join contigs [%(default)s]")
+    scaf.add_argument("-l", "--limit",  default=0.1, type=float, 
+                      help="align subset of reads [%(default)s]")
+    scaf.add_argument("-q", "--mapq",    default=10, type=int, 
+                      help="min mapping quality [%(default)s]")
     scaf.add_argument("-iters",         default=2, type=int, 
-                      help="scaffolding iterations per library  [%(default)s]")
+                      help="scaffolding iterations per library [%(default)s]")
     scaf.add_argument("--sspacebin",    default="~/src/SSPACE/SSPACE_Standard_v3.0.pl", 
                        help="SSPACE path  [%(default)s]")
     gaps = parser.add_argument_group('Gap closing options')

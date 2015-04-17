@@ -50,7 +50,7 @@ def sam2sspace_tab(inhandle,outhandle,mapqTh=0,upto=float('inf'),verbose=False):
     i = j = k = pq1 = 0
     for q1,flag1,ref1,start1,mapq1,len1,q2,flag2,ref2,start2,mapq2,len2 in parse_sam(inhandle):
         i   += 1
-        if i>upto:
+        if upto and i>upto:
             break        
         '''#gem uses entire fasta header as seq name
         ref1 = ref1.split()[0]

@@ -10,16 +10,19 @@
 # Redundans
 
 Redundans pipeline assists **an assembly of heterozygous genomes**.  
-Program takes as input **assembled contigs**, **paired-end and/or mate pairs sequencing libraries** and returns **scaffolded homozygous genome assembly**, that should be **less fragmented** and with total **size smaller** than the input contigs. In addition, Redundans will automatically **close the gaps** resulting from genome assembly or scaffolding. 
+Program takes as input **assembled contigs**, **paired-end and/or mate pairs 
+sequencing libraries** and returns **scaffolded homozygous genome assembly**, 
+that should be **less fragmented** and with total **size smaller** than the input contigs. 
+In addition, Redundans will automatically **close the gaps** resulting from genome assembly or scaffolding. 
 
 The pipeline consists of three steps/modules: 
-
 - **redundancy reduction**: detection and selectively removal of redundant contigs from an initial *de novo* assembly
 - **scaffolding**: joining of genome fragments using paired-end and/or mate-pairs reads
 - **gap closing**
 
 Redundans is: 
-- **fast** & **lightweight**, with multi-core support and memory-optimised, so it can be run even on laptop on small-to-medium size genomes
+- **fast** & **lightweight**, multi-core support and memory-optimised, 
+so it can be run even on then laptop for small-to-medium size genomes
 - **flexible** toward many sequencing technologies (Illumina, 454 or Sanger) and library types (paired-end, mate pairs, fosmids)
 - **modular**: every step can be ommited or replaced by another tools
 
@@ -52,7 +55,6 @@ Nevertheless, most of the pipeline parameters can be adjusted manually (default 
                         assembly FASTA file
   -o OUTDIR, --outdir OUTDIR
                         output directory [.]
-  -q MAPQ, --mapq MAPQ  min mapping quality for variants [10]
   -t THREADS, --threads THREADS
                         max threads to run [2]
   --log LOG             output log to [stderr]
@@ -69,7 +71,8 @@ Nevertheless, most of the pipeline parameters can be adjusted manually (default 
   -j JOINS, --joins JOINS
                         min k pairs to join contigs [5]
   -l LIMIT, --limit LIMIT
-                        align at most l reads [5000000]
+                        align subset of reads [0.1]
+  -q MAPQ, --mapq MAPQ  min mapping quality [10]
   -iters ITERS          scaffolding iterations per library  [2]
   --sspacebin SSPACEBIN
                         SSPACE path  [~/src/SSPACE/SSPACE_Standard_v3.0.pl]
