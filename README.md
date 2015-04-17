@@ -26,7 +26,7 @@ so it can be run even on then laptop for small-to-medium size genomes
 - **flexible** toward many sequencing technologies (Illumina, 454 or Sanger) and library types (paired-end, mate pairs, fosmids)
 - **modular**: every step can be ommited or replaced by another tools
 
-For more information have a look at the [poster](https://github.com/lpryszcz/redundans/blob/master/docs/poster.pdf).
+For more information have a look at the [poster](/docs/poster.pdf).
 
 ## Prerequisites
 - Python 2.7+ & Biopython 1.6+ `sudo easy_install -U biopython`
@@ -89,7 +89,7 @@ To run the test example, execute:
 Note, the **order of libraries (`-i/--input`) is not important**, as long as `read1` and `read2` from each library are given one after another 
 i.e. `-i 600_1.fq.gz 600_2.fq.gz 5000_1.fq.gz 5000_2.fq.gz` would be interpreted the same as `-i 5000_1.fq.gz 5000_2.fq.gz 600_1.fq.gz 600_2.fq.gz`.
 
-For more details have a look at [test/ directory](/test). 
+For more details have a look in [test directory](/test). 
 
 ## FAQ
 - SSPACE fails with an error `Can't locate getopts.pl in @INC`.  
