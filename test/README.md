@@ -101,8 +101,8 @@ test/5000_1.fq.gz test/5000_2.fq.gz | 5,028 | 5,031.51 | 600.93 | 5 | 17,494 | 1
 test/600_1.fq.gz test/600_2.fq.gz | 598 | 598.28 | 39.26 | 0 | 32,778 | 1 | 0
 
 Above, you can see, there are two libraries:
-- FR: paired-end with 600 bp insert size +/- 39 bp
-- FR: mate-pairs with 5000 bp insert size +/- 600 bp
+- test/5000_1.fq.gz & test/5000_2.fq.gz: FR; mate-pairs with 5000 bp insert size +/- 600 bp
+- test/600_1.fq.gz & test/600_2.fq.gz: FR; paired-end with 600 bp insert size +/- 39 bp
 
 Based on these statistics, the program will perform scaffolding and gap closing starting from libraries with the smallest insert size.
 Here, the user is notified about libraries with poor statistics i.e. large stdev or not consisted orientation. For these cases, the statistics are updated before every scaffolding iteration. 
