@@ -8,17 +8,17 @@ To run the test example, execute:
 
 **Table of contents**
 [Generation of test set](#Generation-of-test-set)
- [Simulations](#Simulations)
-  [Heterozygous genome](#Heterozygous genome)
-  [Short reads](#Short reads)
- [*De novo* genome assembly](#De novo genome assembly)
- [Redundans pipeline](#Redundans pipeline)
-  [Run statistics](#Run statistics)
-   [Parameters estimation](#Parameters estimation)
-   [Reduction](#Reduction)
-   [Scaffolding](#Scaffolding)
-   [Gap closing](#Gap closing)
-   [Summary statistics](#Summary statistics)
+ [Simulations](#simulations)
+  [Heterozygous genome](#heterozygous-genome)
+  [Short reads](#short-reads)
+ [*De novo* genome assembly](#de-novo-genome-assembly)
+ [Redundans pipeline](#redundans-pipeline)
+  [Run statistics](#run-statistics)
+   [Parameters estimation](#parameters-estimation)
+   [Reduction](#reduction)
+   [Scaffolding](#scaffolding)
+   [Gap closing](#gap-closing)
+   [Summary statistics](#summary-statistics)
 [Accuracy estimation](#accuracy-estimation)
 
 ## Generation of test set
