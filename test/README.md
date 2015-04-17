@@ -5,6 +5,22 @@ To run the test example, execute:
 ```bash
 ./redundans.py -v -i test/*.fq.gz -f test/contigs.fa -o test/run1 
 ```
+
+**Table of contents**
+[Generation of test set](#Generation-of-test-set)
+ [Simulations](#Simulations)
+  [Heterozygous genome](#Heterozygous genome)
+  [Short reads](#Short reads)
+ [*De novo* genome assembly](#De novo genome assembly)
+ [Redundans pipeline](#Redundans pipeline)
+  [Run statistics](#Run statistics)
+   [Parameters estimation](#Parameters estimation)
+   [Reduction](#Reduction)
+   [Scaffolding](#Scaffolding)
+   [Gap closing](#Gap closing)
+   [Summary statistics](#Summary statistics)
+[Accuracy estimation](#accuracy-estimation)
+
 ## Generation of test set
 Below, you can find detailed description for regeneration of test dataset with any input genome.  
 
