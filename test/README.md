@@ -71,7 +71,7 @@ Finally, heterozygous genome assembly pipeline can be applied to simulated heter
 
 file name | genome size | contigs | heterozygous size | [%] | heterozygous contigs | [%] | identity [%] | possible joins | homozygous size | [%] | homozygous contigs | [%]
 ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- 
-test/run1/contigs.fa | 163897 | 245 | 65287 | 39.83 | 217 | 88.57 | 95.243 | 0 | 98610 | 60.17 | 28 | 11.43
+run1/contigs.fa | 163897 | 245 | 65287 | 39.83 | 217 | 88.57 | 95.243 | 0 | 98610 | 60.17 | 28 | 11.43
 
 ##### Scaffolding
 
@@ -90,22 +90,20 @@ test/run1/contigs.fa | 163897 | 245 | 65287 | 39.83 | 217 | 88.57 | 95.243 | 0 |
 
 fname | contigs | bases | GC [%] | contigs >1kb | bases in contigs >1kb | N50 | N90 | Ns | longest
 :----- | -----: | -----: | :-----: | -----: | -----: | -----: | -----: | -----: | -----: 
-test/run1/contigs.fa | 245 | 163897 | 40.298 | 24 | 117391 | 3975 | 233 | 0 | 29603
-test/run1/contigs.reduced.fa | 28 | 98610 | 39.516 | 17 | 94157 | 7321 | 1858 | 0 | 29603
-test/run1/_sspace.1.1.final.scaffolds.fasta | 6 | 98479 | 39.507 | 4 | 97405 | 87549 | 4745 | 584 | 87549
-test/run1/_sspace.1.2.final.scaffolds.fasta | 4 | 98937 | 39.507 | 4 | 98937 | 88627 | 4745 | 1042 | 88627
-test/run1/_sspace.2.1.final.scaffolds.fasta | 1 | 100747 | 39.507 | 1 | 100747 | 100747 | 100747 | 2852 | 100747
-test/run1/_sspace.2.2.final.scaffolds.fasta | 1 | 100747 | 39.507 | 1 | 100747 | 100747 | 100747 | 2852 | 100747
-test/run1/scaffolds.fa | 1 | 100747 | 39.507 | 1 | 100747 | 100747 | 100747 | 2852 | 100747
-test/run1/_gap2seq.1.1.fa | 1 | 100818 | 39.762 | 1 | 100818 | 100818 | 100818 | 38 | 100818
-test/run1/_gap2seq.2.1.fa | 1 | 100818 | 39.762 | 1 | 100818 | 100818 | 100818 | 38 | 100818
-test/run1/scaffolds.filled.fa | 1 | 100818 | 39.762 | 1 | 100818 | 100818 | 100818 | 38 | 100818
+run1/contigs.fa | 245 | 163897 | 40.298 | 24 | 117391 | 3975 | 233 | 0 | 29603
+run1/contigs.reduced.fa | 28 | 98610 | 39.516 | 17 | 94157 | 7321 | 1858 | 0 | 29603
+run1/_sspace.1.1.fa | 6 | 98479 | 39.507 | 4 | 97405 | 87549 | 4745 | 584 | 87549
+run1/_sspace.1.2.fa | 4 | 98937 | 39.507 | 4 | 98937 | 88627 | 4745 | 1042 | 88627
+run1/_sspace.2.1.fa | 1 | 100747 | 39.507 | 1 | 100747 | 100747 | 100747 | 2852 | 100747
+run1/_sspace.2.2.fa | 1 | 100747 | 39.507 | 1 | 100747 | 100747 | 100747 | 2852 | 100747
+run1/scaffolds.fa | 1 | 100747 | 39.507 | 1 | 100747 | 100747 | 100747 | 2852 | 100747
+run1/_gap2seq.1.1.fa | 1 | 100818 | 39.762 | 1 | 100818 | 100818 | 100818 | 38 | 100818
+run1/_gap2seq.2.1.fa | 1 | 100818 | 39.762 | 1 | 100818 | 100818 | 100818 | 38 | 100818
+run1/scaffolds.filled.fa | 1 | 100818 | 39.762 | 1 | 100818 | 100818 | 100818 | 38 | 100818
 
 ## Accuracy estimation
 Accuracy of recovered contigs can be assessed by alignment of final scaffolds (`run1/scaffolds.filled.fa`) back onto reference (`ref.fa`).
 This can be quickly achieved with nucmer:
-
-[Figure 1: Pairwise alignment of reference sequence and redundans scaffolds ](/docs/nucmer.ref.plot.png)
 
 ```bash
 cd run1
@@ -116,10 +114,9 @@ mummerplot --png --large nucmer.ref.delta -p nucmer.ref.plot
 # open plot
 eog nucmer.ref.plot.png
 ```
+[Figure 1: Pairwise alignment of reference sequence and redundans scaffolds](/docs/nucmer.ref.plot.png)
 
 You may want to compare final redundans scaffolds (`run1/scaffolds.filled.fa`) with initial SPAdes contigs (`contigs.fa`). 
-
-[Figure 2: Pairwise alignment of redundans scaffolds and SPAdes contigs ](/docs/nucmer.contigs.plot.png)
 
 ```bash
 cd run1
@@ -130,10 +127,9 @@ mummerplot --png --large nucmer.contigs.delta -p nucmer.contigs.plot
 # open plot
 eog nucmer.contigs.plot.png
 ```
+[Figure 2: Pairwise alignment of redundans scaffolds and SPAdes contigs](/docs/nucmer.contigs.plot.png)
 
 Finally, comparison of consensus contigs from dipSPAdes (`consensus_contigs.fa`) and reference sequnece (`ref.fa`) informs about missing regions in dipSPAdes reconstruction.
-
-[Figure 3: Pairwise alignment of reference sequence and dipSPAdes consensus contigs ](/docs/nucmer.ref_dipspades.plot.png)
 
 ```bash
 # align
@@ -143,6 +139,7 @@ mummerplot --png --large nucmer.ref_dipspades.delta -p nucmer.ref_dipspades.plot
 # open plot
 eog nucmer.ref_dipspades.plot.png
 ```
+[Figure 3: Pairwise alignment of reference sequence and dipSPAdes consensus contigs](/docs/nucmer.ref_dipspades.plot.png)
 
 
 All programs/scripts not disclosed in this repository (i.e.  fasta2diverged.py), can be found in https://github.com/lpryszcz/bin. 
