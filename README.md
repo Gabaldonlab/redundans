@@ -54,7 +54,7 @@ Nevertheless, most of the pipeline parameters can be adjusted manually (default 
   -f FASTA, --fasta FASTA
                         assembly FASTA file
   -o OUTDIR, --outdir OUTDIR
-                        output directory [.]
+                        output directory [redundans]
   -t THREADS, --threads THREADS
                         max threads to run [2]
   --log LOG             output log to [stderr]
@@ -71,30 +71,25 @@ Nevertheless, most of the pipeline parameters can be adjusted manually (default 
   -j JOINS, --joins JOINS
                         min k pairs to join contigs [5]
   -l LIMIT, --limit LIMIT
-                        align subset of reads [0.1]
+                        align subset of reads [0.2]
   -q MAPQ, --mapq MAPQ  min mapping quality [10]
   -iters ITERS          scaffolding iterations per library  [2]
   --sspacebin SSPACEBIN
                         SSPACE path  [~/src/SSPACE/SSPACE_Standard_v3.0.pl]
 ```
+
 Redundans is **extremely flexible**. All steps of the pipeline can be ommited using: `--noreduction`, `--noscaffolding` and/or `--nogapclosing` parameters. 
 
 ### Test run
-In [./test](https://github.com/lpryszcz/redundans/tree/master/test) directory you can find test dataset with 100 kb genomic region from *C. parapsilosis* CDC317 and three Illumina libraries simulated using [GemSIM](http://sourceforge.net/projects/gemsim/): 
-- paired-end with 300bp insert (300_1.fq.gz, 300_2.fq.gz), 
-- paired-end with 600bp insert (600_1.fq.gz, 600_2.fq.gz),  
-- mate pairs with 5kb insert (5000_1.fq.gz, 5000_2.fq.gz).  
-
-To run the test example, just execute: 
+To run the test example, execute: 
 ```bash
-cd test
-mkdir redundans 
-cd redundans
-../../redundans.py -v -i ../*.fq.gz -f ../contigs.fasta
+./redundans.py -v -i test/*.fq.gz -f test/contigs.fa -o test/run1 
 ```
 
-Note, the **order of libraries is not important**, as long as `read1` and `read2` from each library are given one after another 
-i.e. `-i 600_1.fq.gz 600_2.fq.gz 300_1.fq.gz 300_2.fq.gz` would be interpreted the same as `-i 300_1.fq.gz 300_2.fq.gz 600_1.fq.gz 600_2.fq.gz`. 
+Note, the **order of libraries (`-i/--input`) is not important**, as long as `read1` and `read2` from each library are given one after another 
+i.e. `-i 600_1.fq.gz 600_2.fq.gz 5000_1.fq.gz 5000_2.fq.gz` would be interpreted the same as `-i 5000_1.fq.gz 5000_2.fq.gz 600_1.fq.gz 600_2.fq.gz`.
+
+For more details have a look at [test/ directory](/lpryszcz/redundans/tree/master/test). 
 
 ## FAQ
 - SSPACE fails with an error `Can't locate getopts.pl in @INC`.  
