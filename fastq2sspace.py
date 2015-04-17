@@ -170,8 +170,11 @@ def get_libs( outdir,libFn,libNames,tabFnames,inserts,iBounds,orientations,verbo
             sys.stderr.write( " Reading libs from %s\n" % libFn )
         lines = open(libFn).readlines()
     #add TAB libs
-    for t in zip( libNames,tabFnames,inserts,iBounds,orientations ):
-        lines.append( "%s\tTAB\t%s\t%s\t%s\t%s\n" % t )
+    tabline = "%s\tTAB\t%s\t%s\t%s\t%s\n"
+    for libname, tabfn, isize, isfrac, orient in zip(libNames, tabFnames, inserts, \
+                                                     iBounds, orientations):
+        lines.append(tabline%(libname, os.path.basename(tabfn), \
+                              isize, isfrac, orient))
 
     outfn = "%s.libs.txt" % outdir #os.path.join( outdir,"libs.txt" )
     if verbose:
@@ -183,10 +186,14 @@ def fastq2sspace(out, fasta, lib, libnames, libFs, libRs, orientations,  \
                  libIS, libISStDev, cores, mapq, upto, minlinks, \
                  sspacebin, verbose):
     """Map reads onto contigs, prepare library file and execute SSPACE2"""
+    # get dir variables
+    curdir = os.path.abspath(os.path.curdir)
+    outfn  = os.path.basename(out)
+    outdir = os.path.dirname(out)
     #generate outdirs if out contain dir and dir not exists
-    if os.path.dirname(out):
-        if not os.path.isdir(os.path.dirname(out)):
-            os.makedirs(os.path.dirname(out))
+    if outdir:
+        if not os.path.isdir(outdir):
+            os.makedirs(outdir)
     
     #get tab files
     if verbose:
@@ -198,11 +205,17 @@ def fastq2sspace(out, fasta, lib, libnames, libFs, libRs, orientations,  \
         sys.stderr.write("[%s] Generating libraries file...\n" % datetime.ctime(datetime.now()) )
     libFn = get_libs(out, lib, libnames, tabFnames, libIS, libISStDev, orientations, verbose)
 
-    #print sspace cmd
-    cmd = "perl %s -l %s -a 0.7 -k %s -s %s -b %s > %s.sspace.log"%(sspacebin, libFn, minlinks, fasta.name, out, out)
+    # run sspace
+    ## change dir to outdir - sspace output intermediate files always in curdir
+    os.chdir(outdir)
+    CMD = "perl %s -l %s -a 0.7 -k %s -s %s -b %s > %s.sspace.log"
+    cmd = CMD%(sspacebin, os.path.basename(libFn), minlinks, \
+               os.path.basename(fasta.name), outfn, outfn)
     if verbose:
         sys.stderr.write(" %s\n"%cmd)
     os.system(cmd)
+    ## change to basal dir
+    os.chdir(curdir)
     
 def main():
 

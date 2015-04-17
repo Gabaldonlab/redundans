@@ -16,7 +16,6 @@ import numpy as np
 from fasta2homozygous import fasta2homozygous
 from fastq2sspace import fastq2sspace
 from fastq2insert_size import fastq2insert_size
-from filterReads import filter_paired
 from fasta_stats import fasta_stats
 
 def timestamp():
@@ -26,7 +25,13 @@ def timestamp():
 def symlink(file1, file2):
     """Create symbolic link taking care of real path."""
     if not os.path.isfile(file2):
-        os.symlink(os.path.join(os.path.realpath(os.path.curdir), file1), file2)
+        # check if need for absolute path
+        file1abs = os.path.join(os.path.realpath(os.path.curdir), file1)
+        if os.path.isfile(file1abs):
+            os.symlink(file1abs, file2)
+        # otherwise create symbolic link without full path
+        else:
+            os.symlink(file1, file2)
 
 def get_orientation(pairs, fq1, fq2):
     """Return orientation of paired reads, either FF, FR, RF or RR.
@@ -83,6 +88,21 @@ def get_libraries(fastq, fasta, mapq, threads, limit, verbose):
         # update counter
         i += 1
     return libraries
+
+def get_read_limit(fastq, fasta, mapq, threads, readLimit, verbose):
+    """Return read limit and libraries."""
+    # limit no. of reads to align as fraction of genome size
+    limit = 0
+    if readLimit:
+        stats = fasta_stats(open(fasta))
+        fastaSize = int(stats.split('\t')[2])
+        limit = int(readLimit * fastaSize)
+        if verbose:
+            sys.stderr.write(" Aligning %s mates per library...\n"%limit)
+
+    # get libraries
+    libraries = get_libraries(fastq, fasta, mapq, threads, limit, verbose)
+    return limit, libraries
     
 def run_scaffolding(outdir, scaffoldsFname, fastq, libraries, reducedFname, mapq, threads, \
                     joins, limit, iters, sspacebin, verbose, lib=""):
@@ -97,16 +117,19 @@ def run_scaffolding(outdir, scaffoldsFname, fastq, libraries, reducedFname, mapq
         for j in range(1, iters+1):
             if verbose:
                 sys.stderr.write(" iteration %s.%s ...\n"%(i,j))
-            out = "_sspace.%s.%s"%(i, j)
+            out = os.path.join(outdir, "_sspace.%s.%s"%(i, j))
             lib = ""
             # run fastq scaffolding
             fastq2sspace(out, open(pout), lib, libnames, libFs, libRs, orients, \
                          libIS, libISStDev, threads, mapq, limit, joins, \
                          sspacebin, verbose=0)
             # store out info
-            pout = os.path.join(out, "_sspace.%s.%s"%(i, j)+".final.scaffolds.fasta")
+            pout = out+".fa"
+            # link output ie out/_sspace.1.1/_sspace.1.1.scaffolds.fasta --> out/_sspace.1.1.scaffolds.fasta
+            targetout = os.path.join(os.path.basename(out), os.path.basename(out+".final.scaffolds.fasta"))
+            symlink(targetout, pout)
         # update library insert size estimation, especially for mate-pairs
-        libraries = get_libraries(fastq, pout, mapq, threads, limit, verbose)
+        libraries = get_libraries(fastq, pout, mapq, threads, limit, verbose=0)
     # create symlink to final scaffolds or pout
     symlink(pout, scaffoldsFname)
 
@@ -158,37 +181,24 @@ def redundants(fastq, fasta, outdir, mapq, threads, identity, overlap, minLength
                joins, readLimit, iters, sspacebin, reduction=1, scaffolding=1, gapclosing=1, \
                verbose=1, log=sys.stderr):
     """Launch redundans pipeline."""
-    # limit no. of reads to align as fraction of genome size
-    limit = 0
-    if readLimit:
-        stats = fasta_stats(open(fasta))
-        fastaSize = int(stats.split('\t')[2])
-        limit = int(readLimit * fastaSize)
-        if verbose:
-            sys.stderr.write(" Aligning %s mates per library...\n"%limit)
-
-    # get libraries
-    libraries = get_libraries(fastq, fasta, mapq, threads, limit, verbose)
-    
     # redirect stderr
     #sys.stderr = log
     
     # prepare outdir or quit if exists
     if os.path.isdir(outdir):
-        pass
-        #sys.stderr.write("Directory %s exists!\n"%outdir)
-        #sys.exit(1)
+        sys.stderr.write("Directory %s exists!\n"%outdir)
+        sys.exit(1)
     else:
         os.makedirs(outdir)
-
-    # check if all files exists
-    #_check_files(log, fasta, fastq)
     
     # REDUCTION
     contigsFname = os.path.join(outdir, "contigs.fa")
     reducedFname = os.path.join(outdir, "contigs.reduced.fa")
     # link contigs & genome
-    symlink(fasta, contigsFname)
+    symlink(fasta, contigsFname)    
+    # get read limit & libraries
+    limit, libraries = get_read_limit(fastq, contigsFname, mapq, threads, \
+                                      readLimit, verbose)
     if reduction:
         if verbose:
             sys.stderr.write("%sReduction...\n"%timestamp())
@@ -223,13 +233,19 @@ def redundants(fastq, fasta, outdir, mapq, threads, identity, overlap, minLength
     # FASTA STATS
     if verbose:
         sys.stderr.write("%sReporting statistics...\n"%timestamp())
-    # itermediate fasta files    
-    otherfastas  = sorted(glob.glob("_sspace*/*.final.scaffolds.fasta"))
-    otherfastas += sorted(glob.glob(os.path.join(outdir, "_gap*.fa")))
+    # itermediate fasta files
+    fastas  = [contigsFname, reducedFname]
+    fastas += sorted(glob.glob(os.path.join(outdir, "_sspace.*.fa")))
+    fastas.append(scaffoldsFname)
+    fastas += sorted(glob.glob(os.path.join(outdir, "_gap*.fa")))
+    fastas.append(nogapsFname)
     # report stats
     sys.stderr.write('#fname\tcontigs\tbases\tGC [%]\tcontigs >1kb\tbases in contigs >1kb\tN50\tN90\tNs\tlongest\n')
-    for fn in [contigsFname, reducedFname] + otherfastas + [scaffoldsFname, nogapsFname]:
+    for fn in fastas:
         sys.stderr.write(fasta_stats(open(fn)))
+
+    # Clean-up
+    ## ie. remove fq.is.txt, but this in fact may be usefull for the user 
 
 def _check_executable(cmd):
     """Check if executable exists."""
@@ -248,7 +264,7 @@ def main():
                         help="FASTQ PE/MP files")
     parser.add_argument("-f", "--fasta", required=1, 
                         help="assembly FASTA file")
-    parser.add_argument("-o", "--outdir",  default=".", 
+    parser.add_argument("-o", "--outdir",  default="redundans", 
                         help="output directory [%(default)s]")
     parser.add_argument("-t", "--threads", default=2, type=int, 
                         help="max threads to run [%(default)s]")
