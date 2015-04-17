@@ -96,7 +96,7 @@ At the beginning, Redundans estimates number of parameters:
 ###### Table 1: Library statistics
 
 FastQ files | median | mean | stdev | FF | FR | RF | RR
-===== | =====: | =====: | =====: | ===== | ===== | ===== | ===== 
+----- | -----: | -----: | -----: | ----- | ----- | ----- | ----- 
 test/5000_1.fq.gz test/5000_2.fq.gz | 5,028 | 5,031.51 | 600.93 | 5 | 17,494 | 159 | 1
 test/600_1.fq.gz test/600_2.fq.gz | 598 | 598.28 | 39.26 | 0 | 32,778 | 1 | 0
 
