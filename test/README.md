@@ -75,6 +75,7 @@ test/run1/contigs.fa | 163897 | 245 | 65287 | 39.83 | 217 | 88.57 | 95.243 | 0 |
 
 ##### Scaffolding
 
+```bash
  iteration 1.1 ...
    32780 pairs. 31126 passed filtering [94.95%]. 3484 in different contigs [10.63%].
  iteration 1.2 ...
@@ -83,6 +84,7 @@ test/run1/contigs.fa | 163897 | 245 | 65287 | 39.83 | 217 | 88.57 | 95.243 | 0 |
    20000 pairs. 18581 passed filtering [92.91%]. 1523 in different contigs [7.62%].
  iteration 2.2 ...
    20000 pairs. 18862 passed filtering [94.31%]. 0 in different contigs [0.00%].
+```
 
 ##### Summary statistics
 
