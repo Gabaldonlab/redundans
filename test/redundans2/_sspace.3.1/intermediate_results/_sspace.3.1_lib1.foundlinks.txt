@@ -1,4 +1,0 @@
-f1 has 250 links with f2 and gap of 54 bases
-r2 has 250 links with r1 and gap of 54 bases
-f2 has 184 links with r3 and gap of 2324 bases
-f3 has 184 links with r2 and gap of 2324 bases

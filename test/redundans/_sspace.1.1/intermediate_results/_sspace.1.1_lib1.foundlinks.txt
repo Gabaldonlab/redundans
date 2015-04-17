@@ -1,4 +1,0 @@
-r6 has 5 links with f9 and gap of 76 bases
-r9 has 5 links with f6 and gap of 76 bases
-f2 has 8 links with r3 and gap of 59 bases
-f3 has 8 links with r2 and gap of 59 bases

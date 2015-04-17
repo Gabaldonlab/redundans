@@ -1,8 +1,0 @@
-r3 has 10 links with r6 and gap of 238 bases
-f3 has 11 links with f6 and gap of 162 bases
-f3 has 7 links with f5 and gap of 123 bases
-f4 has 12 links with f6 and gap of -24 bases
-r6 has 12 links with r4 and gap of -24 bases
-r6 has 11 links with r3 and gap of 162 bases
-f6 has 10 links with f3 and gap of 238 bases
-r5 has 7 links with r3 and gap of 123 bases
