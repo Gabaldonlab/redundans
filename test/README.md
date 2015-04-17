@@ -85,14 +85,14 @@ Finally, heterozygous genome assembly pipeline can be applied to simulated heter
 #### Run statistics
 ##### Parameters estimation
 At the beginning, Redundans estimates number of parameters:
-- number of reads that it's going to align (based on `-l/--limit` parameter
+- number of reads that it's going to align (based on `-l/--limit` parameter) 
+```bash
+ Aligning 32779 mates per library...
+```
 - library statistics:
  - insert size: median, mean, stdev
  - mates orientation: FF, FR, RF, RR
 
-```bash
- Aligning 32779 mates per library...
-```
 ###### Table 1: Library statistics
 
 FastQ files | median | mean | stdev | FF | FR | RF | RR
