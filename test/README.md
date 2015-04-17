@@ -79,8 +79,8 @@ At the beginning, Redundans estimates number of parameters:
 ```
 ###### Table 1: Library statistics
 
-**Insert size statistics |  |  |  | Mates orientation stats
-FastQ files | median | mean | stdev | FF | FR | RF | RR**
+Insert size statistics |  |  |  | Mates orientation stats
+FastQ files | median | mean | stdev | FF | FR | RF | RR
 ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- 
 test/5000_1.fq.gz test/5000_2.fq.gz | 5028 | 5031.51 | 600.93 | 5 | 17494 | 159 | 1
 test/600_1.fq.gz test/600_2.fq.gz | 598 | 598.28 | 39.26 | 0 | 32778 | 1 | 0
@@ -102,7 +102,7 @@ At the end of this step, the user will be notified about:
 
 ###### Table 2: Reduction statistics
 
-**file name | genome size | contigs | heterozygous size | [%] | heterozygous contigs | [%] | identity [%] | possible joins | homozygous size | [%] | homozygous contigs | [%]**
+file name | genome size | contigs | heterozygous size | [%] | heterozygous contigs | [%] | identity [%] | possible joins | homozygous size | [%] | homozygous contigs | [%]
 ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----- 
 run1/contigs.fa | 163897 | 245 | 65287 | 39.83 | 217 | 88.57 | 95.243 | 0 | 98610 | 60.17 | 28 | 11.43
 
