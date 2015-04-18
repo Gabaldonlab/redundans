@@ -32,12 +32,12 @@ def blat(fasta, identity, threads, verbose):
     os.system(cmd.replace("-ooc=", "-makeOoc="))
     #run BLAT
     os.system(cmd)
-    #sort and take into account only larger vs smaller
+    # sort and take into account only larger vs smaller
     cmd2 = "awk '$10!=$14 && $11>=$15' %s*.psl | sort -k11nr,11 -k12n,12 -k13nr,13 | gzip > %s.psl.gz"%(fasta, fasta)
     if verbose:
         sys.stderr.write(cmd2+'\n')
     os.system(cmd2)
-    #clean-up
+    # clean-up
     os.system("rm %s*.psl %s.11.ooc"%(fasta, fasta))
 
 def get_ranges(starts, sizes, offset=1):
