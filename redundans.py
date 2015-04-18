@@ -16,6 +16,7 @@ import numpy as np
 from fasta2homozygous import fasta2homozygous
 from fastq2sspace import fastq2sspace
 from fastq2insert_size import fastq2insert_size
+from filterReads import filter_paired
 from fasta_stats import fasta_stats
 
 def timestamp():
@@ -382,7 +383,7 @@ def main():
             sys.exit(1)
 
     # check if all executables exists
-    for cmd in ('blat', 'bwa', o.sspacebin, 'Gap2Seq'):
+    for cmd in ('blat', 'bwa', o.sspacebin, 'GapCloser'):
         info = _check_executable(cmd)
         if "not found" in info:
             sys.stderr.write("[ERROR] %s"%info)
@@ -404,7 +405,7 @@ if __name__=='__main__':
     except IOError as e:
         sys.stderr.write("I/O error({0}): {1}\n".format(e.errno, e.strerror))
     #[Errno 95] Operation not supported ie symlinks over samba or in NFS shares
-    except OSError as e:
-        sys.stderr.write("OS error({0}): {1}\n".format(e.errno, e.strerror))
+    #except OSError as e:
+    #    sys.stderr.write("OS error({0}): {1}\n".format(e.errno, e.strerror))
     dt = datetime.now()-t0
     sys.stderr.write("#Time elapsed: %s\n"%dt)

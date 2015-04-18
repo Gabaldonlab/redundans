@@ -33,7 +33,7 @@ For more information have a look at the [poster](/docs/poster.pdf).
 - [BLAT](https://genome.ucsc.edu/FAQ/FAQblat.html#blat3)
 - [BWA](http://bio-bwa.sourceforge.net/)
 - [SSPACE3](http://www.baseclear.com/genomics/bioinformatics/basetools/SSPACE)
-- [Gap2Seq](http://www.cs.helsinki.fi/u/lmsalmel/Gap2Seq/)
+- [GapCloser](http://sourceforge.net/projects/soapdenovo2/files/GapCloser/)
 
 ## Running the pipeline
 Redundans input consists of **assembled contigs** (FastA) and **paired-end and/or mate pairs reads** (FastQ). Gzipped FastQ files are also accepted. 

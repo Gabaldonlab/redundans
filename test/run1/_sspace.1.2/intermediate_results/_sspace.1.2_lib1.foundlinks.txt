@@ -1,0 +1,12 @@
+r1 has 46 links with r4 and gap of 289 bases
+r2 has 35 links with f3 and gap of 87 bases
+r2 has 28 links with f6 and gap of 211 bases
+r2 has 16 links with f4 and gap of -2 bases
+r3 has 64 links with r6 and gap of 169 bases
+r3 has 35 links with f2 and gap of 87 bases
+r3 has 31 links with r4 and gap of 31 bases
+r4 has 16 links with f2 and gap of -2 bases
+f4 has 46 links with f1 and gap of 289 bases
+f4 has 31 links with f3 and gap of 31 bases
+r6 has 28 links with f2 and gap of 211 bases
+f6 has 64 links with f3 and gap of 169 bases

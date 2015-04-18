@@ -1,0 +1,4 @@
+Contig r2 (size = 4745) has 2 multiple links;
+	with f4 (links = 16)
+	with f6 (links = 28)
+
