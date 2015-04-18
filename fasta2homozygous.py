@@ -139,8 +139,8 @@ def hits2skip(hits, faidx, verbose):
 
 def get_coverage(faidx, fasta, libraries, limit, verbose):
     """Align subset of reads and calculate per contig coverage"""
-    # init c2cov 
-    c2cov = {c: 0 for c in faidx}
+    # init c2cov make it python 2.6 compatible 
+    c2cov = {} #c: 0 for c in faidx}
     covTh = 0
     
     return c2cov, covTh
