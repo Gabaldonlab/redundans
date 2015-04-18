@@ -22,10 +22,10 @@ To run the test example, execute:
 - [Accuracy estimation](#accuracy-estimation)
 
 ## Generation of test set
-Below, you can find detailed description for regeneration of test dataset with any input genome.  
+Below, you can find detailed description for regeneration of test dataset with any input genome. 
 
 ### Simulations
-Test dataset is based on 100 Kb region from [*C. parapsilosis* CDC317](http://www.ncbi.nlm.nih.gov/pmc/articles/PMC2834264/?report=classic) HE605202:100000-200000. 
+Test dataset is based on 100 Kb region from [*C. parapsilosis* CDC317](http://www.ncbi.nlm.nih.gov/pmc/articles/PMC2834264/?report=classic) [HE605202:100000-200000]. 
 ```bash
 samtools faidx CANPA.fa HE605202:100000-200000 > ref.fa
 ```

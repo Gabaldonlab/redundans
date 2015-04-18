@@ -137,7 +137,16 @@ def hits2skip(hits, faidx, verbose):
         identity = 0
     return contig2skip, identity
 
+def get_coverage(faidx, fasta, libraries, limit, verbose):
+    """Align subset of reads and calculate per contig coverage"""
+    # init c2cov 
+    c2cov = {c: 0 for c in faidx}
+    covTh = 0
+    
+    return c2cov, covTh
+
 def fasta2homozygous(out, fasta, identity, overlap, minLength, \
+                     libraries, limit, \
                      joinOverlap=200, endTrimming=0, verbose=0):
     """Parse alignments and report homozygous contigs"""
     #create/load fasta index
@@ -145,7 +154,12 @@ def fasta2homozygous(out, fasta, identity, overlap, minLength, \
         sys.stderr.write("Indexing fasta...\n")
     faidx = SeqIO.index_db(fasta.name+".db3", fasta.name, "fasta")
     genomeSize = sum(len(faidx[c]) for c in faidx) 
-    
+
+    # depth-of-coverage info
+    c2cov, covTh = None, None
+    if libraries:
+        c2cov, covTh = get_coverage(faidx, fasta.name, libraries, limit, \
+                                    verbose)
     #run blat
     psl = fasta.name + ".psl.gz"
     if not os.path.isfile(psl):
@@ -159,6 +173,7 @@ def fasta2homozygous(out, fasta, identity, overlap, minLength, \
     hits, overlapping = psl2hits(psl, identity, overlap, joinOverlap, endTrimming)
 
     #remove redundant
+    ## maybe store info about removed also
     contig2skip, identity = hits2skip(hits, faidx, verbose)
     #print "\n".join("\t".join(map(str, x)) for x in overlapping[:100]); return
     
@@ -218,8 +233,8 @@ def merge_fasta(out, faidx, contig2skip, overlapping, minLength, verbose):
     
     #report not skipper, nor joined
     k = skipped = ssize = 0
-    for i, c in enumerate(faidx, 1):
-        #don't report skipped & merged
+    for i, c in enumerate(faidx, 1): 
+        # don't report skipped & merged
         if contig2skip[c] or len(faidx[c])<minLength:
             skipped += 1
             ssize   += len(faidx[c])
@@ -263,12 +278,16 @@ def main():
     if o.verbose:
         sys.stderr.write("Options: %s\n"%str(o))
 
+    # allow depth-of-coverage
+    libraries, limit = [], 0
+        
     #process fasta
     sys.stderr.write("Homozygous assembly/ies will be written with input name + '.homozygous.fa.gz'\n")
     sys.stderr.write("#file name\tgenome size\tcontigs\theterozygous size\t[%]\theterozygous contigs\t[%]\tidentity [%]\tpossible joins\thomozygous size\t[%]\thomozygous contigs\t[%]\n")
     for fasta in o.fasta:
         out = gzip.open(fasta.name+".homozygous.fa.gz", "w")
         fasta2homozygous(out, fasta, o.identity, o.overlap, o.minLength, \
+                         libraries, limit, 
                          o.joinOverlap, o.endTrimming, o.verbose)
         out.close()
 

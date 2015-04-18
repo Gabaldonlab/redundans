@@ -52,8 +52,8 @@ def get_orientation(pairs, fq1, fq2):
 def get_libraries(fastq, fasta, mapq, threads, limit, verbose):
     """Return libraries"""
     # otherwise process all reads
-    if not limit:
-        limit = 10e4
+    if not limit or limit<10e5:
+        limit = 10e5
     
     # get libraries statistics using 1% of mapped read limit
     libdata = fastq2insert_size(sys.stderr, fastq, fasta, mapq, threads, \
@@ -204,7 +204,8 @@ def redundants(fastq, fasta, outdir, mapq, threads, identity, overlap, minLength
             sys.stderr.write("%sReduction...\n"%timestamp())
             sys.stderr.write("#file name\tgenome size\tcontigs\theterozygous size\t[%]\theterozygous contigs\t[%]\tidentity [%]\tpossible joins\thomozygous size\t[%]\thomozygous contigs\t[%]\n")
         with open(reducedFname, "w") as out:
-            fasta2homozygous(out, open(contigsFname), identity, overlap, minLength)
+            fasta2homozygous(out, open(contigsFname), identity, overlap, \
+                             minLength, libraries, limit)
     else:
         symlink(contigsFname, reducedFname)
 
@@ -245,7 +246,8 @@ def redundants(fastq, fasta, outdir, mapq, threads, identity, overlap, minLength
         sys.stderr.write(fasta_stats(open(fn)))
 
     # Clean-up
-    ## ie. remove fq.is.txt, but this in fact may be usefull for the user 
+    # rm fq.is.txt
+    # rm *.h5 CHANGEME.mphf
 
 def _check_executable(cmd):
     """Check if executable exists."""

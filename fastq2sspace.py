@@ -111,7 +111,7 @@ def sam2sspace_tab_OLD(inhandle,outhandle,mapqTh=0,verbose=False):
             break
     sys.stderr.write( "   %s pairs. %s passed filtering [%.2f%s]. %s in different contigs [%.2f%s].\n" % (i,j,j*100.0/i,'%',k,k*100.0/i,'%') )
 
-def _get_bwamem_proc(fn1,fn2,ref,maxins,cores,upto,verbose,bufsize=-1):
+def _get_bwamem_proc(fn1, fn2, ref, maxins, cores, upto, verbose, log=sys.stderr):
     """Return bwamem subprocess.
     bufsize: 0 no buffer; 1 buffer one line; -1 set system default.
     """
@@ -119,11 +119,11 @@ def _get_bwamem_proc(fn1,fn2,ref,maxins,cores,upto,verbose,bufsize=-1):
     if verbose:
         sys.stderr.write( "  %s\n" % " ".join(bwaArgs) )
     #select ids
-    bwaProc = subprocess.Popen(bwaArgs, bufsize=bufsize, \
-                               stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    bwaProc = subprocess.Popen(bwaArgs, stdout=subprocess.PIPE, stderr=log)
     return bwaProc
     
-def get_tab_files( outdir,reffile,libNames,fReadsFnames,rReadsFnames,inserts,iBounds,cores,mapqTh,upto,verbose ):
+def get_tab_files(outdir, reffile, libNames, fReadsFnames, rReadsFnames, inserts, iBounds,\
+                  cores, mapqTh, upto, verbose):
     """Prepare genome index, align all libs and save TAB file"""
     #create genome index
     ref = reffile.name
@@ -141,23 +141,24 @@ def get_tab_files( outdir,reffile,libNames,fReadsFnames,rReadsFnames,inserts,iBo
         if verbose:
             sys.stderr.write( "[%s] [lib] %s\n" % (datetime.ctime(datetime.now()),libName) )
         #define tab output
-        outfn = "%s.%s.tab" % ( outdir,libName ) 
+        outfn = "%s.%s.tab" % (outdir, libName)
         #skip if file exists
         if os.path.isfile( outfn ):
             sys.stderr.write( "  File exists: %s\n" % outfn )
             tabFnames.append( outfn )
             continue
-        out   = open( outfn,"w" )
+        out = open(outfn, "w")
+        log = open(outfn+".log", "w")
         #define max insert size allowed
         maxins = ( 1.0+iFrac ) * iSize
         #run bowtie2 for all libs        
-        proc = _get_bwamem_proc( f1.name,f2.name,ref,maxins,cores,upto,verbose )
+        proc = _get_bwamem_proc(f1.name, f2.name, ref, maxins, cores, upto, verbose, log)
         #proc = _get_gem_proc( f1.name,f2.name,ref,maxins,upto,cores,verbose )
         #parse botwie output
-        sam2sspace_tab( proc.stdout,out,mapqTh,upto )
+        sam2sspace_tab(proc.stdout, out, mapqTh, upto)
         #close file
         out.close()
-        tabFnames.append( outfn )
+        tabFnames.append(outfn)
 
     return tabFnames
     
