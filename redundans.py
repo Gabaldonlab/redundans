@@ -50,7 +50,7 @@ def get_orientation(pairs, fq1, fq2):
         sys.stderr.write(info%(orientation, maxcfrac, '%', fq1, fq2, str(pairs)))
     return orientation 
 
-def get_libraries(fastq, fasta, mapq, threads, limit, verbose):
+def get_libraries(fastq, fasta, mapq, threads, verbose, limit=0):
     """Return libraries"""
     # otherwise process all reads
     if not limit or limit<10e5:
@@ -90,7 +90,7 @@ def get_libraries(fastq, fasta, mapq, threads, limit, verbose):
         i += 1
     return libraries
 
-def get_read_limit(fastq, fasta, mapq, threads, readLimit, verbose):
+def get_read_limit(fasta, readLimit, verbose):
     """Return read limit and libraries."""
     # limit no. of reads to align as fraction of genome size
     limit = 0
@@ -100,13 +100,11 @@ def get_read_limit(fastq, fasta, mapq, threads, readLimit, verbose):
         limit = int(readLimit * fastaSize)
         if verbose:
             sys.stderr.write(" Aligning %s mates per library...\n"%limit)
-
-    # get libraries
-    libraries = get_libraries(fastq, fasta, mapq, threads, limit, verbose)
-    return limit, libraries
+    return limit
     
 def run_scaffolding(outdir, scaffoldsFname, fastq, libraries, reducedFname, mapq, threads, \
-                    joins, limit, iters, sspacebin, verbose, lib=""):
+                    joins, limit, iters, sspacebin, verbose, \
+                    identity, overlap, minLength, lib=""):
     """Execute scaffolding step."""        
     # run scaffolding using libraries with increasing insert size in multiple iterations
     pout = reducedFname
@@ -129,20 +127,29 @@ def run_scaffolding(outdir, scaffoldsFname, fastq, libraries, reducedFname, mapq
             # link output ie out/_sspace.1.1/_sspace.1.1.scaffolds.fasta --> out/_sspace.1.1.scaffolds.fasta
             targetout = os.path.join(os.path.basename(out), os.path.basename(out+".final.scaffolds.fasta"))
             symlink(targetout, pout)
-            # if number of gaps larger than 1%, run gap closer
-            stats     = fasta_stats(open(pout))
-            fastaSize = int(stats.split('\t')[2])
-            gapSize   = int(stats.split('\t')[-2])
-            if 1.0 * gapSize / fastaSize > 0.01:
-                if verbose:
-                    sys.stderr.write("  closing gaps ...\n")
-                nogapsFname = ".".join(pout.split(".")[:-1]) + ".filled.fa"
-                basename = "_sspace.%s.%s._gapcloser"%(i, j)
-                run_gapclosing(outdir, mapq, [libraries[i-1],], nogapsFname, pout, \
-                               threads, limit, iters, 0, basename)
-                pout = nogapsFname            
+        # if number of gaps larger than 1%, run gap closer & reduction
+        stats     = fasta_stats(open(pout))
+        fastaSize = int(stats.split('\t')[2])
+        gapSize   = int(stats.split('\t')[-2])
+        if 1.0 * gapSize / fastaSize > 0.01:
+            # close gaps
+            if verbose:
+                sys.stderr.write("  closing gaps ...\n")
+            nogapsFname = ".".join(pout.split(".")[:-1]) + ".filled.fa"
+            basename = "_sspace.%s.%s._gapcloser"%(i, j)
+            run_gapclosing(outdir, mapq, libraries[:i], nogapsFname, pout, \
+                           threads, limit, iters, 0, basename)
+            # reduce
+            if verbose:
+                sys.stderr.write("  reducing ...\n")
+            reducedFname = ".".join(pout.split(".")[:-1]) + ".reduced.fa"
+            with open(reducedFname, "w") as out:
+                fasta2homozygous(out, open(nogapsFname), identity, overlap, \
+                                 minLength, libraries, limit)
+            # update pout
+            pout = reducedFname
         # update library insert size estimation, especially for mate-pairs
-        libraries = get_libraries(fastq, pout, mapq, threads, limit, verbose=0)
+        libraries = get_libraries(fastq, pout, mapq, threads, verbose=0)
     # create symlink to final scaffolds or pout
     symlink(pout, scaffoldsFname)
 
@@ -187,7 +194,7 @@ def prepare_gapcloser(outdir, mapq, configFn, libFs, libRs, orientations, libIS,
             continue
         # filter reads
         fn1, fn2 = filter_reads(outdir, fq1, fq2, minlen, maxlen, limit, mapq)
-        #store config info
+        #store config info - make is smaller 100
         config.append(lines%(iSize, reverse_seq, i, fn1, fn2))
         
     # store config only if some libs passed filtering
@@ -210,18 +217,20 @@ def run_gapclosing(outdir, mapq, libraries, nogapsFname, scaffoldsFname, \
                                  minReadLen, maxReadLen, limit, verbose):
             continue
         # run iterations
-        out = os.path.join(outdir, "%s.%s.fa"%(basename, i))
-        # run GapCloser
-        cmd = ["GapCloser", "-t %s"%threads, "-p %s"%overlap, "-l %s"%maxReadLen, \
-               "-a", pout, "-b", configFn, "-o", out]
-        if verbose:
-            sys.stderr.write(" iteration %s ...\n"%i)
-            #sys.stderr.write( "  %s\n" % " ".join(cmd) )
-        with open(out+".log", "w") as log:
-            GapCloser = subprocess.Popen(cmd, bufsize=-1, stdout=log, stderr=log)
-            GapCloser.wait()
-        # store out info
-        pout = out
+        for j in range(1, iters+1):
+            out = os.path.join(outdir, "%s.%s.%s.fa"%(basename, i, j))
+            # run GapCloser
+            cmd = ["GapCloser", "-t %s"%threads, "-p %s"%overlap, "-l %s"%maxReadLen, \
+                   "-a", pout, "-b", configFn, "-o", out]
+            if verbose:
+                sys.stderr.write(" iteration %s.%s ...\n"%(i,j))
+                #sys.stderr.write( "  %s\n" % " ".join(cmd) )
+            # run GapCloser and save stdout/err to log file
+            with open(out+".log", "w") as log:
+                GapCloser = subprocess.Popen(cmd, stdout=log, stderr=log)
+                GapCloser.wait()
+            # store out info
+            pout = out
     # create symlink to final scaffolds or pout
     symlink(pout, nogapsFname)
         
@@ -245,8 +254,8 @@ def redundants(fastq, fasta, outdir, mapq, threads, identity, overlap, minLength
     # link contigs & genome
     symlink(fasta, contigsFname)    
     # get read limit & libraries
-    limit, libraries = get_read_limit(fastq, contigsFname, mapq, threads, \
-                                      readLimit, verbose)
+    limit     = get_read_limit(contigsFname, readLimit, verbose)
+    libraries = get_libraries(fastq, contigsFname, mapq, threads, verbose)
     if reduction:
         if verbose:
             sys.stderr.write("%sReduction...\n"%timestamp())
@@ -257,6 +266,8 @@ def redundants(fastq, fasta, outdir, mapq, threads, identity, overlap, minLength
     else:
         symlink(contigsFname, reducedFname)
 
+    # update read limit using reduced assembly as reference
+    limit     = get_read_limit(reducedFname, readLimit, verbose)
     # SCAFFOLDING
     scaffoldsFname = os.path.join(outdir, "scaffolds.fa")
     if scaffolding:
@@ -264,7 +275,8 @@ def redundants(fastq, fasta, outdir, mapq, threads, identity, overlap, minLength
             sys.stderr.write("%sScaffolding...\n"%timestamp())
         # estimate read limit
         libraries = run_scaffolding(outdir, scaffoldsFname, fastq, libraries, reducedFname, mapq, \
-                                    threads, joins, limit, iters, sspacebin, verbose)
+                                    threads, joins, limit, iters, sspacebin, verbose, \
+                                    identity, overlap, minLength)
     else:
         symlink(reducedFname, scaffoldsFname)
         

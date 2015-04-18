@@ -115,7 +115,8 @@ def _get_bwamem_proc(fn1, fn2, ref, maxins, cores, upto, verbose, log=sys.stderr
     """Return bwamem subprocess.
     bufsize: 0 no buffer; 1 buffer one line; -1 set system default.
     """
-    bwaArgs = ['bwa', 'mem', '-t', str(cores), ref, fn1, fn2 ]
+    # skip mate rescue
+    bwaArgs = ['bwa', 'mem', '-S', '-t', str(cores), ref, fn1, fn2 ]
     if verbose:
         sys.stderr.write( "  %s\n" % " ".join(bwaArgs) )
     #select ids
@@ -175,7 +176,7 @@ def get_libs( outdir,libFn,libNames,tabFnames,inserts,iBounds,orientations,verbo
     for libname, tabfn, isize, isfrac, orient in zip(libNames, tabFnames, inserts, \
                                                      iBounds, orientations):
         lines.append(tabline%(libname, os.path.basename(tabfn), \
-                              isize, isfrac, orient))
+                              isize-100, isfrac, orient))
 
     outfn = "%s.libs.txt" % outdir #os.path.join( outdir,"libs.txt" )
     if verbose:

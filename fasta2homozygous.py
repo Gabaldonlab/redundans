@@ -18,7 +18,7 @@ from Bio import SeqIO
 def blat(fasta, identity, verbose):
     """Start BLAT"""
     #prepare BLAT command
-    identity = int(100*identity)
+    identity = int(100*identity)-1
     args = ["-ooc=%s.11.ooc"%fasta, "-dots=1000", "-noHead", "-extendThroughN", \
             "-minMatch=5", "-repMatch=10", \
             "-minScore=%s"%identity, "-minIdentity=%s"%identity] 

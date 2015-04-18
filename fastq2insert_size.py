@@ -48,7 +48,7 @@ def get_bwa_subprocess(fq1, fq2, fasta, threads, verbose):
     cmd = ["bwa", "mem", "-S", "-t %s"%threads, fasta, fq1, fq2]
     #if verbose:
     #    sys.stderr.write(" %s\n"%" ".join(cmd))
-    bwa = subprocess.Popen(cmd, bufsize=-1, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    bwa = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     return bwa
         
 def get_isize_stats(fq1, fq2, fasta, mapqTh=10, threads=1,
@@ -81,7 +81,7 @@ def get_isize_stats(fq1, fq2, fasta, mapqTh=10, threads=1,
         if not i%1000:
             sys.stderr.write(' %s %s \r'%(i, len(isizes)))
         # read sam entry
-        rname, flag, chrom, pos, mapq, cigar, mchrom, mpos, isize = sam.split('\t')[:9]
+        rname, flag, chrom, pos, mapq, cigar, mchrom, mpos, isize, seq = sam.split('\t')[:10]
         flag, pos, mapq, mpos, isize = map(int, (flag, pos, mapq, mpos, isize))
         # take only reads with good alg quality and one read per pair
         # ignore not primary and supplementary alignments
