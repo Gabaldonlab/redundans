@@ -15,7 +15,7 @@ import gzip, math, os, sys
 from datetime import datetime
 from Bio import SeqIO
 
-def blat(fasta, identity, verbose):
+def blat(fasta, identity, threads, verbose):
     """Start BLAT"""
     #prepare BLAT command
     identity = int(100*identity)-1
@@ -33,12 +33,12 @@ def blat(fasta, identity, verbose):
     #run BLAT
     os.system(cmd)
     #sort and take into account only larger vs smaller
-    cmd2 = "awk '$10!=$14 && $11>=$15' %s.psl | sort -k11nr,11 -k12n,12 -k13nr,13 | gzip > %s.psl.gz"%(fasta, fasta)
+    cmd2 = "awk '$10!=$14 && $11>=$15' %s*.psl | sort -k11nr,11 -k12n,12 -k13nr,13 | gzip > %s.psl.gz"%(fasta, fasta)
     if verbose:
         sys.stderr.write(cmd2+'\n')
     os.system(cmd2)
     #clean-up
-    os.system("rm %s.psl %s.11.ooc"%(fasta, fasta))
+    os.system("rm %s*.psl %s.11.ooc"%(fasta, fasta))
 
 def get_ranges(starts, sizes, offset=1):
     """Return str representation of alg ranges"""
@@ -147,7 +147,7 @@ def get_coverage(faidx, fasta, libraries, limit, verbose):
 
 def fasta2homozygous(out, fasta, identity, overlap, minLength, \
                      libraries, limit, \
-                     joinOverlap=200, endTrimming=0, verbose=0):
+                     threads=1, joinOverlap=200, endTrimming=0, verbose=0):
     """Parse alignments and report homozygous contigs"""
     #create/load fasta index
     if verbose:
@@ -165,7 +165,7 @@ def fasta2homozygous(out, fasta, identity, overlap, minLength, \
     if not os.path.isfile(psl):
         if verbose:
             sys.stderr.write("Running BLAT...\n")
-        blat(fasta.name, identity, verbose)
+        blat(fasta.name, identity, threads, verbose)
     
     if verbose:
         sys.stderr.write("Parsing alignments...\n")
@@ -259,6 +259,8 @@ def main():
                         help="verbose")    
     parser.add_argument("-i", "-f", "--fasta", nargs="+", type=file, 
                         help="FASTA file(s)")
+    parser.add_argument("-t", "--threads", default=1, type=int, 
+                        help="max threads to run [%(default)s]")
     #parser.add_argument("-o", "--output",    default=sys.stdout, type=argparse.FileType('w'), 
     #                    help="output stream   [stdout]")
     parser.add_argument("--identity",    default=0.8, type=float, 
@@ -288,7 +290,7 @@ def main():
         out = gzip.open(fasta.name+".homozygous.fa.gz", "w")
         fasta2homozygous(out, fasta, o.identity, o.overlap, o.minLength, \
                          libraries, limit, 
-                         o.joinOverlap, o.endTrimming, o.verbose)
+                         o.threads, o.joinOverlap, o.endTrimming, o.verbose)
         out.close()
 
 if __name__=='__main__': 
