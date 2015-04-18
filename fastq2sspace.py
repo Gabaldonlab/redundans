@@ -159,7 +159,7 @@ def get_tab_files(outdir, reffile, libNames, fReadsFnames, rReadsFnames, inserts
         #close file
         out.close()
         tabFnames.append(outfn)
-
+        proc.terminate()
     return tabFnames
     
 def get_libs( outdir,libFn,libNames,tabFnames,inserts,iBounds,orientations,verbose ):
