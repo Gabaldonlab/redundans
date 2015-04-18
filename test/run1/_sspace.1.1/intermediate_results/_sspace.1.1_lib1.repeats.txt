@@ -1,4 +1,0 @@
-Contig r16 (size = 430) has 2 multiple links;
-	with f19 (links = 16)
-	with f23 (links = 28)
-
