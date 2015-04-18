@@ -131,23 +131,16 @@ def run_scaffolding(outdir, scaffoldsFname, fastq, libraries, reducedFname, mapq
         stats     = fasta_stats(open(pout))
         fastaSize = int(stats.split('\t')[2])
         gapSize   = int(stats.split('\t')[-2])
-        if 1.0 * gapSize / fastaSize > 0.01:
+        '''if 1.0 * gapSize / fastaSize > 0.01:
             # close gaps
             if verbose:
                 sys.stderr.write("  closing gaps ...\n")
             nogapsFname = ".".join(pout.split(".")[:-1]) + ".filled.fa"
-            basename = "_sspace.%s.%s._gapcloser"%(i, j)
-            run_gapclosing(outdir, mapq, libraries[:i], nogapsFname, pout, \
-                           threads, limit, iters, 0, basename)
-            # reduce
-            if verbose:
-                sys.stderr.write("  reducing ...\n")
-            reducedFname = ".".join(pout.split(".")[:-1]) + ".reduced.fa"
-            with open(reducedFname, "w") as out:
-                fasta2homozygous(out, open(nogapsFname), identity, overlap, \
-                                 minLength, libraries, limit)
+            basename    = "_sspace.%s.%s._gapcloser"%(i, j)
+            run_gapclosing(outdir, mapq, [libraries[i-1],], nogapsFname, pout, \
+                           threads, limit, 1, 0, basename)
             # update pout
-            pout = reducedFname
+            pout = nogapsFname'''
         # update library insert size estimation, especially for mate-pairs
         libraries = get_libraries(fastq, pout, mapq, threads, verbose=0)
     # create symlink to final scaffolds or pout
@@ -291,6 +284,17 @@ def redundants(fastq, fasta, outdir, mapq, threads, identity, overlap, minLength
     else:
         symlink(scaffoldsFname, nogapsFname)
 
+    # FINAL REDUCTION
+    finalFname = os.path.join(outdir, "scaffolds.reduced.fa")
+    if reduction:
+        if verbose:
+            sys.stderr.write("%sReduction...\n"%timestamp())
+        with open(finalFname, "w") as out:
+            fasta2homozygous(out, open(nogapsFname), identity, overlap, \
+                             minLength, libraries, limit)
+    else:
+        symlink(nogapsFname, finalFname)
+
     # FASTA STATS
     if verbose:
         sys.stderr.write("%sReporting statistics...\n"%timestamp())
@@ -300,6 +304,7 @@ def redundants(fastq, fasta, outdir, mapq, threads, identity, overlap, minLength
     fastas.append(scaffoldsFname)
     fastas += sorted(glob.glob(os.path.join(outdir, "_gap*.fa")))
     fastas.append(nogapsFname)
+    fastas.append(finalFname)
     # report stats
     sys.stderr.write('#fname\tcontigs\tbases\tGC [%]\tcontigs >1kb\tbases in contigs >1kb\tN50\tN90\tNs\tlongest\n')
     for fn in fastas:

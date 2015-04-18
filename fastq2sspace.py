@@ -176,7 +176,7 @@ def get_libs( outdir,libFn,libNames,tabFnames,inserts,iBounds,orientations,verbo
     for libname, tabfn, isize, isfrac, orient in zip(libNames, tabFnames, inserts, \
                                                      iBounds, orientations):
         lines.append(tabline%(libname, os.path.basename(tabfn), \
-                              isize-100, isfrac, orient))
+                              isize-50, isfrac, orient))
 
     outfn = "%s.libs.txt" % outdir #os.path.join( outdir,"libs.txt" )
     if verbose:
