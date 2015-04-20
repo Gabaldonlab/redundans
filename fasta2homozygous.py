@@ -215,9 +215,8 @@ def fasta2homozygous(out, fasta, identity, overlap, minLength, \
                                     verbose)
     # run last; multi on python 2.7+ only as 2.6 stalls
     last = last_single
-    if sys.version_info.major==2:
-        if sys.version_info.minor>6:
-            last = last_multi
+    if sys.version_info[0]==2 and sys.version_info[1]>6:
+        last = last_multi
     #run blat
     psl = fasta.name + ".psl.gz"
     if not os.path.isfile(psl):
