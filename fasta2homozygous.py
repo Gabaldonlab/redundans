@@ -22,7 +22,7 @@ def last(fasta, identity, threads, verbose):
         os.system("lastdb %s %s" % (fasta, fasta))
     # run LAST as subprocess batch
     procs1, procs2, outs = [], [], []
-    cmd11 = ["lastal", "-T 1", fasta, "-"]
+    cmd11 = ["lastal", fasta, "-"] #"-T 1", -f 0 > tab and parse directly
     cmd12 = ["maf-convert", "psl", "-"]# > %s.psl"]
     for i in range(threads):
         out   = open("%s_%s.psl"%(fasta, i), "w")
@@ -222,6 +222,8 @@ def fasta2homozygous(out, fasta, identity, overlap, minLength, \
     sys.stderr.write(info%(fasta.name, genomeSize, len(faidx), ssize, 100.0*ssize/genomeSize, \
                            skipped, 100.0*skipped/len(faidx), identity, len(merged), \
                            nsize, 100.0*nsize/genomeSize, k, 100.0*k/len(faidx)))
+
+    return genomeSize, len(faidx), ssize, skipped, identity
 
 def get_name_abbrev(size, s, e):
     """Return s if s < size/2, otherwise return e."""
