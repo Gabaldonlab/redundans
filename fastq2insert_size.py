@@ -48,7 +48,7 @@ def get_bwa_subprocess(fq1, fq2, fasta, threads, verbose):
     cmd = ["bwa", "mem", "-S", "-t %s"%threads, fasta, fq1, fq2]
     #if verbose:
     #    sys.stderr.write(" %s\n"%" ".join(cmd))
-    bwa = subprocess.Popen(cmd, bufsize=-1, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    bwa = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     return bwa
         
 def get_isize_stats(fq1, fq2, fasta, mapqTh=10, threads=1,
@@ -57,6 +57,15 @@ def get_isize_stats(fq1, fq2, fasta, mapqTh=10, threads=1,
     pairing orientation counts (FF, FR, RF, RR). 
     Ignore bottom and up percentile for insert size statistics. 
     """
+    # read dumped info
+    if os.path.isfile(fq2+".is.txt"):
+        ldata = open(fq2+".is.txt").readline().split("\t")
+        if len(ldata) == 7:
+            ismedian, ismean, isstd = map(float, ldata[:3])
+            pairs = map(int, ldata[3:])
+            # skip insert size estimation only if satisfactory previous estimate 
+            if sum(pairs)*2 >= limit and isstd / ismean < 0.66:
+                return ismedian, ismean, isstd, pairs
     #if verbose:
     #    sys.stderr.write("Starting alignment...\n")
     bwa = get_bwa_subprocess(fq1, fq2, fasta, threads, verbose)
@@ -72,7 +81,7 @@ def get_isize_stats(fq1, fq2, fasta, mapqTh=10, threads=1,
         if not i%1000:
             sys.stderr.write(' %s %s \r'%(i, len(isizes)))
         # read sam entry
-        rname, flag, chrom, pos, mapq, cigar, mchrom, mpos, isize = sam.split('\t')[:9]
+        rname, flag, chrom, pos, mapq, cigar, mchrom, mpos, isize, seq = sam.split('\t')[:10]
         flag, pos, mapq, mpos, isize = map(int, (flag, pos, mapq, mpos, isize))
         # take only reads with good alg quality and one read per pair
         # ignore not primary and supplementary alignments
@@ -85,24 +94,36 @@ def get_isize_stats(fq1, fq2, fasta, mapqTh=10, threads=1,
         #stop if limit reached
         if len(isizes) >= limit:
             break
+    if sum(pairs)<100:
+        return 0, 0, 0, []
     #get rid of 5 percentile from both sides
     maxins = stats.scoreatpercentile(isizes, 100-percentile)
     minins = stats.scoreatpercentile(isizes, percentile)
     isizes = np.array(filter(lambda x: minins<x<maxins, isizes), dtype='int')
-    return np.median(isizes), isizes.mean(), isizes.std(), pairs
+    # get stats
+    ismedian, ismean, isstd = np.median(isizes), isizes.mean(), isizes.std()
+    # save info
+    with open(fq2+".is.txt", "w") as out:
+        out.write("%s\t%s\t%s\t%s\n"%(ismedian, ismean, isstd, "\t".join(map(str, pairs))))
+    return ismedian, ismean, isstd, pairs
 
 def fastq2insert_size(out, fastq, fasta, mapq, threads, limit, verbose):
     """Report insert size statistics and return all information."""
     header  = "Insert size statistics\t\t\t\tMates orientation stats\n"
     header += "FastQ files\tmedian\tmean\tstdev\tFF\tFR\tRF\tRR\n"
-    out.write(header)
+    if verbose:
+        out.write(header)
     line = "%s %s\t%i\t%.2f\t%.2f\t%s\n"
     data = []
     for fq1, fq2 in zip(fastq[0::2], fastq[1::2]):
         # get IS stats
         ismedian, ismean, isstd, pairs = get_isize_stats(fq1, fq2, fasta, mapq, threads, limit, verbose)
+        if not sum(pairs):
+            sys.stderr.write("[WARNING] No alignments for %s - %s!\n"%(fq1, fq2))
+            continue
         # report
-        out.write(line%(fq1, fq2, ismedian, ismean, isstd, "\t".join(map(str, pairs))))
+        if verbose:
+            out.write(line%(fq1, fq2, ismedian, ismean, isstd, "\t".join(map(str, pairs))))
         # store data
         data.append((fq1, fq2, ismedian, ismean, isstd, pairs))
     return data

@@ -124,10 +124,9 @@ def rawtrimmer(infile, minlen, maxlen, limit, minqual, \
     """Single process implementation of rawtrimmer.
     Open zcat subprocess and read from stdin."""
     handle = infile
-
     if infile.name.endswith('.gz'):
         zcat = subprocess.Popen(['zcat', infile.name], bufsize=-1, \
-            stdout=subprocess.PIPE)
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         handle = zcat.stdout
 
     ## Get parser
@@ -197,9 +196,9 @@ def filter_paired(fpair, outfiles, minlen, maxlen, limit, minqual, \
 
     ## Define parsers rawtrimmer fqtrimmer
     fqparser1 = rawtrimmer(inF, minlen, maxlen, limit, minqual, qual64offset, qseq, \
-        stripHeaders, outformat, pi)
+                           stripHeaders, outformat, pi)
     fqparser2 = rawtrimmer(inR, minlen, maxlen, limit, minqual, qual64offset, qseq, \
-        stripHeaders, outformat, pi)
+                           stripHeaders, outformat, pi)
 
     ## Process
     both = fori = revi = filtered = 0

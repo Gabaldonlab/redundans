@@ -11,14 +11,50 @@ epilog="""Author: l.p.pryszcz@gmail.com
 Mizerow, 26/08/2014
 """
 
-import gzip, math, os, sys
+import gzip, math, os, sys, subprocess
 from datetime import datetime
 from Bio import SeqIO
 
-def blat(fasta, identity, verbose):
+def last(fasta, identity, threads, verbose):
+    """Start LAST with multiple threads."""
+    # build db
+    if not os.path.isfile(fasta+".suf"):
+        os.system("lastdb %s %s" % (fasta, fasta))
+    # run LAST as subprocess batch
+    procs1, procs2, outs = [], [], []
+    cmd11 = ["lastal", "-T 1", fasta, "-"]
+    cmd12 = ["maf-convert", "psl", "-"]# > %s.psl"]
+    for i in range(threads):
+        out   = open("%s_%s.psl"%(fasta, i), "w")
+        log1  = open("%s_%s.psl.log1"%(fasta, i), "w")
+        log2  = open("%s_%s.psl.log2"%(fasta, i), "w")
+        proc1 = subprocess.Popen(cmd11, stdin=subprocess.PIPE, \
+                                stdout=subprocess.PIPE, stderr=log1)
+        proc2 = subprocess.Popen(cmd12, stdin=proc1.stdout, \
+                                stdout=out, stderr=log2)
+        outs.append(out)
+        procs1.append(proc1)
+        procs2.append(proc2)
+    # parse fasta
+    for i, r in enumerate(SeqIO.parse(fasta, 'fasta')):
+        procs1[i%threads].stdin.write(r.format('fasta'))
+    # wait until all finish
+    for out, proc1, proc2 in zip(outs, procs1, procs2):
+        proc1.stdin.close()
+        proc2.wait()
+        out.close() #'''
+    # sort and take into account only larger vs smaller
+    cmd2 = "awk '$10!=$14 && $11>=$15' %s*.psl | sort -k11nr,11 -k12n,12 -k13nr,13 | gzip > %s.psl.gz"%(fasta, fasta)
+    if verbose:
+        sys.stderr.write(cmd2+'\n')
+    os.system(cmd2)
+    # clean-up
+    os.system("rm %s*.psl"%fasta)
+
+def blat(fasta, identity, threads, verbose):
     """Start BLAT"""
     #prepare BLAT command
-    identity = int(100*identity)
+    identity = int(100*identity)-1
     args = ["-ooc=%s.11.ooc"%fasta, "-dots=1000", "-noHead", "-extendThroughN", \
             "-minMatch=5", "-repMatch=10", \
             "-minScore=%s"%identity, "-minIdentity=%s"%identity] 
@@ -32,13 +68,13 @@ def blat(fasta, identity, verbose):
     os.system(cmd.replace("-ooc=", "-makeOoc="))
     #run BLAT
     os.system(cmd)
-    #sort and take into account only larger vs smaller
-    cmd2 = "awk '$10!=$14 && $11>=$15' %s.psl | sort -k11nr,11 -k12n,12 -k13nr,13 | gzip > %s.psl.gz"%(fasta, fasta)
+    # sort and take into account only larger vs smaller
+    cmd2 = "awk '$10!=$14 && $11>=$15' %s*.psl | sort -k11nr,11 -k12n,12 -k13nr,13 | gzip > %s.psl.gz"%(fasta, fasta)
     if verbose:
         sys.stderr.write(cmd2+'\n')
     os.system(cmd2)
-    #clean-up
-    os.system("rm %s.psl %s.11.ooc"%(fasta, fasta))
+    # clean-up
+    os.system("rm %s*.psl %s.11.ooc"%(fasta, fasta))
 
 def get_ranges(starts, sizes, offset=1):
     """Return str representation of alg ranges"""
@@ -137,21 +173,35 @@ def hits2skip(hits, faidx, verbose):
         identity = 0
     return contig2skip, identity
 
+def get_coverage(faidx, fasta, libraries, limit, verbose):
+    """Align subset of reads and calculate per contig coverage"""
+    # init c2cov make it python 2.6 compatible 
+    c2cov = {} #c: 0 for c in faidx}
+    covTh = 0
+    
+    return c2cov, covTh
+
 def fasta2homozygous(out, fasta, identity, overlap, minLength, \
-                     joinOverlap=200, endTrimming=0, verbose=0):
+                     libraries, limit, \
+                     threads=1, joinOverlap=200, endTrimming=0, verbose=0):
     """Parse alignments and report homozygous contigs"""
     #create/load fasta index
     if verbose:
         sys.stderr.write("Indexing fasta...\n")
     faidx = SeqIO.index_db(fasta.name+".db3", fasta.name, "fasta")
     genomeSize = sum(len(faidx[c]) for c in faidx) 
-    
+
+    # depth-of-coverage info
+    c2cov, covTh = None, None
+    if libraries:
+        c2cov, covTh = get_coverage(faidx, fasta.name, libraries, limit, \
+                                    verbose)
     #run blat
     psl = fasta.name + ".psl.gz"
     if not os.path.isfile(psl):
         if verbose:
             sys.stderr.write("Running BLAT...\n")
-        blat(fasta.name, identity, verbose)
+        last(fasta.name, identity, threads, verbose)
     
     if verbose:
         sys.stderr.write("Parsing alignments...\n")
@@ -159,6 +209,7 @@ def fasta2homozygous(out, fasta, identity, overlap, minLength, \
     hits, overlapping = psl2hits(psl, identity, overlap, joinOverlap, endTrimming)
 
     #remove redundant
+    ## maybe store info about removed also
     contig2skip, identity = hits2skip(hits, faidx, verbose)
     #print "\n".join("\t".join(map(str, x)) for x in overlapping[:100]); return
     
@@ -218,8 +269,8 @@ def merge_fasta(out, faidx, contig2skip, overlapping, minLength, verbose):
     
     #report not skipper, nor joined
     k = skipped = ssize = 0
-    for i, c in enumerate(faidx, 1):
-        #don't report skipped & merged
+    for i, c in enumerate(faidx, 1): 
+        # don't report skipped & merged
         if contig2skip[c] or len(faidx[c])<minLength:
             skipped += 1
             ssize   += len(faidx[c])
@@ -244,6 +295,8 @@ def main():
                         help="verbose")    
     parser.add_argument("-i", "-f", "--fasta", nargs="+", type=file, 
                         help="FASTA file(s)")
+    parser.add_argument("-t", "--threads", default=1, type=int, 
+                        help="max threads to run [%(default)s]")
     #parser.add_argument("-o", "--output",    default=sys.stdout, type=argparse.FileType('w'), 
     #                    help="output stream   [stdout]")
     parser.add_argument("--identity",    default=0.8, type=float, 
@@ -263,13 +316,17 @@ def main():
     if o.verbose:
         sys.stderr.write("Options: %s\n"%str(o))
 
+    # allow depth-of-coverage
+    libraries, limit = [], 0
+        
     #process fasta
     sys.stderr.write("Homozygous assembly/ies will be written with input name + '.homozygous.fa.gz'\n")
     sys.stderr.write("#file name\tgenome size\tcontigs\theterozygous size\t[%]\theterozygous contigs\t[%]\tidentity [%]\tpossible joins\thomozygous size\t[%]\thomozygous contigs\t[%]\n")
     for fasta in o.fasta:
         out = gzip.open(fasta.name+".homozygous.fa.gz", "w")
         fasta2homozygous(out, fasta, o.identity, o.overlap, o.minLength, \
-                         o.joinOverlap, o.endTrimming, o.verbose)
+                         libraries, limit, 
+                         o.threads, o.joinOverlap, o.endTrimming, o.verbose)
         out.close()
 
 if __name__=='__main__': 
@@ -278,7 +335,7 @@ if __name__=='__main__':
         main()
     except KeyboardInterrupt:
         sys.stderr.write("\nCtrl-C pressed!      \n")
-    except IOError as e:
-        sys.stderr.write("I/O error({0}): {1}\n".format(e.errno, e.strerror))
+    #except IOError as e:
+    #    sys.stderr.write("I/O error({0}): {1}\n".format(e.errno, e.strerror))
     dt = datetime.now()-t0
     sys.stderr.write("#Time elapsed: %s\n"%dt)

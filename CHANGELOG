@@ -1,3 +1,0 @@
-
-0.10b
-	-l/--limit now takes number of reads limit as fraction of homozygous genome size. To process all reads set -l to 0. 

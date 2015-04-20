@@ -111,19 +111,20 @@ def sam2sspace_tab_OLD(inhandle,outhandle,mapqTh=0,verbose=False):
             break
     sys.stderr.write( "   %s pairs. %s passed filtering [%.2f%s]. %s in different contigs [%.2f%s].\n" % (i,j,j*100.0/i,'%',k,k*100.0/i,'%') )
 
-def _get_bwamem_proc(fn1,fn2,ref,maxins,cores,upto,verbose,bufsize=-1):
+def _get_bwamem_proc(fn1, fn2, ref, maxins, cores, upto, verbose, log=sys.stderr):
     """Return bwamem subprocess.
     bufsize: 0 no buffer; 1 buffer one line; -1 set system default.
     """
-    bwaArgs = ['bwa', 'mem', '-t', str(cores), ref, fn1, fn2 ]
+    # skip mate rescue
+    bwaArgs = ['bwa', 'mem', '-S', '-t', str(cores), ref, fn1, fn2 ]
     if verbose:
         sys.stderr.write( "  %s\n" % " ".join(bwaArgs) )
     #select ids
-    bwaProc = subprocess.Popen(bwaArgs, bufsize=bufsize, \
-                               stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    bwaProc = subprocess.Popen(bwaArgs, stdout=subprocess.PIPE, stderr=log)
     return bwaProc
     
-def get_tab_files( outdir,reffile,libNames,fReadsFnames,rReadsFnames,inserts,iBounds,cores,mapqTh,upto,verbose ):
+def get_tab_files(outdir, reffile, libNames, fReadsFnames, rReadsFnames, inserts, iBounds,\
+                  cores, mapqTh, upto, verbose):
     """Prepare genome index, align all libs and save TAB file"""
     #create genome index
     ref = reffile.name
@@ -141,24 +142,25 @@ def get_tab_files( outdir,reffile,libNames,fReadsFnames,rReadsFnames,inserts,iBo
         if verbose:
             sys.stderr.write( "[%s] [lib] %s\n" % (datetime.ctime(datetime.now()),libName) )
         #define tab output
-        outfn = "%s.%s.tab" % ( outdir,libName ) 
+        outfn = "%s.%s.tab" % (outdir, libName)
         #skip if file exists
         if os.path.isfile( outfn ):
             sys.stderr.write( "  File exists: %s\n" % outfn )
             tabFnames.append( outfn )
             continue
-        out   = open( outfn,"w" )
+        out = open(outfn, "w")
+        log = open(outfn+".log", "w")
         #define max insert size allowed
         maxins = ( 1.0+iFrac ) * iSize
         #run bowtie2 for all libs        
-        proc = _get_bwamem_proc( f1.name,f2.name,ref,maxins,cores,upto,verbose )
+        proc = _get_bwamem_proc(f1.name, f2.name, ref, maxins, cores, upto, verbose, log)
         #proc = _get_gem_proc( f1.name,f2.name,ref,maxins,upto,cores,verbose )
         #parse botwie output
-        sam2sspace_tab( proc.stdout,out,mapqTh,upto )
+        sam2sspace_tab(proc.stdout, out, mapqTh, upto)
         #close file
         out.close()
-        tabFnames.append( outfn )
-
+        tabFnames.append(outfn)
+        proc.terminate()
     return tabFnames
     
 def get_libs( outdir,libFn,libNames,tabFnames,inserts,iBounds,orientations,verbose ):
@@ -170,8 +172,11 @@ def get_libs( outdir,libFn,libNames,tabFnames,inserts,iBounds,orientations,verbo
             sys.stderr.write( " Reading libs from %s\n" % libFn )
         lines = open(libFn).readlines()
     #add TAB libs
-    for t in zip( libNames,tabFnames,inserts,iBounds,orientations ):
-        lines.append( "%s\tTAB\t%s\t%s\t%s\t%s\n" % t )
+    tabline = "%s\tTAB\t%s\t%s\t%s\t%s\n"
+    for libname, tabfn, isize, isfrac, orient in zip(libNames, tabFnames, inserts, \
+                                                     iBounds, orientations):
+        lines.append(tabline%(libname, os.path.basename(tabfn), \
+                              isize, isfrac, orient))
 
     outfn = "%s.libs.txt" % outdir #os.path.join( outdir,"libs.txt" )
     if verbose:
@@ -183,10 +188,14 @@ def fastq2sspace(out, fasta, lib, libnames, libFs, libRs, orientations,  \
                  libIS, libISStDev, cores, mapq, upto, minlinks, \
                  sspacebin, verbose):
     """Map reads onto contigs, prepare library file and execute SSPACE2"""
+    # get dir variables
+    curdir = os.path.abspath(os.path.curdir)
+    outfn  = os.path.basename(out)
+    outdir = os.path.dirname(out)
     #generate outdirs if out contain dir and dir not exists
-    if os.path.dirname(out):
-        if not os.path.isdir(os.path.dirname(out)):
-            os.makedirs(os.path.dirname(out))
+    if outdir:
+        if not os.path.isdir(outdir):
+            os.makedirs(outdir)
     
     #get tab files
     if verbose:
@@ -198,11 +207,17 @@ def fastq2sspace(out, fasta, lib, libnames, libFs, libRs, orientations,  \
         sys.stderr.write("[%s] Generating libraries file...\n" % datetime.ctime(datetime.now()) )
     libFn = get_libs(out, lib, libnames, tabFnames, libIS, libISStDev, orientations, verbose)
 
-    #print sspace cmd
-    cmd = "perl %s -l %s -a 0.7 -k %s -s %s -b %s > %s.sspace.log"%(sspacebin, libFn, minlinks, fasta.name, out, out)
+    # run sspace
+    ## change dir to outdir - sspace output intermediate files always in curdir
+    os.chdir(outdir)
+    CMD = "perl %s -l %s -a 0.7 -k %s -s %s -b %s > %s.sspace.log"
+    cmd = CMD%(sspacebin, os.path.basename(libFn), minlinks, \
+               os.path.basename(fasta.name), outfn, outfn)
     if verbose:
         sys.stderr.write(" %s\n"%cmd)
     os.system(cmd)
+    ## change to basal dir
+    os.chdir(curdir)
     
 def main():
 
