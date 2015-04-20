@@ -11,20 +11,40 @@ epilog="""Author: l.p.pryszcz@gmail.com
 Mizerow, 26/08/2014
 """
 
-import gzip, math, os, sys
+import gzip, math, os, sys, subprocess
 from datetime import datetime
 from Bio import SeqIO
 
 def last(fasta, identity, threads, verbose):
-    """Start LAST"""
-    #if not os.path.isfile(fasta+".11.ooc"):
-    cmd0 = "lastdb %s %s" % (fasta, fasta)
-    cmd1 = "lastal -T 1 %s %s | maf-convert psl - > %s.psl"%(fasta, fasta, fasta)
-    cmd2 = "awk '$10!=$14 && $11>=$15' %s*.psl | sort -k11nr,11 -k12n,12 -k13nr,13 | gzip > %s.psl.gz"%(fasta, fasta)
-    #run LAST
-    os.system(cmd0)
-    os.system(cmd1)
+    """Start LAST with multiple threads."""
+    # build db
+    if not os.path.isfile(fasta+".suf"):
+        os.system("lastdb %s %s" % (fasta, fasta))
+    # run LAST as subprocess batch
+    procs1, procs2, outs = [], [], []
+    cmd11 = ["lastal", "-T 1", fasta, "-"]
+    cmd12 = ["maf-convert", "psl", "-"]# > %s.psl"]
+    for i in range(threads):
+        out   = open("%s_%s.psl"%(fasta, i), "w")
+        log1  = open("%s_%s.psl.log1"%(fasta, i), "w")
+        log2  = open("%s_%s.psl.log2"%(fasta, i), "w")
+        proc1 = subprocess.Popen(cmd11, stdin=subprocess.PIPE, \
+                                stdout=subprocess.PIPE, stderr=log1)
+        proc2 = subprocess.Popen(cmd12, stdin=proc1.stdout, \
+                                stdout=out, stderr=log2)
+        outs.append(out)
+        procs1.append(proc1)
+        procs2.append(proc2)
+    # parse fasta
+    for i, r in enumerate(SeqIO.parse(fasta, 'fasta')):
+        procs1[i%threads].stdin.write(r.format('fasta'))
+    # wait until all finish
+    for out, proc1, proc2 in zip(outs, procs1, procs2):
+        proc1.stdin.close()
+        proc2.wait()
+        out.close() #'''
     # sort and take into account only larger vs smaller
+    cmd2 = "awk '$10!=$14 && $11>=$15' %s*.psl | sort -k11nr,11 -k12n,12 -k13nr,13 | gzip > %s.psl.gz"%(fasta, fasta)
     if verbose:
         sys.stderr.write(cmd2+'\n')
     os.system(cmd2)
@@ -315,7 +335,7 @@ if __name__=='__main__':
         main()
     except KeyboardInterrupt:
         sys.stderr.write("\nCtrl-C pressed!      \n")
-    except IOError as e:
-        sys.stderr.write("I/O error({0}): {1}\n".format(e.errno, e.strerror))
+    #except IOError as e:
+    #    sys.stderr.write("I/O error({0}): {1}\n".format(e.errno, e.strerror))
     dt = datetime.now()-t0
     sys.stderr.write("#Time elapsed: %s\n"%dt)

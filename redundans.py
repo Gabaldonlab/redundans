@@ -132,15 +132,19 @@ def run_scaffolding(outdir, scaffoldsFname, fastq, libraries, reducedFname, mapq
         fastaSize = int(stats.split('\t')[2])
         gapSize   = int(stats.split('\t')[-2])
         if 1.0 * gapSize / fastaSize > 0.01:
-            # close gaps
+            # close gaps & reduce
             if verbose:
-                sys.stderr.write("  closing gaps ...\n")
+                sys.stderr.write("  closing gaps & reducing ...\n")
             nogapsFname = ".".join(pout.split(".")[:-1]) + ".filled.fa"
             basename    = "_sspace.%s.%s._gapcloser"%(i, j)
             run_gapclosing(outdir, mapq, [libraries[i-1],], nogapsFname, pout, \
                            threads, limit, 1, 0, basename)
+            reducedFname = ".".join(pout.split(".")[:-1]) + ".reduced.fa"
+            with open(reducedFname, "w") as out:
+                fasta2homozygous(out, open(nogapsFname), identity, overlap, \
+                                 minLength, libraries, limit, threads)
             # update pout
-            pout = nogapsFname
+            pout = reducedFname #nogapsFname
         # update library insert size estimation, especially for mate-pairs
         libraries = get_libraries(fastq, pout, mapq, threads, verbose=0)
     # create symlink to final scaffolds or pout
@@ -228,8 +232,8 @@ def run_gapclosing(outdir, mapq, libraries, nogapsFname, scaffoldsFname, \
     symlink(pout, nogapsFname)
         
 def redundants(fastq, fasta, outdir, mapq, threads, identity, overlap, minLength, \
-               joins, readLimit, iters, sspacebin, reduction=1, scaffolding=1, gapclosing=1, \
-               verbose=1, log=sys.stderr):
+               joins, readLimit, iters, sspacebin, reduction=1, scaffolding=1, \
+               gapclosing=1, cleaning=1, verbose=1, log=sys.stderr):
     """Launch redundans pipeline."""
     # redirect stderr
     #sys.stderr = log
@@ -255,7 +259,7 @@ def redundants(fastq, fasta, outdir, mapq, threads, identity, overlap, minLength
             sys.stderr.write("#file name\tgenome size\tcontigs\theterozygous size\t[%]\theterozygous contigs\t[%]\tidentity [%]\tpossible joins\thomozygous size\t[%]\thomozygous contigs\t[%]\n")
         with open(reducedFname, "w") as out:
             fasta2homozygous(out, open(contigsFname), identity, overlap, \
-                             minLength, libraries, limit)
+                             minLength, libraries, limit, threads)
     else:
         symlink(contigsFname, reducedFname)
 
@@ -291,7 +295,7 @@ def redundants(fastq, fasta, outdir, mapq, threads, identity, overlap, minLength
             sys.stderr.write("%sReduction...\n"%timestamp())
         with open(finalFname, "w") as out:
             fasta2homozygous(out, open(nogapsFname), identity, overlap, \
-                             minLength, libraries, limit)
+                             minLength, libraries, limit, threads)
     else:
         symlink(nogapsFname, finalFname)
 
@@ -312,7 +316,13 @@ def redundants(fastq, fasta, outdir, mapq, threads, identity, overlap, minLength
 
     # Clean-up
     # rm fq.is.txt outdir/_reads,
-    # rm *.h5 CHANGEME.mphf
+    if cleaning:
+        if verbose:
+            sys.stderr.write("%sCleaning-up...\n"%timestamp())
+        for root, dirs, fnames in os.walk(outdir):
+            for fn in filter(lambda x: not x.endswith(('.fa', '.fasta', '.stats')), fnames):
+                os.unlink(os.path.join(root, fn))
+            # remove empty dirs!
 
 def _check_executable(cmd):
     """Check if executable exists."""
@@ -340,7 +350,7 @@ def main():
     redu = parser.add_argument_group('Reduction options')
     redu.add_argument("--identity",        default=0.8, type=float,
                       help="min. identity [%(default)s]")
-    redu.add_argument("--overlap",         default=0.66, type=float,
+    redu.add_argument("--overlap",         default=0.75, type=float,
                       help="min. overlap  [%(default)s]")
     redu.add_argument("--minLength",       default=200, type=int, 
                       help="min. contig length [%(default)s]")
@@ -361,6 +371,7 @@ def main():
     skip.add_argument('--noreduction',   action='store_false', default=True)   
     skip.add_argument('--noscaffolding', action='store_false', default=True)   
     skip.add_argument('--nogapclosing',  action='store_false', default=True)   
+    skip.add_argument('--nocleaning',    action='store_false', default=True)   
     
     o = parser.parse_args()
     if o.verbose:
@@ -383,7 +394,7 @@ def main():
     redundants(o.fastq, o.fasta, o.outdir, o.mapq, o.threads, \
                o.identity, o.overlap, o.minLength, \
                o.joins, o.limit, o.iters, o.sspacebin, \
-               o.noreduction, o.noscaffolding, o.nogapclosing, \
+               o.noreduction, o.noscaffolding, o.nogapclosing, o.nocleaning, \
                o.verbose, o.log)
 
 if __name__=='__main__': 

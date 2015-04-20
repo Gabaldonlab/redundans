@@ -26,11 +26,11 @@ so it can be run even on then laptop for small-to-medium size genomes
 - **flexible** toward many sequencing technologies (Illumina, 454 or Sanger) and library types (paired-end, mate pairs, fosmids)
 - **modular**: every step can be ommited or replaced by another tools
 
-For more information have a look at the [poster](/docs/poster.pdf).
+For more information have a look at the [poster](/docs/poster.pdf) or [manuscript](/docs/manuscript.pdf).
 
 ## Prerequisites
 - Python 2.7+ & Biopython 1.6+ `sudo easy_install -U biopython`
-- [BLAT](https://genome.ucsc.edu/FAQ/FAQblat.html#blat3)
+- [LAST](http://last.cbrc.jp/)
 - [BWA](http://bio-bwa.sourceforge.net/)
 - [SSPACE3](http://www.baseclear.com/genomics/bioinformatics/basetools/SSPACE)
 - [GapCloser](http://sourceforge.net/projects/soapdenovo2/files/GapCloser/)
