@@ -15,7 +15,24 @@ import gzip, math, os, sys, subprocess
 from datetime import datetime
 from Bio import SeqIO
 
-def last(fasta, identity, threads, verbose):
+def last_single(fasta, identity, threads, verbose):
+    """Start LAST without multiple threads.
+    Python 2.6 compatible."""
+    # build db
+    if not os.path.isfile(fasta+".suf"):
+        os.system("lastdb %s %s" % (fasta, fasta))
+    # run LAST
+    cmd1 = "lastal %s %s | maf-convert psl - > %s.psl"%(fasta, fasta, fasta)
+    os.system(cmd1)
+    # sort and take into account only larger vs smaller
+    cmd2 = "awk '$10!=$14 && $11>=$15' %s*.psl | sort -k11nr,11 -k12n,12 -k13nr,13 | gzip > %s.psl.gz"%(fasta, fasta)
+    if verbose:
+        sys.stderr.write(cmd2+'\n')
+    os.system(cmd2)
+    # clean-up
+    os.system("rm %s*.psl"%fasta)
+
+def last_multi(fasta, identity, threads, verbose):
     """Start LAST with multiple threads."""
     # build db
     if not os.path.isfile(fasta+".suf"):
@@ -29,9 +46,9 @@ def last(fasta, identity, threads, verbose):
         log1  = open("%s_%s.psl.log1"%(fasta, i), "w")
         log2  = open("%s_%s.psl.log2"%(fasta, i), "w")
         proc1 = subprocess.Popen(cmd11, stdin=subprocess.PIPE, \
-                                stdout=subprocess.PIPE, stderr=log1)
+                                 stdout=subprocess.PIPE, stderr=log1)
         proc2 = subprocess.Popen(cmd12, stdin=proc1.stdout, \
-                                stdout=out, stderr=log2)
+                                 stdout=out, stderr=log2)
         outs.append(out)
         procs1.append(proc1)
         procs2.append(proc2)
@@ -196,6 +213,11 @@ def fasta2homozygous(out, fasta, identity, overlap, minLength, \
     if libraries:
         c2cov, covTh = get_coverage(faidx, fasta.name, libraries, limit, \
                                     verbose)
+    # run last; multi on python 2.7+ only as 2.6 stalls
+    last = last_single
+    if sys.version_info.major==2:
+        if sys.version_info.minor>6:
+            last = last_multi
     #run blat
     psl = fasta.name + ".psl.gz"
     if not os.path.isfile(psl):

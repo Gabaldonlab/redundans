@@ -134,7 +134,7 @@ def run_scaffolding(outdir, scaffoldsFname, fastq, libraries, reducedFname, mapq
             if 1.0 * gapSize / fastaSize > 0.01:
                 # close gaps
                 if verbose:
-                    sys.stderr.write("  closing gaps & reducing ...\n")
+                    sys.stderr.write("  closing gaps ...\n")
                 nogapsFname = ".".join(pout.split(".")[:-1]) + ".filled.fa"
                 basename    = "_sspace.%s.%s._gapcloser"%(i, j)
                 run_gapclosing(outdir, mapq, [libraries[i-1],], nogapsFname, pout, \
