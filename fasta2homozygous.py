@@ -322,9 +322,9 @@ def main():
                         help="max threads to run [%(default)s]")
     #parser.add_argument("-o", "--output",    default=sys.stdout, type=argparse.FileType('w'), 
     #                    help="output stream   [stdout]")
-    parser.add_argument("--identity",    default=0.8, type=float, 
+    parser.add_argument("--identity",    default=0.51, type=float, 
                         help="min. identity   [%(default)s]")
-    parser.add_argument("--overlap",     default=0.75, type=float, 
+    parser.add_argument("--overlap",     default=0.66, type=float, 
                         help="min. overlap    [%(default)s]")
     parser.add_argument("--joinOverlap", default=200, type=int, 
                         help="min. end overlap to join two contigs [%(default)s]")

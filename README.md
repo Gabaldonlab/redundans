@@ -13,7 +13,7 @@ Redundans pipeline assists **an assembly of heterozygous genomes**.
 Program takes as input **assembled contigs**, **paired-end and/or mate pairs 
 sequencing libraries** and returns **scaffolded homozygous genome assembly**, 
 that should be **less fragmented** and with total **size smaller** than the input contigs. 
-In addition, Redundans will automatically **close the gaps** resulting from genome assembly or scaffolding. 
+In addition, Redundans will automatically **close the gaps** resulting from genome assembly or scaffolding [more details](/test#redundans-pipeline). 
 
 The pipeline consists of three steps/modules: 
 - **redundancy reduction**: detection and selectively removal of redundant contigs from an initial *de novo* assembly
@@ -71,7 +71,7 @@ Nevertheless, most of the pipeline parameters can be adjusted manually (default 
   -j JOINS, --joins JOINS
                         min k pairs to join contigs [5]
   -l LIMIT, --limit LIMIT
-                        align subset of reads [0.2]
+                        align subset of reads [0.2]; this means 0.2*genome size reads will be aligned; so for 100Mb genome, redundans will process 20M reads per library
   -q MAPQ, --mapq MAPQ  min mapping quality [10]
   -iters ITERS          scaffolding iterations per library  [2]
   --sspacebin SSPACEBIN
@@ -98,6 +98,12 @@ This is due to missing getops in recent Perl. Just do:
 sudo cpan
 install Perl4::CoreLibs
 ```
+
+- Reduction step takes a lot of time.
+Reduction step execute all-vs-all similarity search on your contigs. This may take some time if your assembly is heavily fragmented (>100k contigs).  
+In order to speed-up the analysis, you can use threads (i.e. `-t 8` for 8 cores). Make sure, you are running Python 2.7, as threading in reduction step is disabled in Python 2.6 and earlier.
+
+- 
 
 ## Citation
 Leszek P. Pryszcz and Toni Gabaldón (Submitted) Redundans: an assembly pipeline for highly heterozygous genomes 
