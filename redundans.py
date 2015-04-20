@@ -340,7 +340,7 @@ def main():
     redu = parser.add_argument_group('Reduction options')
     redu.add_argument("--identity",        default=0.8, type=float,
                       help="min. identity [%(default)s]")
-    redu.add_argument("--overlap",         default=0.75, type=float,
+    redu.add_argument("--overlap",         default=0.66, type=float,
                       help="min. overlap  [%(default)s]")
     redu.add_argument("--minLength",       default=200, type=int, 
                       help="min. contig length [%(default)s]")
@@ -373,7 +373,7 @@ def main():
             sys.exit(1)
 
     # check if all executables exists
-    for cmd in ('blat', 'bwa', o.sspacebin, 'GapCloser'):
+    for cmd in ('lastal', 'bwa', o.sspacebin, 'GapCloser'):
         info = _check_executable(cmd)
         if "not found" in info:
             sys.stderr.write("[ERROR] %s"%info)

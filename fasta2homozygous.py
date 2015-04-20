@@ -15,6 +15,22 @@ import gzip, math, os, sys
 from datetime import datetime
 from Bio import SeqIO
 
+def last(fasta, identity, threads, verbose):
+    """Start LAST"""
+    #if not os.path.isfile(fasta+".11.ooc"):
+    cmd0 = "lastdb %s %s" % (fasta, fasta)
+    cmd1 = "lastal -T 1 %s %s | maf-convert psl - > %s.psl"%(fasta, fasta, fasta)
+    cmd2 = "awk '$10!=$14 && $11>=$15' %s*.psl | sort -k11nr,11 -k12n,12 -k13nr,13 | gzip > %s.psl.gz"%(fasta, fasta)
+    #run LAST
+    os.system(cmd0)
+    os.system(cmd1)
+    # sort and take into account only larger vs smaller
+    if verbose:
+        sys.stderr.write(cmd2+'\n')
+    os.system(cmd2)
+    # clean-up
+    os.system("rm %s*.psl"%fasta)
+
 def blat(fasta, identity, threads, verbose):
     """Start BLAT"""
     #prepare BLAT command
@@ -165,7 +181,7 @@ def fasta2homozygous(out, fasta, identity, overlap, minLength, \
     if not os.path.isfile(psl):
         if verbose:
             sys.stderr.write("Running BLAT...\n")
-        blat(fasta.name, identity, threads, verbose)
+        last(fasta.name, identity, threads, verbose)
     
     if verbose:
         sys.stderr.write("Parsing alignments...\n")
