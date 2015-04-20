@@ -1,11 +1,11 @@
 ### Table of Contents
-**[Redundans](#redundans)**  
- **[Prerequisites](#prerequisites)**  
- **[Running the pipeline](#running-the-pipeline)**  
-  **[Parameters](#parameters)**  
-  **[Test run](#test-run)**  
- **[FAQ](#faq)**  
- **[Citation](#citation)**  
+- **[Redundans](#redundans)**  
+  - **[Prerequisites](#prerequisites)**  
+  - **[Running the pipeline](#running-the-pipeline)**  
+    - **[Parameters](#parameters)**  
+    - **[Test run](#test-run)**  
+  - **[FAQ](#faq)**  
+  - **[Citation](#citation)**  
 
 # Redundans
 
@@ -61,7 +61,7 @@ Nevertheless, most of the pipeline parameters can be adjusted manually (default 
 ```
 - Reduction options:
 ```
-  --identity IDENTITY   min. identity [0.8]
+  --identity IDENTITY   min. identity [0.51]
   --overlap OVERLAP     min. overlap  [0.75]
   --minLength MINLENGTH
                         min. contig length [200]
