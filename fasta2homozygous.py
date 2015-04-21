@@ -211,17 +211,19 @@ def fasta2homozygous(out, fasta, identity, overlap, minLength, \
         c2cov, covTh = get_coverage(faidx, fasta.name, libraries, limit, \
                                     verbose)
     # run blat for identity >= 0.85
-    similarity = blat
-    # or run last; multi on python 2.7+ only as 2.6 stalls
-    if identity<0.85:
-        similarity = last_single
-    if sys.version_info[0]==2 and sys.version_info[1]>6:
-        similarity = last_multi
+    similarity, name = blat, "BLAT"
+    # or run last for more diverged haplotypes
+    if identity < 0.85:
+        similarity, name = last_single, "LAST"
+        # multi-threading on python 2.7+ only, as 2.6 stalls
+        if threads > 1 and sys.version_info[0] == 2 \
+           and sys.version_info[1] > 6:
+            similarity, name = last_multi, "multithreaded LAST"
     #run blat
     psl = fasta.name + ".psl.gz"
     if not os.path.isfile(psl):
         if verbose:
-            sys.stderr.write("Running BLAT...\n")
+            sys.stderr.write("Running %s...\n"%name)
         similarity(fasta.name, identity, threads, verbose)
     
     if verbose:
