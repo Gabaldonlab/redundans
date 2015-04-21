@@ -376,7 +376,7 @@ def main():
             sys.exit(1)
 
     # check if all executables exists
-    for cmd in ('lastal', 'bwa', o.sspacebin, 'GapCloser'):
+    for cmd in ('blat', 'lastal', 'bwa', o.sspacebin, 'GapCloser'):
         info = _check_executable(cmd)
         if "not found" in info:
             sys.stderr.write("[ERROR] %s"%info)

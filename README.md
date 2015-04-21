@@ -111,10 +111,10 @@ You can specify library statistics manually. To do so, look for *.is.txt file sp
 ```
 
 - Why does Redundans use two similarity search algorithms, [BLAT](https://genome.ucsc.edu/FAQ/FAQblat.html#blat3) & [LAST](http://last.cbrc.jp/)?
-BLAT is lightweight & very fast, but lack sensitivity for more diverged sequences. If you specify `--identity` below 0.85, the pipeline will use LAST, that is ~5x slower, but more sensitive than BLAT.
+BLAT is lightweight & very fast, but lack sensitivity for more diverged sequences. If you specify `--identity` below 0.85, the pipeline will use LAST, that is ~4x slower, but more sensitive than BLAT.
 Our simulations shows LAST is capable of correctly reducing heterozygous assemblies with 40% divergence between haplotypes (or even more!).
 To limit speed difference between these two algorithms, LAST runs in multiple threads, so using `-t 4` you shouldn't see any difference in runtime between runs for `--identity 0.9` or `--identity 0.5`. Note, this only works in Python 2.7! 
 
 
 ## Citation
-Leszek P. Pryszcz and Toni Gabaldón (Submitted) Redundans: an assembly pipeline for highly heterozygous genomes 
+Leszek P. Pryszcz and Toni Gabaldón (Submitted) Redundans: an assembly pipeline for highly heterozygous genomes.  
