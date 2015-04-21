@@ -1,6 +1,9 @@
-####0.11b
+####0.11c
 	-depth-of-coverage is used in reduction step
 	-calculate insert size from global distribution maximun, not mean
+
+####0.11b
+    - two similarity search algorithms: BLAT for `--identity 0.85`+ and LAST for `--identity` < 0.85
 
 ####0.11a
 	- iterative insert size estimation refining for mate pairs

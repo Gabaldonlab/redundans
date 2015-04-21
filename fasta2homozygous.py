@@ -16,31 +16,28 @@ from datetime import datetime
 from Bio import SeqIO
 
 def last_single(fasta, identity, threads, verbose):
-    """Start LAST without multiple threads.
+    """Start LAST with single thread.
     Python 2.6 compatible."""
     # build db
     if not os.path.isfile(fasta+".suf"):
         os.system("lastdb %s %s" % (fasta, fasta))
     # run LAST
-    cmd1 = "lastal %s %s | maf-convert psl - > %s.psl"%(fasta, fasta, fasta)
-    os.system(cmd1)
+    cmd  = "lastal %s %s | maf-convert psl - | "%(fasta, fasta)
     # sort and take into account only larger vs smaller
-    cmd2 = "awk '$10!=$14 && $11>=$15' %s*.psl | sort -k11nr,11 -k12n,12 -k13nr,13 | gzip > %s.psl.gz"%(fasta, fasta)
-    if verbose:
-        sys.stderr.write(cmd2+'\n')
-    os.system(cmd2)
-    # clean-up
-    os.system("rm %s*.psl"%fasta)
+    cmd += "awk '$10!=$14 && $11>=$15' | sort -k11nr,11 -k12n,12 -k13nr,13 | gzip > %s.psl.gz"%fasta
+    os.system(cmd)
 
 def last_multi(fasta, identity, threads, verbose):
-    """Start LAST with multiple threads."""
+    """Start LAST with multiple threads.
+    Works only on Python 2.7, stalls on 2.6.
+    """
     # build db
     if not os.path.isfile(fasta+".suf"):
         os.system("lastdb %s %s" % (fasta, fasta))
     # run LAST as subprocess batch
     procs1, procs2, outs = [], [], []
-    cmd11 = ["lastal", fasta, "-"] #"-T 1", -f 0 > tab and parse directly
-    cmd12 = ["maf-convert", "psl", "-"]# > %s.psl"]
+    cmd11 = ["lastal", fasta, "-"] 
+    cmd12 = ["maf-convert", "psl", "-"]
     for i in range(threads):
         out   = open("%s_%s.psl"%(fasta, i), "w")
         log1  = open("%s_%s.psl.log1"%(fasta, i), "w")
@@ -71,7 +68,7 @@ def last_multi(fasta, identity, threads, verbose):
 def blat(fasta, identity, threads, verbose):
     """Start BLAT"""
     #prepare BLAT command
-    identity = int(100*identity)-1
+    identity = int(100*identity)
     args = ["-ooc=%s.11.ooc"%fasta, "-dots=1000", "-noHead", "-extendThroughN", \
             "-minMatch=5", "-repMatch=10", \
             "-minScore=%s"%identity, "-minIdentity=%s"%identity] 
@@ -86,12 +83,12 @@ def blat(fasta, identity, threads, verbose):
     #run BLAT
     os.system(cmd)
     # sort and take into account only larger vs smaller
-    cmd2 = "awk '$10!=$14 && $11>=$15' %s*.psl | sort -k11nr,11 -k12n,12 -k13nr,13 | gzip > %s.psl.gz"%(fasta, fasta)
+    cmd2 = "awk '$10!=$14 && $11>=$15' %s.psl | sort -k11nr,11 -k12n,12 -k13nr,13 | gzip > %s.psl.gz"%(fasta, fasta)
     if verbose:
         sys.stderr.write(cmd2+'\n')
     os.system(cmd2)
     # clean-up
-    os.system("rm %s*.psl %s.11.ooc"%(fasta, fasta))
+    os.system("rm %s.psl %s.11.ooc"%(fasta, fasta))
 
 def get_ranges(starts, sizes, offset=1):
     """Return str representation of alg ranges"""
@@ -213,16 +210,19 @@ def fasta2homozygous(out, fasta, identity, overlap, minLength, \
     if libraries:
         c2cov, covTh = get_coverage(faidx, fasta.name, libraries, limit, \
                                     verbose)
-    # run last; multi on python 2.7+ only as 2.6 stalls
-    last = last_single
+    # run blat for identity >= 0.85
+    similarity = blat
+    # or run last; multi on python 2.7+ only as 2.6 stalls
+    if identity<0.85:
+        similarity = last_single
     if sys.version_info[0]==2 and sys.version_info[1]>6:
-        last = last_multi
+        similarity = last_multi
     #run blat
     psl = fasta.name + ".psl.gz"
     if not os.path.isfile(psl):
         if verbose:
             sys.stderr.write("Running BLAT...\n")
-        last(fasta.name, identity, threads, verbose)
+        similarity(fasta.name, identity, threads, verbose)
     
     if verbose:
         sys.stderr.write("Parsing alignments...\n")
@@ -322,7 +322,7 @@ def main():
                         help="max threads to run [%(default)s]")
     #parser.add_argument("-o", "--output",    default=sys.stdout, type=argparse.FileType('w'), 
     #                    help="output stream   [stdout]")
-    parser.add_argument("--identity",    default=0.51, type=float, 
+    parser.add_argument("--identity",    default=0.85, type=float, 
                         help="min. identity   [%(default)s]")
     parser.add_argument("--overlap",     default=0.66, type=float, 
                         help="min. overlap    [%(default)s]")
