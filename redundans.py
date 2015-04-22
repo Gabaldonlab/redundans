@@ -65,7 +65,7 @@ def get_libraries(fastq, fasta, mapq, threads, verbose, limit=0):
     # add libraries strating from lowest insert size
     for fq1, fq2, ismedian, ismean, isstd, pairs in sorted(libdata, key=lambda x: x[3]):
         # add new library set if 
-        if not libraries or ismedian > 1.5*libraries[-1][4][0]:
+        if not libraries or ismean > 1.5*libraries[-1][4][0]:
             # libnames, libFs, libRs, orientations, libIS, libISStDev
             libraries.append([[], [], [], [], [], []])
             i = 1
