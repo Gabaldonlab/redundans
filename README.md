@@ -103,7 +103,7 @@ install Perl4::CoreLibs
 Reduction step execute all-vs-all similarity search on your contigs. This may take some time if your assembly is heavily fragmented (>100k contigs).
 In order to speed-up the analysis, you can use threads (i.e. `-t 8` for 8 cores). Make sure, you are running Python 2.7, as threading in reduction step is disabled in Python 2.6 and earlier.
 
-### Estimation of my library statistics (insert size, standard deviation, pair orientation) is incorrect. Can I specify these values manually?   
+### Estimation of my library statistics is incorrect. Can I specify these values manually?   
 This can happen for highly fragmented assemblies or poor quality libraries. You can specify library statistics manually. To do so, look for *.is.txt file specific for your library i.e. for `-i 5000_1.fq.gz 5000_2.fq.gz` you will have to enter requested values into `5000_2.fq.gz.is.txt`. Make sure you specify some large number of mates for requested orientation (ie 100,000). For example if you want mate-pairs with RF orientation and 5kb insert size +/- 1.5kb, enter into respective *.is.txt file:
 ```bash
 5000.0        5000.0  1500.0  0       0      100000   0
