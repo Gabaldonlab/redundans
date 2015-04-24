@@ -4,6 +4,7 @@
 
 ####0.11b
     - two similarity search algorithms: BLAT for `--identity 0.85`+ and LAST for `--identity` < 0.85
+    - corrected error in fastq2sspace.py, so now libraries are merged based on mean insert size, not median
 
 ####0.11a
 	- iterative insert size estimation refining for mate pairs

@@ -335,7 +335,7 @@ def main():
                         help="assembly FASTA file")
     parser.add_argument("-o", "--outdir",  default="redundans", 
                         help="output directory [%(default)s]")
-    parser.add_argument("-t", "--threads", default=2, type=int, 
+    parser.add_argument("-t", "--threads", default=4, type=int, 
                         help="max threads to run [%(default)s]")
     parser.add_argument("--log",           default=None, type=argparse.FileType('w'), 
                         help="output log to [stderr]")

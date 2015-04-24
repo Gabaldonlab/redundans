@@ -56,13 +56,13 @@ Nevertheless, most of the pipeline parameters can be adjusted manually (default 
   -o OUTDIR, --outdir OUTDIR
                         output directory [redundans]
   -t THREADS, --threads THREADS
-                        max threads to run [2]
+                        max threads to run [4]
   --log LOG             output log to [stderr]
 ```
 - Reduction options:
 ```
   --identity IDENTITY   min. identity [0.51]
-  --overlap OVERLAP     min. overlap  [0.75]
+  --overlap OVERLAP     min. overlap  [0.66]
   --minLength MINLENGTH
                         min. contig length [200]
 ```
@@ -103,17 +103,17 @@ install Perl4::CoreLibs
 Reduction step execute all-vs-all similarity search on your contigs. This may take some time if your assembly is heavily fragmented (>100k contigs).  
 In order to speed-up the analysis, you can use threads (i.e. `-t 8` for 8 cores). Make sure, you are running Python 2.7, as threading in reduction step is disabled in Python 2.6 and earlier.
 
-- Estimation of my library statistics (insert size, standard deviation, pair orientation) is incorrect. Can I specify these values manually?
+- Estimation of my library statistics (insert size, standard deviation, pair orientation) is incorrect. Can I specify these values manually?  
 This can happen for highly fragmented assemblies or poor quality libraries. 
 You can specify library statistics manually. To do so, look for *.is.txt file specific for your library i.e. for `-i 5000_1.fq.gz 5000_2.fq.gz` you will have to enter requested values into `5000_2.fq.gz.is.txt`. Make sure you specify some large number of mates for requested orientation (ie 100,000). For example if you want mate-pairs with RF orientation and 5kb insert size +/- 1.5kb, enter into respective *.is.txt file:
 ```bash
 5000.0        5000.0  1500.0  0       0      100000   0
 ```
 
-- Why does Redundans use two similarity search algorithms, [BLAT](https://genome.ucsc.edu/FAQ/FAQblat.html#blat3) & [LAST](http://last.cbrc.jp/)?
+- Why does Redundans use two similarity search algorithms, [BLAT](https://genome.ucsc.edu/FAQ/FAQblat.html#blat3) & [LAST](http://last.cbrc.jp/)?  
 BLAT is lightweight & very fast, but lack sensitivity for more diverged sequences. If you specify `--identity` below 0.85, the pipeline will use LAST, that is ~4x slower, but more sensitive than BLAT.
-Our simulations shows LAST is capable of correctly reducing heterozygous assemblies with up to 45% divergence between haplotypes.
-To limit speed difference between these two algorithms, LAST runs in multiple threads, so using `-t 4` you shouldn't see any difference in runtime between runs for `--identity 0.9` or `--identity 0.5`. Note, this only works in Python 2.7! 
+Our simulations shows LAST is capable of correctly reducing heterozygous assemblies with up to 45% divergence between haplotypes.  
+To limit speed difference between these two algorithms, LAST **runs in multiple threads**, so using `-t 4` you shouldn't see any difference in runtime between runs for `--identity 0.9` or `--identity 0.5`. Note, this only works in Python 2.7! 
 
 
 ## Citation
