@@ -28,6 +28,8 @@ so it can be run even on then laptop for small-to-medium size genomes
 
 For more information have a look at the [poster](/docs/poster.pdf) or [manuscript](/docs/manuscript.pdf).
 
+![Flowchart](/docs/redundans_flowchart.png)
+
 ## Prerequisites
 - Python 2.7+ & Biopython 1.6+ `sudo easy_install -U biopython`
 - [BLAT](https://genome.ucsc.edu/FAQ/FAQblat.html#blat3) & [LAST](http://last.cbrc.jp/)
