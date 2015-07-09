@@ -113,8 +113,10 @@ This can happen for highly fragmented assemblies or poor quality libraries. You 
 
 ### No alignments error.  
 If you see warning messages like the ones below while running the test set: 
+```bash
 [WARNING] No alignments for test/5000_1.fq.gz - test/5000_2.fq.gz!
 [WARNING] No alignments for test/600_1.fq.gz - test/600_2.fq.gz!
+```
 
 The problem is because older version of BWA lack MEM algorithm (check it by executing `bwa mem`). If it gives you an error, download the latest [BWA](http://bio-bwa.sourceforge.net/).  
 
