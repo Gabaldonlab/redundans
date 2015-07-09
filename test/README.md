@@ -70,7 +70,7 @@ for f in *.fq.gz; do ln -s $f `echo $f | sed 's/random.//;s/.d05.l40//'`; done
 ```
 
 ### *De novo* genome assembly
-Simulated reads were assembled with SPAdes v.3.5.0. In order 
+Simulated reads were assembled with SPAdes v.3.5.0. 
 ```bash
 dipspades.py --only-assembler -t 4 -o 600 -1 600_1.fq.gz -2 600_2.fq.gz
 ```

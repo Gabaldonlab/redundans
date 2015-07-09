@@ -111,6 +111,13 @@ This can happen for highly fragmented assemblies or poor quality libraries. You 
 5000.0        5000.0  1500.0  0       0      100000   0
 ```
 
+### No alignments error.  
+If you see warning messages like the ones below while running the test set: 
+[WARNING] No alignments for test/5000_1.fq.gz - test/5000_2.fq.gz!
+[WARNING] No alignments for test/600_1.fq.gz - test/600_2.fq.gz!
+
+The problem is because older version of BWA lack MEM algorithm (check it by executing `bwa mem`). If it gives you an error, download the latest [BWA](http://bio-bwa.sourceforge.net/).  
+
 ### Why does Redundans use two similarity search algorithms, [BLAT](https://genome.ucsc.edu/FAQ/FAQblat.html#blat3) & [LAST](http://last.cbrc.jp/)?   
 BLAT is lightweight & very fast, but lack sensitivity for more diverged sequences. If you specify `--identity` below 0.85, the pipeline will use LAST, that is ~4x slower, but more sensitive than BLAT.
 Our simulations shows LAST is capable of correctly reducing heterozygous assemblies with up to 45% divergence between haplotypes.   
