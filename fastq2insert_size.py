@@ -107,7 +107,7 @@ def get_isize_stats(fq1, fq2, fasta, mapqTh=10, threads=1,
         with open(fq2+".is.txt", "w") as out:
             out.write("%s\t%s\t%s\t%s\n"%(ismedian, ismean, isstd, "\t".join(map(str, pairs))))
     except:
-        sys.stderr.write("[WARNING] Couldn't write library statistics to: %s\n"%(fq2+".is.txt",))
+        sys.stderr.write("[WARNING] Couldn't write library statistics to %s\n"%(fq2+".is.txt",))
     return ismedian, ismean, isstd, pairs
 
 def fastq2insert_size(out, fastq, fasta, mapq, threads, limit, verbose):
