@@ -396,9 +396,9 @@ if __name__=='__main__':
     except KeyboardInterrupt:
         sys.stderr.write("\nCtrl-C pressed!      \n")
     except IOError as e:
-        sys.stderr.write("I/O error({0}): {1}\n".format(e.errno, e.strerror))
+        sys.stderr.write("I/O error({0}): {1}\n{2}\n".format(e.errno, e.strerror, str(e)))
     #[Errno 95] Operation not supported ie symlinks over samba or in NFS shares
     except OSError as e:
-        sys.stderr.write("OS error({0}): {1}\n".format(e.errno, e.strerror))
+        sys.stderr.write("%s\n"%str(e))
     dt = datetime.now()-t0
     sys.stderr.write("#Time elapsed: %s\n"%dt)
