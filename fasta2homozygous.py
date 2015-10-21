@@ -43,9 +43,9 @@ def last_multi(fasta, identity, threads, verbose):
         log1  = open("%s_%s.psl.log1"%(fasta, i), "w")
         log2  = open("%s_%s.psl.log2"%(fasta, i), "w")
         proc1 = subprocess.Popen(cmd11, stdin=subprocess.PIPE, \
-                                 stdout=subprocess.PIPE, stderr=log1)
+                                 stdout=subprocess.PIPE, stderr=log1, shell=True)
         proc2 = subprocess.Popen(cmd12, stdin=proc1.stdout, \
-                                 stdout=out, stderr=log2)
+                                 stdout=out, stderr=log2, shell=True)
         outs.append(out)
         procs1.append(proc1)
         procs2.append(proc2)

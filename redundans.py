@@ -226,7 +226,7 @@ def run_gapclosing(outdir, mapq, libraries, nogapsFname, scaffoldsFname, \
                 #sys.stderr.write( "  %s\n" % " ".join(cmd) )
             # run GapCloser and save stdout/err to log file
             with open(out+".log", "w") as log:
-                GapCloser = subprocess.Popen(cmd, stdout=log, stderr=log)
+                GapCloser = subprocess.Popen(cmd, stdout=log, stderr=log, shell=True)
                 GapCloser.wait()
             # store out info
             pout = out
