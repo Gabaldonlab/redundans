@@ -120,6 +120,19 @@ If you see warning messages like the ones below while running the test set:
 
 The problem is because older version of BWA lack MEM algorithm (check it by executing `bwa mem`). If it gives you an error, download the latest [BWA](http://bio-bwa.sourceforge.net/).  
 
+### Redundans fails with OSError or maf-convert is missing.  
+Make sure you are using the latest version of [LAST](http://last.cbrc.jp/) aligner and that all dependencies are accessible through your PATH environmental variable. 
+
+```bash
+OSError: [Errno 13] Permission denied
+
+# or
+OSError: [Errno 2] No such file or directory
+
+# or
+[ERROR] maf-convert: not found
+```
+
 ### Why does Redundans use two similarity search algorithms, [BLAT](https://genome.ucsc.edu/FAQ/FAQblat.html#blat3) & [LAST](http://last.cbrc.jp/)?   
 BLAT is lightweight & very fast, but lack sensitivity for more diverged sequences. If you specify `--identity` below 0.85, the pipeline will use LAST, that is ~4x slower, but more sensitive than BLAT.
 Our simulations shows LAST is capable of correctly reducing heterozygous assemblies with up to 45% divergence between haplotypes.   
