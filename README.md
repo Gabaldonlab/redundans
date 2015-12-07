@@ -138,8 +138,8 @@ BLAT is lightweight & very fast, but lack sensitivity for more diverged sequence
 Our simulations shows LAST is capable of correctly reducing heterozygous assemblies with up to 45% divergence between haplotypes.   
 To limit speed difference between these two algorithms, LAST **runs in multiple threads**, so using `-t 4` you shouldn't see any difference in runtime between runs for `--identity 0.9` or `--identity 0.5`. Note, this only works in Python 2.7! 
 
-### How is multiple redundancy handled #8 ? 
-Redundans removes all contigs, but the longest one, that fullfill identity & overlap critaria during reduction step. 
+### How is multiple redundancy handled? 
+Redundans removes all contigs, but the longest one, that fullfill identity & overlap critaria during reduction step (#8). 
 
 ## Citation
 Leszek P. Pryszcz and Toni Gabaldón (Submitted) Redundans: an assembly pipeline for highly heterozygous genomes. 
