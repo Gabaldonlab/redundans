@@ -139,7 +139,7 @@ Our simulations shows LAST is capable of correctly reducing heterozygous assembl
 To limit speed difference between these two algorithms, LAST **runs in multiple threads**, so using `-t 4` you shouldn't see any difference in runtime between runs for `--identity 0.9` or `--identity 0.5`. Note, this only works in Python 2.7! 
 
 ### How is multiple redundancy handled? 
-Redundans removes all contigs, but the longest one, that fullfill identity & overlap critaria during reduction step. For more info see [issue #8](/issues/8) #8 . 
+Redundans removes all contigs, but the longest one, that fullfill identity & overlap critaria during reduction step. For more info see [issue #8](https://github.com/lpryszcz/redundans/issues/8). 
 
 ## Citation
 Leszek P. Pryszcz and Toni Gabaldón (Submitted) Redundans: an assembly pipeline for highly heterozygous genomes. 
