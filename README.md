@@ -8,7 +8,7 @@
   - **[Citation](#citation)**  
 
 # Redundans
-
+ 
 Redundans pipeline assists **an assembly of heterozygous genomes**.  
 Program takes as input **assembled contigs**, **paired-end and/or mate pairs 
 sequencing libraries** and returns **scaffolded homozygous genome assembly**, 
