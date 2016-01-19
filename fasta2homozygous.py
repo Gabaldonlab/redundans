@@ -2,10 +2,12 @@
 desc="""Align genome onto itself (BLAT) and remove heterozygous (redundant) scaffolds.
 
 TO ADD:
+- multicore BLAT (blat_multi)
 - scaffold extension based on overlapping matches (overlapping already recognised)
 - reporting of haplotypes
 - recognise heterozygous contigs with translocations
 - add min contig length, ignore shorter contigs
+- in memory sorting (so far patched with 80%) #https://github.com/lpryszcz/redundans/issues/9
 """
 epilog="""Author: l.p.pryszcz@gmail.com
 Mizerow, 26/08/2014
@@ -24,7 +26,7 @@ def last_single(fasta, identity, threads, verbose):
     # run LAST
     cmd  = "lastal %s %s | maf-convert psl - | "%(fasta, fasta)
     # sort and take into account only larger vs smaller
-    cmd += "awk '$10!=$14 && $11>=$15' | sort -k11nr,11 -k12n,12 -k13nr,13 | gzip > %s.psl.gz"%fasta
+    cmd += "awk '$10!=$14 && $11>=$15' | sort -S %s -k11nr,11 -k12n,12 -k13nr,13 | gzip > %s.psl.gz"%("80%", fasta)
     os.system(cmd)
 
 def last_multi(fasta, identity, threads, verbose):
@@ -58,13 +60,52 @@ def last_multi(fasta, identity, threads, verbose):
         proc2.wait()
         out.close() #'''
     # sort and take into account only larger vs smaller
-    cmd2 = "awk '$10!=$14 && $11>=$15' %s*.psl | sort -k11nr,11 -k12n,12 -k13nr,13 | gzip > %s.psl.gz"%(fasta, fasta)
+    cmd2 = "awk '$10!=$14 && $11>=$15' %s*.psl | sort -S %s -k11nr,11 -k12n,12 -k13nr,13 | gzip > %s.psl.gz"%(fasta, "80%", fasta)
     if verbose:
         sys.stderr.write(cmd2+'\n')
     os.system(cmd2)
     # clean-up
     os.system("rm %s*.psl"%fasta)
 
+def blat_multi(fasta, identity, threads, verbose):
+    """Start BLAT"""
+    #prepare BLAT command
+    identity = int(100*identity)
+    args = ["-ooc=%s.11.ooc"%fasta, "-dots=1000", "-noHead", "-extendThroughN", \
+            "-minMatch=5", "-repMatch=10", \
+            "-minScore=%s"%identity, "-minIdentity=%s"%identity]
+    
+    for i in range(threads):
+        cmd = "blat %s %s %s%s %s%s.psl"%(" ".join(args), fasta, fasta, '', fasta, '')
+        if not verbose:
+            cmd += " > /dev/null"
+        else:
+            sys.stderr.write(cmd+'\n')
+        #generate overepresented 11mers if not exists
+        if not os.path.isfile(fasta+".11.ooc"):
+            os.system(cmd.replace("-ooc=", "-makeOoc="))
+        
+        out   = open("%s_%s.psl"%(fasta, i), "w")
+        log1  = open("%s_%s.psl.log1"%(fasta, i), "w")
+        log2  = open("%s_%s.psl.log2"%(fasta, i), "w")
+        proc1 = subprocess.Popen(cmd11, stdin=subprocess.PIPE, \
+                                 stdout=subprocess.PIPE, stderr=log1)
+        proc2 = subprocess.Popen(cmd12, stdin=proc1.stdout, \
+                                 stdout=out, stderr=log2)
+        outs.append(out)
+        procs1.append(proc1)
+        procs2.append(proc2)
+    
+    #run BLAT
+    os.system(cmd)
+    # sort and take into account only larger vs smaller
+    cmd2 = "awk '$10!=$14 && $11>=$15' %s*.psl | sort -k11nr,11 -k12n,12 -k13nr,13 | gzip > %s.psl.gz"%(fasta, fasta)
+    if verbose:
+        sys.stderr.write(cmd2+'\n')
+    os.system(cmd2)
+    # clean-up
+    os.system("rm %s.psl %s.11.ooc"%(fasta, fasta))
+    
 def blat(fasta, identity, threads, verbose):
     """Start BLAT"""
     #prepare BLAT command
