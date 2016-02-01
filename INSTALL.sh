@@ -7,7 +7,7 @@
 
 log="/tmp/install.log"
 installdir="$HOME/src"
-pyversion="2.7.11"
+pyversion="2.7.10"
 waiting="30s"
 
 exists()
