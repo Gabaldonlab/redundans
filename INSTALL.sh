@@ -72,14 +72,6 @@ if [ ! -d $installdir ]; then mkdir -p $installdir; fi
 cd $installdir
 
 echo `date` "Installing Python & dependencies..."
-# sqlite3
-wget -q https://www.sqlite.org/2016/sqlite-autoconf-3100200.tar.gz
-tar xpfz sqlite-autoconf-3100200.tar.gz
-ln -s sqlite-autoconf-3100200 sqlite3
-cd sqlite3
-./configure && make >> $log 2>&1
-cd ../
-
 # install pythonbrew to ~/.pythonbrew
 curl -kLs http://xrl.us/pythonbrewinstall | bash >> $log 2>&1
  
@@ -185,4 +177,12 @@ echo "###"
 
 exit 0
 
+
+# sqlite3
+wget -q https://www.sqlite.org/2016/sqlite-autoconf-3100200.tar.gz
+tar xpfz sqlite-autoconf-3100200.tar.gz
+ln -s sqlite-autoconf-3100200 sqlite3
+cd sqlite3
+./configure && make >> $log 2>&1
+cd ../
 
