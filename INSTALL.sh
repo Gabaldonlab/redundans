@@ -69,10 +69,8 @@ export PATH=$PATH:$installdir/SSPACE:$installdir/bwa:$installdir/last/src:$insta
 
 # install python 
 pythonbrew install $pyversion >> $log 2>&1
- 
 # and enable the new version
 pythonbrew switch $pyversion >> $log 2>&1
-
 # biopython, numpy
 pip install -U biopython numpy >> $log 2>&1
 
@@ -86,6 +84,12 @@ ln -s bwa-0.7.12 bwa
 cd bwa 
 make >> $log 2>&1
 cd ..
+
+
+# BLAT
+echo `date` " BLAT"
+wget -q https://raw.githubusercontent.com/lpryszcz/bin/master/blat
+chmod +x blat
 
 
 # LAST
@@ -113,12 +117,6 @@ ln -s SSPACE-STANDARD-3.0_linux-x86_64 SSPACE
 echo `date` " GapCloser"
 wget -q http://downloads.sourceforge.net/project/soapdenovo2/GapCloser/bin/r6/GapCloser-bin-v1.12-r6.tgz
 tar xpfz GapCloser-bin-v1.12-r6.tgz
-
-
-# BLAT
-echo `date` " BLAT"
-wget -q https://raw.githubusercontent.com/lpryszcz/bin/master/blat
-chmod +x blat
 
 
 # check if installed corretly
