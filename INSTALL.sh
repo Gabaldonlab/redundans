@@ -6,7 +6,7 @@
 # sudo apt-get install wget screen make git gcc make bash libc-dev
 
 log="install.log"
-installdir="~/src"
+installdir="$HOME/src"
 pyversion="2.7"
 waiting="30s"
 
@@ -27,14 +27,14 @@ echo -e "\n#######################"
 echo -e "# Redundans installer #"
 echo -e "#######################\n"
 echo "Installation may take several minutes! Installation log can be found in $log."
-echo "Redundans and dependencies will be installed in $installdir/redundans"
+echo "Redundans and its dependencies will be installed in $installdir"
 echo "Python $pyversion and all necessary dependencies will be installed in ~/.pythonbrew"
 echo " Necessary imports will be added to ~/.bashrc automatically"
 echo -e "\nStarting in ${waiting}... Press Ctrl-C if you wish to cancel.\n"
 
 sleep $waiting 
 
-if ! -d $installdir; then mkdir -p $installdir; fi
+if [ ! -d $installdir ]; then mkdir -p $installdir; fi
 cd $installdir
 
 echo `date` "Installing Python & dependencies..."
@@ -73,7 +73,7 @@ cd ..
 # LAST
 echo `date` " LAST"
 wget -q http://last.cbrc.jp/last-714.zip
-unzip last-714.zip
+unzip -q last-714.zip
 ln -s last-714 last
 cd last
 make > $log 2>&1
