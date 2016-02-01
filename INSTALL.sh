@@ -3,10 +3,9 @@
 # Redundans installer for UNIX.
 ###
 
-# sudo apt-get install wget curl screen make git gcc make bash libc-dev
 # sudo apt-get install curl build-essential libbz2-dev libsqlite3-dev zlib1g-dev libxml2-dev libxslt1-dev libreadline5 libgdbm-dev  libxml2 libssl-dev tk-dev libgdbm-dev libexpat1-dev libncursesw5-dev
 # zlib.h
-# 
+
 
 log="/tmp/install.log"
 installdir="$HOME/src"
@@ -32,7 +31,7 @@ echo "Redundans and its dependencies will be installed in $installdir"
 echo "Python $pyversion and all necessary dependencies will be installed in ~/.pythonbrew"
 echo -e " Necessary imports will be added to ~/.bashrc automatically\n"
 echo "Installation may take several minutes! Installation log can be found in $log."
-echo -e "\n! Make sure libssl & zlib.h are installed ie. `sudo apt-get install zlib1g-dev libssl-dev`!\n"
+echo -e '\n! Make sure libssl & zlib.h are installed ie. `sudo apt-get install zlib1g-dev libssl-dev`!\n'
 
 # YES/NO prompt
 echo -n "Do you want to proceed with installation (y/n)? "
