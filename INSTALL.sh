@@ -18,7 +18,7 @@ exists()
 error=""
 
 # check if all programs exists
-for cmd in echo wget curl gcc make cd ln date bash1; do
+for cmd in echo wget curl gcc make cd ln date; do
     if ! exists $cmd; then
         echo "Install $cmd first!"
         error=1
