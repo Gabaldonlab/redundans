@@ -3,6 +3,8 @@
 # Redundans installer for UNIX.
 ###
 
+# sudo apt-get install wget screen make git gcc make bash libc-dev
+
 log="install.log"
 installdir="~/src"
 pyversion="2.7"
@@ -27,7 +29,7 @@ echo "Installation may take several minutes! Installation log can be found in $l
 echo "Redundans and dependencies will be installed in $installdir/redundans"
 echo "Python $pyversion and all necessary dependencies will be installed in ~/.pythonbrew"
 echo " Necessary imports will be added to ~/.bashrc automatically"
-echo "Starting in 10s... Press Ctrl-C if you wish to cancel."
+echo -e "\nStarting in 10s... Press Ctrl-C if you wish to cancel.\n"
 sleep 10s
 
 if ! -d $installdir; then mkdir -p $installdir; fi
