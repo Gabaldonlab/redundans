@@ -3,7 +3,7 @@
 # Redundans installer for UNIX.
 ###
 
-# sudo apt-get install curl screen make git gcc make bash libc-dev
+# sudo apt-get install wget curl screen make git gcc make bash libc-dev
 
 log="/tmp/install.log"
 installdir="$HOME/src"
@@ -16,7 +16,7 @@ exists()
 }
 
 # check if all programs exists
-for cmd in echo curl git gcc make cd ln date bash; do
+for cmd in echo wget curl git gcc make cd ln date bash; do
     if ! exists $cmd; then
         echo "Install $cmd first!"
         exit 1
@@ -30,9 +30,16 @@ echo "Installation may take several minutes! Installation log can be found in $l
 echo "Redundans and its dependencies will be installed in $installdir"
 echo "Python $pyversion and all necessary dependencies will be installed in ~/.pythonbrew"
 echo " Necessary imports will be added to ~/.bashrc automatically"
-echo -e "\nStarting in ${waiting}... Press Ctrl-C if you wish to cancel.\n"
 
-sleep $waiting 
+# YES/NO prompt
+echo -ne "\nDo you want to proceed with installation (y/n)? "
+read answer
+if echo "$answer" | grep -iq "^y" ; then
+    echo -n ""
+else
+    echo "Aborted!"
+    exit 0
+fi
 
 if [ ! -d $installdir ]; then mkdir -p $installdir; fi
 cd $installdir
@@ -56,7 +63,11 @@ pythonbrew install $pyversion >> $log 2>&1
 # and enable the new version
 pythonbrew switch $pyversion >> $log 2>&1
 
-## biopython, numpy, scpy
+# install pip
+#curl -O https://raw.github.com/pypa/pip/master/contrib/get-pip.py
+#python get-pip.py
+
+# biopython, numpy, scpy
 pip install -U biopython numpy scipy >> $log 2>&1
 
 
@@ -72,7 +83,7 @@ cd ..
 
 # LAST
 echo `date` " LAST"
-curl -kLs http://last.cbrc.jp/last-714.zip
+wget -q http://last.cbrc.jp/last-714.zip
 unzip -q last-714.zip
 ln -s last-714 last
 cd last
@@ -81,18 +92,18 @@ cd ..
 
 # SSPACE 
 echo `date` " SSPACE"
-curl -kLs http://www.baseclear.com/base/download/41SSPACE-STANDARD-3.0_linux-x86_64.tar.gz
+wget -q http://www.baseclear.com/base/download/41SSPACE-STANDARD-3.0_linux-x86_64.tar.gz
 tar xpfz 41SSPACE-STANDARD-3.0_linux-x86_64.tar.gz
 ln -s 41SSPACE-STANDARD-3.0_linux-x86_64 SSPACE
 
 # GapCloser
 echo `date` " GapCloser"
-curl -kLs http://downloads.sourceforge.net/project/soapdenovo2/GapCloser/bin/r6/GapCloser-bin-v1.12-r6.tgz
+wget -q http://downloads.sourceforge.net/project/soapdenovo2/GapCloser/bin/r6/GapCloser-bin-v1.12-r6.tgz
 tar xpfz GapCloser-bin-v1.12-r6.tgz
 
 # BLAT
 echo `date` " BLAT"
-curl -kLs https://raw.githubusercontent.com/lpryszcz/bin/master/blat
+wget -q https://raw.githubusercontent.com/lpryszcz/bin/master/blat
 chmod +x blat
 
 # check if installed corretly
