@@ -31,7 +31,8 @@ echo "Redundans and dependencies will be installed in $installdir/redundans"
 echo "Python $pyversion and all necessary dependencies will be installed in ~/.pythonbrew"
 echo " Necessary imports will be added to ~/.bashrc automatically"
 echo -e "\nStarting in ${waiting}... Press Ctrl-C if you wish to cancel.\n"
-sleep $waiting
+
+sleep $waiting 
 
 if ! -d $installdir; then mkdir -p $installdir; fi
 cd $installdir

@@ -31,7 +31,13 @@ For more information have a look at the [poster](/docs/poster.pdf) or [manuscrip
 ![Flowchart](/docs/redundans_flowchart.png)
 
 ## Prerequisites
-- Python 2.7+ & Biopython 1.6+ `sudo easy_install -U biopython`
+You can try installer to automatically fetch, compile and configure Redundans together with all dependencies. These should work on most UNIX systems.
+```bash
+wget -O- -q https://raw.githubusercontent.com/lpryszcz/redundans/master/INSTALL.sh | bash
+```
+
+Alternatively, you can download and configure all dependencies manually: 
+- Python 2.7+ & dependencies `sudo pip install -U biopython numpy scipy`
 - [BLAT](https://genome.ucsc.edu/FAQ/FAQblat.html#blat3) & [LAST](http://last.cbrc.jp/)
 - [BWA](http://bio-bwa.sourceforge.net/)
 - [SSPACE3](http://www.baseclear.com/genomics/bioinformatics/basetools/SSPACE)
