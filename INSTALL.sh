@@ -26,6 +26,8 @@ done
 
 echo -e "\n#####################################################################"
 echo -e "#                        Redundans installer                        #"
+echo -e "#                                                                   #"
+echo -e "#                                           l.p.pryszcz@gmail.com   #"
 echo -e "#####################################################################\n"
 echo "Redundans and its dependencies will be installed in $installdir"
 echo "Python $pyversion and all necessary dependencies will be installed in ~/.pythonbrew"
@@ -71,8 +73,8 @@ pythonbrew install $pyversion >> $log 2>&1
 # and enable the new version
 pythonbrew switch $pyversion >> $log 2>&1
 
-# biopython, numpy, scpy
-pip install -U biopython numpy scipy >> $log 2>&1
+# biopython, numpy
+pip install -U biopython numpy >> $log 2>&1
 
 
 echo `date` "Installing redundans dependencies..."
@@ -85,6 +87,7 @@ cd bwa
 make >> $log 2>&1
 cd ..
 
+
 # LAST
 echo `date` " LAST"
 wget -q http://last.cbrc.jp/last-714.zip
@@ -94,21 +97,29 @@ cd last
 make >> $log 2>&1
 cd ..
 
+
+echo `date` " Perl & SSPACE"
+# perl
+curl -L http://xrl.us/installperlnix | bash >> $log 2>&1
+# getopts.pl https://github.com/lpryszcz/redundans/#sspace-fails-with-an-error-cant-locate-getoptspl-in-inc
+cpanm Perl4::CoreLibs >> $log 2>&1
 # SSPACE - note tar.gz and dir are different!
-echo `date` " SSPACE"
 wget -q http://www.baseclear.com/base/download/41SSPACE-STANDARD-3.0_linux-x86_64.tar.gz
 tar xpfz 41SSPACE-STANDARD-3.0_linux-x86_64.tar.gz
 ln -s SSPACE-STANDARD-3.0_linux-x86_64 SSPACE
+
 
 # GapCloser
 echo `date` " GapCloser"
 wget -q http://downloads.sourceforge.net/project/soapdenovo2/GapCloser/bin/r6/GapCloser-bin-v1.12-r6.tgz
 tar xpfz GapCloser-bin-v1.12-r6.tgz
 
+
 # BLAT
 echo `date` " BLAT"
 wget -q https://raw.githubusercontent.com/lpryszcz/bin/master/blat
 chmod +x blat
+
 
 # check if installed corretly
 for cmd in blat lastal bwa GapCloser SSPACE_Standard_v3.0.pl; do
@@ -120,22 +131,26 @@ done
 
 echo `date` " Redundans"
 #git clone https://github.com/lpryszcz/redundans
-wget -O redundans.tgz https://github.com/lpryszcz/redundans/archive/master.tar.gz
+wget -q -O redundans.tgz https://github.com/lpryszcz/redundans/archive/master.tar.gz
 tar xpfz redundans.tgz
 mv redundans-master redundans
 cd redundans
 
-
-echo `date` "Trying Redundans..."
-./redundans.py -v -i test/*.fq.gz -f test/contigs.fa -o test/run1
+echo `date` "Installation finished!"
 
 
-echo -e "#####\nMake sure to register as user of:"
+echo -e "\nTo try Redundans, open new terminal and execute:"
+echo " cd $installdir/redundans"
+echo " ./redundans.py -v -i test/*.fq.gz -f test/contigs.fa -o test/run1"
+
+echo -e "###\nMake sure to register as user of:"
 echo "- SSPACE http://www.baseclear.com/genomics/bioinformatics/basetools/SSPACE"
-echo -e "#####\n"
+echo -e "###\n"
 
 echo "To uninstall execute:"
-echo " rm -rI ~/.pythonbrew ~/src/{*SSPACE,bwa,blat,GapCloser,last,redundans}*"
+echo " rm -rI ~/.pythonbrew ~/.perlbrew ~/src/{*SSPACE,bwa,blat,GapCloser,last,redundans}*"
 echo " cp ~/.bashrc_bak ~/.bashrc"
 
 exit 0
+
+
