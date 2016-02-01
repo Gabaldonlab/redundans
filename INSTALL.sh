@@ -32,7 +32,7 @@ echo "Python $pyversion and all necessary dependencies will be installed in ~/.p
 echo -e " Necessary imports will be added to ~/.bashrc automatically\n"
 
 # YES/NO prompt
-echo -n "Do you want to proceed with installation (y/n)?"
+echo -n "Do you want to proceed with installation (y/n)? "
 read answer
 if echo "$answer" | grep -iq "^y" ; then
     echo -n ""
@@ -54,19 +54,17 @@ echo "# python brew activation" >> ~/.bashrc
 echo '[[ -s "$HOME/.pythonbrew/etc/bashrc" ]] && source "$HOME/.pythonbrew/etc/bashrc"' >> ~/.bashrc
 echo 'export PATH=$PATH:'$installdir/SSPACE:$installdir/bwa:$installdir/last/src:$installdir >> ~/.bashrc
 echo "###" >> ~/.bashrc
-# reload 
-source ~/.bashrc
- 
+
+# export PATH 
+# source ~/.bashrc # not working as not interactive shell
+source "$HOME/.pythonbrew/etc/bashrc"
+export PATH=$PATH:$installdir/SSPACE:$installdir/bwa:$installdir/last/src:$installdir
+
 # install python 
 pythonbrew install $pyversion >> $log 2>&1
  
 # and enable the new version
 pythonbrew switch $pyversion >> $log 2>&1
-
-# install pip
-#wget -q wget https://bootstrap.pypa.io/get-pip.py
-#python get-pip.py
-#rm get-pip.py
 
 # biopython, numpy, scpy
 pip install -U biopython numpy scipy >> $log 2>&1
