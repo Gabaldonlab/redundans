@@ -34,9 +34,7 @@ echo -e " Necessary imports will be added to ~/.bashrc automatically\n"
 # YES/NO prompt
 echo -n "Do you want to proceed with installation (y/n)? "
 read answer
-if echo "$answer" | grep -iq "^y" ; then
-    echo -n ""
-else
+if echo "$answer" | grep -viq "^y" ; then
     echo "Aborted!"
     exit 0
 fi
