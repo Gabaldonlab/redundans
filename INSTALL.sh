@@ -3,9 +3,6 @@
 # Redundans installer for UNIX.
 ###
 
-# sudo apt-get install curl build-essential libbz2-dev libsqlite3-dev zlib1g-dev libxml2-dev libxslt1-dev libreadline5 libgdbm-dev  libxml2 libssl-dev tk-dev libgdbm-dev libexpat1-dev libncursesw5-dev
-# zlib.h
-
 log="/tmp/install.log"
 installdir="$HOME/src"
 pyversion="2.7.10"
@@ -79,7 +76,7 @@ curl -kLs http://xrl.us/pythonbrewinstall | bash >> $log 2>&1
 echo -e "\n###\n# redundans imports" >> ~/.bashrc
 echo "# python brew activation" >> ~/.bashrc
 echo '[[ -s "$HOME/.pythonbrew/etc/bashrc" ]] && source "$HOME/.pythonbrew/etc/bashrc"' >> ~/.bashrc
-echo 'export PATH=$PATH:'$installdir/sqlite3:$installdir/SSPACE:$installdir/bwa:$installdir/last/src:$installdir/last/scripts:$installdir >> ~/.bashrc
+echo 'export PATH=$PATH:'$installdir/SSPACE:$installdir/bwa:$installdir/last/src:$installdir/last/scripts:$installdir >> ~/.bashrc
 
 # export PATH 
 # source ~/.bashrc # not working as not interactive shell
@@ -140,6 +137,14 @@ wget -q http://downloads.sourceforge.net/project/soapdenovo2/GapCloser/bin/r6/Ga
 tar xpfz GapCloser-bin-v1.12-r6.tgz
 
 
+echo `date` " Redundans"
+#git clone https://github.com/lpryszcz/redundans
+wget -q -O redundans.tgz https://github.com/lpryszcz/redundans/archive/master.tar.gz
+tar xpfz redundans.tgz
+mv redundans-master redundans
+cd redundans
+
+
 # check if installed correctly
 echo `date` "Checking if all dependencies are installed..."
 for cmd in blat lastal bwa GapCloser SSPACE_Standard_v3.0.pl; do
@@ -149,40 +154,21 @@ for cmd in blat lastal bwa GapCloser SSPACE_Standard_v3.0.pl; do
 done
 
 
-echo `date` " Redundans"
-#git clone https://github.com/lpryszcz/redundans
-wget -q -O redundans.tgz https://github.com/lpryszcz/redundans/archive/master.tar.gz
-tar xpfz redundans.tgz
-mv redundans-master redundans
-cd redundans
-
-
 echo "###" >> ~/.bashrc
 echo `date` "Installation finished!"
 echo ""
 echo "To uninstall execute:"
 echo " rm -rI ~/.pythonbrew ~/.perlbrew ~/src/{*SSPACE,bwa,blat,GapCloser,last,redundans}*"
 echo " cp ~/.bashrc_bak ~/.bashrc"
-
-
 echo ""
 echo "To try Redundans, open new terminal and execute:"
 echo " cd $installdir/redundans"
 echo " ./redundans.py -v -i test/*.fq.gz -f test/contigs.fa -o test/run1"
-
+echo ""
 echo "###"
 echo "# Make sure to register as user of:"
 echo "# - SSPACE http://www.baseclear.com/genomics/bioinformatics/basetools/SSPACE"
 echo "###"
 
 exit 0
-
-
-# sqlite3
-wget -q https://www.sqlite.org/2016/sqlite-autoconf-3100200.tar.gz
-tar xpfz sqlite-autoconf-3100200.tar.gz
-ln -s sqlite-autoconf-3100200 sqlite3
-cd sqlite3
-./configure && make >> $log 2>&1
-cd ../
 
