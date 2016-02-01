@@ -29,10 +29,10 @@ echo -e "#######################\n"
 echo "Installation may take several minutes! Installation log can be found in $log."
 echo "Redundans and its dependencies will be installed in $installdir"
 echo "Python $pyversion and all necessary dependencies will be installed in ~/.pythonbrew"
-echo " Necessary imports will be added to ~/.bashrc automatically"
+echo -e " Necessary imports will be added to ~/.bashrc automatically\n"
 
 # YES/NO prompt
-echo -ne "\nDo you want to proceed with installation (y/n)? "
+echo -n "Do you want to proceed with installation (y/n)?"
 read answer
 if echo "$answer" | grep -iq "^y" ; then
     echo -n ""
