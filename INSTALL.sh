@@ -6,7 +6,6 @@
 # sudo apt-get install curl build-essential libbz2-dev libsqlite3-dev zlib1g-dev libxml2-dev libxslt1-dev libreadline5 libgdbm-dev  libxml2 libssl-dev tk-dev libgdbm-dev libexpat1-dev libncursesw5-dev
 # zlib.h
 
-
 log="/tmp/install.log"
 installdir="$HOME/src"
 pyversion="2.7.10"
@@ -16,24 +15,45 @@ exists()
   command -v "$1" >/dev/null 2>&1
 }
 
+error=""
+
 # check if all programs exists
-for cmd in echo wget curl gcc make cd ln date bash; do
+for cmd in echo wget curl gcc make cd ln date bash1; do
     if ! exists $cmd; then
         echo "Install $cmd first!"
-        exit 1
+        error=1
     fi
 done
 
-echo -e "\n#####################################################################"
-echo -e "#                        Redundans installer                        #"
-echo -e "#                                                                   #"
-echo -e "#                                           l.p.pryszcz@gmail.com   #"
-echo -e "#####################################################################\n"
+# check if all libs present
+for lib in libz libsqlite3 libssl; do
+    if [ -z "$(ldconfig -p | grep $lib.so)" ] ; then
+        echo "Missing library $lib!"
+        error=1
+    fi
+done
+
+# skip if error
+if [ ! -z $error ]; then exit 1; fi
+
+clear
+echo "#####################################################################"
+echo "#                                                                   #"
+echo "#                        Redundans installer                        #"
+echo "#                                                                   #"
+echo "#                                           l.p.pryszcz@gmail.com   #"
+echo "#####################################################################"
+echo ""
 echo "Redundans and its dependencies will be installed in $installdir"
 echo "Python $pyversion and all necessary dependencies will be installed in ~/.pythonbrew"
-echo -e " Necessary imports will be added to ~/.bashrc automatically\n"
-echo "Installation may take several minutes! Installation log can be found in $log."
-echo -e '\n! Make sure libssl & zlib.h are installed ie. `sudo apt-get install zlib1g-dev libssl-dev`!\n'
+echo " Necessary imports will be added to ~/.bashrc automatically"
+echo ""
+echo "Installation may take 20-30 minutes! You can run the following command on another shell to track the status:"
+echo "  tail -f $log"
+echo ""
+echo "!!! Make sure libsqlite3-dev, libssl & zlib.h are installed !!!"
+echo "  sudo apt-get install zlib1g-dev libsqlite3-dev libssl-dev"
+echo ""
 
 # YES/NO prompt
 echo -n "Do you want to proceed with installation (y/n)? "
@@ -52,6 +72,14 @@ if [ ! -d $installdir ]; then mkdir -p $installdir; fi
 cd $installdir
 
 echo `date` "Installing Python & dependencies..."
+# sqlite3
+wget -q https://www.sqlite.org/2016/sqlite-autoconf-3100200.tar.gz
+tar xpfz sqlite-autoconf-3100200.tar.gz
+ln -s sqlite-autoconf-3100200 sqlite3
+cd sqlite3
+./configure && make >> $log 2>&1
+cd ../
+
 # install pythonbrew to ~/.pythonbrew
 curl -kLs http://xrl.us/pythonbrewinstall | bash >> $log 2>&1
  
@@ -59,20 +87,19 @@ curl -kLs http://xrl.us/pythonbrewinstall | bash >> $log 2>&1
 echo -e "\n###\n# redundans imports" >> ~/.bashrc
 echo "# python brew activation" >> ~/.bashrc
 echo '[[ -s "$HOME/.pythonbrew/etc/bashrc" ]] && source "$HOME/.pythonbrew/etc/bashrc"' >> ~/.bashrc
-echo 'export PATH=$PATH:'$installdir/SSPACE:$installdir/bwa:$installdir/last/src:$installdir >> ~/.bashrc
-echo "###" >> ~/.bashrc
+echo 'export PATH=$PATH:'$installdir/sqlite3:$installdir/SSPACE:$installdir/bwa:$installdir/last/src:$installdir/last/scripts:$installdir >> ~/.bashrc
 
 # export PATH 
 # source ~/.bashrc # not working as not interactive shell
 source "$HOME/.pythonbrew/etc/bashrc"
-export PATH=$PATH:$installdir/SSPACE:$installdir/bwa:$installdir/last/src:$installdir
+export PATH=$PATH:$installdir/SSPACE:$installdir/bwa:$installdir/last/src:$installdir/last/scripts:$installdir
 
 # install python 
 pythonbrew install $pyversion >> $log 2>&1
 # and enable the new version
 pythonbrew switch $pyversion >> $log 2>&1
 # biopython, numpy
-pip install -U biopython numpy >> $log 2>&1
+pip install -U biopython numpy pysqlite >> $log 2>&1
 
 
 echo `date` "Installing redundans dependencies..."
@@ -104,9 +131,11 @@ cd ..
 
 echo `date` " Perl & SSPACE"
 # perl
-curl -L http://xrl.us/installperlnix | bash >> $log 2>&1
+curl -Ls http://xrl.us/installperlnix | bash >> $log 2>&1
 # getopts.pl https://github.com/lpryszcz/redundans/#sspace-fails-with-an-error-cant-locate-getoptspl-in-inc
+. $HOME/perl5/perlbrew/etc/bashrc
 cpanm Perl4::CoreLibs >> $log 2>&1
+
 # SSPACE - note tar.gz and dir are different!
 wget -q http://www.baseclear.com/base/download/41SSPACE-STANDARD-3.0_linux-x86_64.tar.gz
 tar xpfz 41SSPACE-STANDARD-3.0_linux-x86_64.tar.gz
@@ -119,7 +148,8 @@ wget -q http://downloads.sourceforge.net/project/soapdenovo2/GapCloser/bin/r6/Ga
 tar xpfz GapCloser-bin-v1.12-r6.tgz
 
 
-# check if installed corretly
+# check if installed correctly
+echo `date` "Checking if all dependencies are installed..."
 for cmd in blat lastal bwa GapCloser SSPACE_Standard_v3.0.pl; do
     if ! exists $cmd; then
         echo "[WARNING] Make sure $cmd installed properly!"
@@ -134,20 +164,24 @@ tar xpfz redundans.tgz
 mv redundans-master redundans
 cd redundans
 
+
+echo "###" >> ~/.bashrc
 echo `date` "Installation finished!"
-
-
-echo -e "\nTo try Redundans, open new terminal and execute:"
-echo " cd $installdir/redundans"
-echo " ./redundans.py -v -i test/*.fq.gz -f test/contigs.fa -o test/run1"
-
-echo -e "###\nMake sure to register as user of:"
-echo "- SSPACE http://www.baseclear.com/genomics/bioinformatics/basetools/SSPACE"
-echo -e "###\n"
-
+echo ""
 echo "To uninstall execute:"
 echo " rm -rI ~/.pythonbrew ~/.perlbrew ~/src/{*SSPACE,bwa,blat,GapCloser,last,redundans}*"
 echo " cp ~/.bashrc_bak ~/.bashrc"
+
+
+echo ""
+echo "To try Redundans, open new terminal and execute:"
+echo " cd $installdir/redundans"
+echo " ./redundans.py -v -i test/*.fq.gz -f test/contigs.fa -o test/run1"
+
+echo "###"
+echo "# Make sure to register as user of:"
+echo "# - SSPACE http://www.baseclear.com/genomics/bioinformatics/basetools/SSPACE"
+echo "###"
 
 exit 0
 

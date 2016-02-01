@@ -97,8 +97,8 @@ def get_isize_stats(fq1, fq2, fasta, mapqTh=10, threads=1,
     if sum(pairs)<100:
         return 0, 0, 0, []
     #get rid of 5 percentile from both sides
-    maxins = np.percentile(a, 100-percentile) #stats.scoreatpercentile(isizes, 100-percentile)
-    minins = np.percentile(a, percentile) #stats.scoreatpercentile(isizes, percentile)
+    maxins = np.percentile(isizes, 100-percentile) #stats.scoreatpercentile(isizes, 100-percentile)
+    minins = np.percentile(isizes, percentile) #stats.scoreatpercentile(isizes, percentile)
     isizes = np.array(filter(lambda x: minins<x<maxins, isizes), dtype='int')
     # get stats
     ismedian, ismean, isstd = np.median(isizes), isizes.mean(), isizes.std()
