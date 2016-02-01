@@ -7,7 +7,7 @@
 
 log="/tmp/install.log"
 installdir="$HOME/src"
-pyversion="2.7"
+pyversion="2.7.11"
 waiting="30s"
 
 exists()
@@ -64,8 +64,9 @@ pythonbrew install $pyversion >> $log 2>&1
 pythonbrew switch $pyversion >> $log 2>&1
 
 # install pip
-#curl -O https://raw.github.com/pypa/pip/master/contrib/get-pip.py
+#wget -q wget https://bootstrap.pypa.io/get-pip.py
 #python get-pip.py
+#rm get-pip.py
 
 # biopython, numpy, scpy
 pip install -U biopython numpy scipy >> $log 2>&1
@@ -74,7 +75,7 @@ pip install -U biopython numpy scipy >> $log 2>&1
 echo `date` "Installing redundans dependencies..."
 echo `date` " BWA"
 # BWA
-curl -kLs http://downloads.sourceforge.net/project/bio-bwa/bwa-0.7.12.tar.bz2
+wget -q http://downloads.sourceforge.net/project/bio-bwa/bwa-0.7.12.tar.bz2
 tar xpfj bwa-0.7.12.tar.bz2
 ln -s bwa-0.7.12 bwa
 cd bwa 
