@@ -8,6 +8,7 @@
 log="install.log"
 installdir="~/src"
 pyversion="2.7"
+waiting="30s"
 
 exists()
 {
@@ -29,8 +30,8 @@ echo "Installation may take several minutes! Installation log can be found in $l
 echo "Redundans and dependencies will be installed in $installdir/redundans"
 echo "Python $pyversion and all necessary dependencies will be installed in ~/.pythonbrew"
 echo " Necessary imports will be added to ~/.bashrc automatically"
-echo -e "\nStarting in 10s... Press Ctrl-C if you wish to cancel.\n"
-sleep 10s
+echo -e "\nStarting in ${waiting}... Press Ctrl-C if you wish to cancel.\n"
+sleep $waiting
 
 if ! -d $installdir; then mkdir -p $installdir; fi
 cd $installdir
