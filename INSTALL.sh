@@ -23,9 +23,9 @@ for cmd in echo wget curl git gcc make cd ln date bash; do
     fi
 done
 
-echo -e "\n#######################"
-echo -e "# Redundans installer #"
-echo -e "#######################\n"
+echo -e "\n#####################################################################"
+echo -e "#                        Redundans installer                        #"
+echo -e "#####################################################################\n"
 echo "Installation may take several minutes! Installation log can be found in $log."
 echo "Redundans and its dependencies will be installed in $installdir"
 echo "Python $pyversion and all necessary dependencies will be installed in ~/.pythonbrew"
@@ -38,6 +38,8 @@ if echo "$answer" | grep -viq "^y" ; then
     echo "Aborted!"
     exit 0
 fi
+
+echo ""
 
 if [ ! -d $installdir ]; then mkdir -p $installdir; fi
 cd $installdir
@@ -87,11 +89,11 @@ cd last
 make >> $log 2>&1
 cd ..
 
-# SSPACE 
+# SSPACE - note tar.gz and dir are different!
 echo `date` " SSPACE"
 wget -q http://www.baseclear.com/base/download/41SSPACE-STANDARD-3.0_linux-x86_64.tar.gz
 tar xpfz 41SSPACE-STANDARD-3.0_linux-x86_64.tar.gz
-ln -s 41SSPACE-STANDARD-3.0_linux-x86_64 SSPACE
+ln -s SSPACE-STANDARD-3.0_linux-x86_64 SSPACE
 
 # GapCloser
 echo `date` " GapCloser"
@@ -110,9 +112,11 @@ for cmd in blat lastal bwa GapCloser SSPACE_Standard_v3.0.pl; do
     fi
 done
 
+
 echo `date` " Redundans"
-git clone git@github.com:lpryszcz/redundans.git
+git clone https://github.com/lpryszcz/redundans
 cd redundans
+
 
 echo `date` "Trying Redundans..."
 ./redundans.py -v -i test/*.fq.gz -f test/contigs.fa -o test/run1
