@@ -3,9 +3,9 @@
 # Redundans installer for UNIX.
 ###
 
-# sudo apt-get install wget screen make git gcc make bash libc-dev
+# sudo apt-get install curl screen make git gcc make bash libc-dev
 
-log="install.log"
+log="/tmp/install.log"
 installdir="$HOME/src"
 pyversion="2.7"
 waiting="30s"
@@ -16,7 +16,7 @@ exists()
 }
 
 # check if all programs exists
-for cmd in echo wget git gcc make cd ln date bash; do
+for cmd in echo curl git gcc make cd ln date bash; do
     if ! exists $cmd; then
         echo "Install $cmd first!"
         exit 1
@@ -39,7 +39,7 @@ cd $installdir
 
 echo `date` "Installing Python & dependencies..."
 # install pythonbrew to ~/.pythonbrew
-wget -O- -q http://xrl.us/pythonbrewinstall | bash > $log 2>&1
+curl -kLs http://xrl.us/pythonbrewinstall | bash >> $log 2>&1
  
 # add to ~/.bashrc to automatically activate pythonbrew
 echo -e "###\n# redundans imports" >> ~/.bashrc
@@ -51,48 +51,48 @@ echo "###" >> ~/.bashrc
 source ~/.bashrc
  
 # install python 
-pythonbrew install $pyversion > $log 2>&1
+pythonbrew install $pyversion >> $log 2>&1
  
 # and enable the new version
-pythonbrew switch $pyversion > $log 2>&1
+pythonbrew switch $pyversion >> $log 2>&1
 
 ## biopython, numpy, scpy
-pip install -U biopython numpy scipy > $log 2>&1
+pip install -U biopython numpy scipy >> $log 2>&1
 
 
 echo `date` "Installing redundans dependencies..."
 echo `date` " BWA"
 # BWA
-wget -q http://downloads.sourceforge.net/project/bio-bwa/bwa-0.7.12.tar.bz2
+curl -kLs http://downloads.sourceforge.net/project/bio-bwa/bwa-0.7.12.tar.bz2
 tar xpfj bwa-0.7.12.tar.bz2
 ln -s bwa-0.7.12 bwa
 cd bwa 
-make > $log 2>&1
+make >> $log 2>&1
 cd ..
 
 # LAST
 echo `date` " LAST"
-wget -q http://last.cbrc.jp/last-714.zip
+curl -kLs http://last.cbrc.jp/last-714.zip
 unzip -q last-714.zip
 ln -s last-714 last
 cd last
-make > $log 2>&1
+make >> $log 2>&1
 cd ..
 
 # SSPACE 
 echo `date` " SSPACE"
-wget -q http://www.baseclear.com/base/download/41SSPACE-STANDARD-3.0_linux-x86_64.tar.gz
+curl -kLs http://www.baseclear.com/base/download/41SSPACE-STANDARD-3.0_linux-x86_64.tar.gz
 tar xpfz 41SSPACE-STANDARD-3.0_linux-x86_64.tar.gz
 ln -s 41SSPACE-STANDARD-3.0_linux-x86_64 SSPACE
 
 # GapCloser
 echo `date` " GapCloser"
-wget -q http://downloads.sourceforge.net/project/soapdenovo2/GapCloser/bin/r6/GapCloser-bin-v1.12-r6.tgz
+curl -kLs http://downloads.sourceforge.net/project/soapdenovo2/GapCloser/bin/r6/GapCloser-bin-v1.12-r6.tgz
 tar xpfz GapCloser-bin-v1.12-r6.tgz
 
 # BLAT
 echo `date` " BLAT"
-wget -q https://raw.githubusercontent.com/lpryszcz/bin/master/blat
+curl -kLs https://raw.githubusercontent.com/lpryszcz/bin/master/blat
 chmod +x blat
 
 # check if installed corretly

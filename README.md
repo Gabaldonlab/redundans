@@ -33,7 +33,7 @@ For more information have a look at the [poster](/docs/poster.pdf) or [manuscrip
 ## Prerequisites
 You can try installer to automatically fetch, compile and configure Redundans together with all dependencies. These should work on most UNIX systems.
 ```bash
-wget -O- -q https://raw.githubusercontent.com/lpryszcz/redundans/master/INSTALL.sh | bash
+curl -s https://raw.githubusercontent.com/lpryszcz/redundans/master/INSTALL.sh | bash
 ```
 
 Alternatively, you can download and configure all dependencies manually: 
