@@ -58,12 +58,12 @@ In addition, the volume needs to be mounted every time, leading to a bit complex
 ### Manual installation
 Alternatively, you can download and configure all dependencies manually: 
 - Python 2.7+ & dependencies `sudo pip install -U biopython numpy scipy`
- - biopython requires (sqlite3)[https://www.sqlite.org/]
+ - biopython requires [sqlite3](https://www.sqlite.org/)
 - [BLAT](https://genome.ucsc.edu/FAQ/FAQblat.html#blat3)
 - [LAST](http://last.cbrc.jp/)
 - [BWA](http://bio-bwa.sourceforge.net/)
 - [SSPACE3](http://www.baseclear.com/genomics/bioinformatics/basetools/SSPACE)
- - SSPACE require Perl; for perl5+ you will need to copy (getopts.pl)[http://cpansearch.perl.org/src/GBARR/perl5.005_03/lib/getopts.pl] into SSPACE/dotlib
+ - SSPACE require Perl; for perl5+ you will need to copy [getopts.pl](http://cpansearch.perl.org/src/GBARR/perl5.005_03/lib/getopts.pl) into SSPACE/dotlib
  - by default Redundans looks for SSPACE in ~/src/SSPACE directory (`--sspacebin` parameter)
 - [GapCloser](http://sourceforge.net/projects/soapdenovo2/files/GapCloser/)
 
