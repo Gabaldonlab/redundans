@@ -32,11 +32,23 @@ For more information have a look at the [poster](/docs/poster.pdf) or [manuscrip
 
 ## Prerequisites
 ### UNIX installer
-UNIX installer will automatically fetch, compile and configure Redundans together with all dependencies. It should work on most UNIX systems, but was only tested on several platforms.   
+UNIX installer will automatically fetch, compile and configure Redundans together with all dependencies. It should work on most UNIX systems, but was only tested on some platforms.   
 **This is EXPERIMENTAL version, so you may want to create new user for installation process, so your working environment is not damaged!**   
 ```bash
 # sudo adduser test && su test
 bash <(curl -Ls http://bit.ly/redundans_installer)
+```
+
+### Docker image
+You need to install (docker)[https://www.docker.com/] first `wget -qO- https://get.docker.com/ | sh`.
+Then, you can run test example by: 
+```bash
+# process the data inside the image - all data will be lost at the end
+docker run -it -w /root/src/redundans lpryszcz/redundans:v0.11b ./redundans.py -v -i test/{600,5000}_{1,2}.fq.gz -f test/contigs.fa -o test/run1
+
+# if you wish to process local files, you need to mount the volume with -v
+## make sure you are in redundans repo directory (containing test/ directory)
+docker run -v `pwd`/test:/test:rw -it lpryszcz/redundans:v0.11b /root/src/redundans/redundans.py -v -i test/*.fq.gz -f test/contigs.fa -o test/run1
 ```
 
 ### Manual installation
