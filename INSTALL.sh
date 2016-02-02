@@ -8,7 +8,6 @@
 log="redundans.install.log"
 installdir="$HOME/src"
 pyversion="2.7.10"
-plversion="perl-5.20.3"
 
 exists()
 {
@@ -20,7 +19,7 @@ echo "#######################################################################"
 echo "#                                                                     #"
 echo "#                         Redundans installer                         #"
 echo "#                                                                     #"
-echo "#                                           l.p.pryszcz@gmail.com     #"
+echo "#    version 0.1b                           l.p.pryszcz@gmail.com     #"
 echo "#######################################################################"
 echo ""
 echo "Redundans and its dependencies will be installed in $installdir"
