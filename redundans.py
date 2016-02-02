@@ -150,7 +150,7 @@ def run_scaffolding(outdir, scaffoldsFname, fastq, libraries, reducedFname, mapq
         # update library insert size estimation, especially for mate-pairs
         libraries = get_libraries(fastq, pout, mapq, threads, verbose=0)
     # create symlink to final scaffolds or pout
-    symlink(pout, scaffoldsFname)
+    symlink(os.path.basename(pout), scaffoldsFname)
 
     return libraries
 
