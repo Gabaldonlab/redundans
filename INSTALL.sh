@@ -1,9 +1,10 @@
 #!/bin/bash
 ###
 # Redundans installer for UNIX.
+# bash <(curl -Ls http://bit.ly/redundans_installer)
 ###
 
-log="/tmp/install.log"
+log="redundans.install.log"
 installdir="$HOME/src"
 pyversion="2.7.10"
 
@@ -12,10 +13,45 @@ exists()
   command -v "$1" >/dev/null 2>&1
 }
 
-error=""
+clear
+echo "#####################################################################"
+echo "#                                                                   #"
+echo "#                        Redundans installer                        #"
+echo "#                                                                   #"
+echo "#                                           l.p.pryszcz@gmail.com   #"
+echo "#####################################################################"
+echo ""
+echo "Redundans and its dependencies will be installed in $installdir"
+echo "Python with all dependencies will be installed in ~/.pythonbrew"
+echo "Perl will be installed in ~/.perlbrew, ~/perl5 and ~/.cpanm"
+echo "Necessary imports will be added to ~/.bashrc automatically. "
+echo " Original file will be backed as ~/.bashrc_bak"
+echo ""
+echo "Installation may take 20 minutes!"
+echo "To track the installation status open in new terminal:"
+echo "  tail -f $log"
+echo ""
+echo "!!! Make sure libsqlite3-dev, libssl-dev & zlib.h are installed !!!"
+echo "  sudo apt-get install zlib1g-dev libsqlite3-dev libssl-dev"
+echo ""
+echo "This is EXPERIMENTAL software! You may want to create new user and "
+echo "run installer there, to avoid data loss:"
+echo "  sudo adduser test && su test"
+echo ""
 
+# YES/NO prompt
+echo -n "Do you want to proceed with installation (y/n)? "
+read answer
+if echo "$answer" | grep -viq "^y" ; then
+    echo "Aborted!"
+    exit 0
+fi
+
+echo ""
+
+error=""
 # check if all programs exists
-for cmd in echo wget curl gcc make cd ln date; do
+for cmd in echo wget curl gcc make cd ln date ldconfig sqlite3; do
     if ! exists $cmd; then
         echo "Install $cmd first!"
         error=1
@@ -31,36 +67,10 @@ for lib in libz libsqlite3 libssl; do
 done
 
 # skip if error
-if [ ! -z $error ]; then exit 1; fi
-
-clear
-echo "#####################################################################"
-echo "#                                                                   #"
-echo "#                        Redundans installer                        #"
-echo "#                                                                   #"
-echo "#                                           l.p.pryszcz@gmail.com   #"
-echo "#####################################################################"
-echo ""
-echo "Redundans and its dependencies will be installed in $installdir"
-echo "Python $pyversion and all necessary dependencies will be installed in ~/.pythonbrew"
-echo " Necessary imports will be added to ~/.bashrc automatically"
-echo ""
-echo "Installation may take 20-30 minutes! You can run the following command on another shell to track the status:"
-echo "  tail -f $log"
-echo ""
-echo "!!! Make sure libsqlite3-dev, libssl & zlib.h are installed !!!"
-echo "  sudo apt-get install zlib1g-dev libsqlite3-dev libssl-dev"
-echo ""
-
-# YES/NO prompt
-echo -n "Do you want to proceed with installation (y/n)? "
-read answer
-if echo "$answer" | grep -viq "^y" ; then
-    echo "Aborted!"
-    exit 0
+if [ ! -z $error ]; then
+    echo "Aborted due to missing dependencies (see above)"
+    exit 1;
 fi
-
-echo ""
 
 # make copy of .bashrc
 cp ~/.bashrc ~/.bashrc_bak
@@ -158,7 +168,7 @@ echo "###" >> ~/.bashrc
 echo `date` "Installation finished!"
 echo ""
 echo "To uninstall execute:"
-echo " rm -rI ~/.pythonbrew ~/.perlbrew ~/src/{*SSPACE,bwa,blat,GapCloser,last,redundans}*"
+echo " rm -rI ~/{.pythonbrew,.perlbrew,.cpanm,perl5} ~/src/{*SSPACE,bwa,blat,GapCloser,last,redundans}*"
 echo " cp ~/.bashrc_bak ~/.bashrc"
 echo ""
 echo "To try Redundans, open new terminal and execute:"

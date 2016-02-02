@@ -31,9 +31,10 @@ For more information have a look at the [poster](/docs/poster.pdf) or [manuscrip
 ![Flowchart](/docs/redundans_flowchart.png)
 
 ## Prerequisites
-You can try installer to automatically fetch, compile and configure Redundans together with all dependencies. These should work on most UNIX systems.
+You can try installer to automatically fetch, compile and configure Redundans together with all dependencies. It should work on most UNIX systems.
+Make sure libsqlite3-dev, libssl & zlib.h are installed ie. `sudo apt-get install zlib1g-dev libsqlite3-dev libssl-dev` before running the installer.
 ```bash
-bash <(curl -s https://raw.githubusercontent.com/lpryszcz/redundans/master/INSTALL.sh)
+bash <(curl -Ls http://bit.ly/redundans_installer)
 ```
 
 Alternatively, you can download and configure all dependencies manually: 
@@ -146,6 +147,19 @@ To limit speed difference between these two algorithms, LAST **runs in multiple 
 
 ### How is multiple redundancy handled? 
 Redundans removes all contigs, but the longest one, that fullfill identity & overlap critaria during reduction step. For more info see [issue #8](https://github.com/lpryszcz/redundans/issues/8). 
+
+## FAQ - INSTALL.sh
+### Installation succeeded, but redundans fails with `Bio.MissingPythonDependencyError: Requires sqlite3, which is included Python 2.5+`
+Most likely you didn't install libsqlite3-dev before running installer. Try this:
+```bash
+# install missing library
+sudo apt-get install sqlite3 libsqlite3-dev
+# uninstall all
+rm -rI ~/.pythonbrew ~/.perlbrew ~/src/{*SSPACE,bwa,blat,GapCloser,last,redundans}*
+cp ~/.bashrc_bak ~/.bashrc
+# open new terminal and relaunch installer
+bash <(curl -s https://raw.githubusercontent.com/lpryszcz/redundans/master/INSTALL.sh)
+```
 
 ## Citation
 Leszek P. Pryszcz and Toni Gabaldón (Submitted) Redundans: an assembly pipeline for highly heterozygous genomes. 
