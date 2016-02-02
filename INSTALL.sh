@@ -130,28 +130,13 @@ make >> $log 2>&1
 cd $installdir
 
 
-echo `date` " Perl $plversion (needed by SSPACE)"
-# perl
-curl -Ls http://install.perlbrew.pl | bash >> $log 2>&1
-# add imports
-echo "# perl brew activation" >> ~/.bashrc
-echo '[[ -s "$HOME/perl5/perlbrew/etc/bashrc" ]] && source "$HOME/perl5/perlbrew/etc/bashrc"' >> ~/.bashrc
-echo 'export PATH=$PATH:'~/perl5/bin >> ~/.bashrc
-. $HOME/perl5/perlbrew/etc/bashrc
-export PATH=$PATH:~/perl5/bin
-# compile perl with threads module
-perlbrew install -v $plversion -Dusethreads >> $log 2>&1
-perlbrew switch $plversion >> $log 2>&1
-# getopts.pl https://github.com/lpryszcz/redundans/#sspace-fails-with-an-error-cant-locate-getoptspl-in-inc
-curl -Ls https://cpanmin.us | perl - App::cpanminus >> $log 2>&1
-cpanm Perl4::CoreLibs >> $log 2>&1
-
 echo `date` " SSPACE"
 # SSPACE - note tar.gz and dir are different!
 wget -q http://www.baseclear.com/base/download/41SSPACE-STANDARD-3.0_linux-x86_64.tar.gz
 tar xpfz 41SSPACE-STANDARD-3.0_linux-x86_64.tar.gz
 ln -s SSPACE-STANDARD-3.0_linux-x86_64 SSPACE
-
+# getopts.pl https://github.com/lpryszcz/redundans/#sspace-fails-with-an-error-cant-locate-getoptspl-in-inc
+curl -s http://cpansearch.perl.org/src/GBARR/perl5.005_03/lib/getopts.pl > SSPACE/dotlib/getopts.pl
 
 # GapCloser
 echo `date` " GapCloser"
