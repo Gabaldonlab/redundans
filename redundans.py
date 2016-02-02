@@ -231,7 +231,7 @@ def run_gapclosing(outdir, mapq, libraries, nogapsFname, scaffoldsFname, \
             # store out info
             pout = out
     # create symlink to final scaffolds or pout
-    symlink(pout, nogapsFname)
+    symlink(os.path.basename(pout), nogapsFname)
         
 def redundants(fastq, fasta, outdir, mapq, threads, identity, overlap, minLength, \
                joins, readLimit, iters, sspacebin, reduction=1, scaffolding=1, \
@@ -263,7 +263,7 @@ def redundants(fastq, fasta, outdir, mapq, threads, identity, overlap, minLength
             info = fasta2homozygous(out, open(contigsFname), identity, overlap, \
                                     minLength, libraries, limit, threads)
     else:
-        symlink(contigsFname, reducedFname)
+        symlink(os.path.basename(contigsFname), reducedFname)
     # update fasta list
     fastas  = [contigsFname, reducedFname]
 
@@ -279,7 +279,7 @@ def redundants(fastq, fasta, outdir, mapq, threads, identity, overlap, minLength
                                     threads, joins, limit, iters, sspacebin, verbose, \
                                     identity, overlap, minLength)
     else:
-        symlink(reducedFname, scaffoldsFname)
+        symlink(os.path.basename(reducedFname), scaffoldsFname)
     # update fasta list
     fastas += sorted(glob.glob(os.path.join(outdir, "_sspace.*.fa")))
     fastas.append(scaffoldsFname)
@@ -293,7 +293,7 @@ def redundants(fastq, fasta, outdir, mapq, threads, identity, overlap, minLength
         run_gapclosing(outdir, mapq, libraries, nogapsFname, scaffoldsFname, threads, \
                        limit, iters, verbose)
     else:
-        symlink(scaffoldsFname, nogapsFname)
+        symlink(os.path.basename(scaffoldsFname), nogapsFname)
     # update fasta list
     fastas += sorted(glob.glob(os.path.join(outdir, "_gap*.fa")))
     fastas.append(nogapsFname)
