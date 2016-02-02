@@ -33,8 +33,9 @@ For more information have a look at the [poster](/docs/poster.pdf) or [manuscrip
 ## Prerequisites
 ### UNIX installer
 UNIX installer will automatically fetch, compile and configure Redundans together with all dependencies. It should work on most UNIX systems, but was only tested on several platforms.
-**This is EXPERIMENTAL version, so you may want to create new user for installation process, so your working environment is not damaged!**
+**This is EXPERIMENTAL version, so you may want to create new user for installation process, so your working environment is not damaged!**  
 ```bash
+# sudo adduser test && su test
 bash <(curl -Ls http://bit.ly/redundans_installer)
 ```
 
