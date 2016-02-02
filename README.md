@@ -32,7 +32,7 @@ For more information have a look at the [poster](/docs/poster.pdf) or [manuscrip
 
 ## Prerequisites
 You can try installer to automatically fetch, compile and configure Redundans together with all dependencies. It should work on most UNIX systems.
-Make sure libsqlite3-dev, libssl & zlib.h are installed ie. `sudo apt-get install zlib1g-dev libsqlite3-dev libssl-dev` before running the installer.
+Make sure libsqlite3-dev, libssl & zlib.h are installed ie. `sudo apt-get install zlib1g-dev sqlite3 libsqlite3-dev libssl-dev` before running the installer.
 ```bash
 bash <(curl -Ls http://bit.ly/redundans_installer)
 ```
@@ -149,6 +149,9 @@ To limit speed difference between these two algorithms, LAST **runs in multiple 
 Redundans removes all contigs, but the longest one, that fullfill identity & overlap critaria during reduction step. For more info see [issue #8](https://github.com/lpryszcz/redundans/issues/8). 
 
 ## FAQ - INSTALL.sh
+### Installation succeeded, but redundans fails with `ImportError: No module named Bio`
+Make sure you opened new terminal window after installation finished/ 
+
 ### Installation succeeded, but redundans fails with `Bio.MissingPythonDependencyError: Requires sqlite3, which is included Python 2.5+`
 Most likely you didn't install libsqlite3-dev before running installer. Try this:
 ```bash
