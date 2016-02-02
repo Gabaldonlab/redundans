@@ -45,11 +45,11 @@ First, you  need to install [docker](https://www.docker.com/): `wget -qO- https:
 Then, you can run the test example by executing: 
 ```bash
 # process the data inside the image - all data will be lost at the end
-docker run -it -w /root/src/redundans lpryszcz/redundans:v0.11b ./redundans.py -v -i test/{600,5000}_{1,2}.fq.gz -f test/contigs.fa -o test/run1
+docker run -it -w /root/src/redundans lpryszcz/redundans ./redundans.py -v -i test/{600,5000}_{1,2}.fq.gz -f test/contigs.fa -o test/run1
 
 # if you wish to process local files, you need to mount the volume with -v
 ## make sure you are in redundans repo directory (containing test/ directory)
-docker run -v `pwd`/test:/test:rw -it lpryszcz/redundans:v0.11b /root/src/redundans/redundans.py -v -i test/*.fq.gz -f test/contigs.fa -o test/run1
+docker run -v `pwd`/test:/test:rw -it lpryszcz/redundans /root/src/redundans/redundans.py -v -i test/*.fq.gz -f test/contigs.fa -o test/run1
 ```
 Docker images are very handy, but they have certain limitation. 
 The most annoying for me is the **lack of autocompletion**, unless you specify the path in host and container in the exactly same manner as in the example above.
