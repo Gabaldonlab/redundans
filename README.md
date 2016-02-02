@@ -34,14 +34,14 @@ For more information have a look at the [poster](/docs/poster.pdf) or [manuscrip
 ### UNIX installer
 UNIX installer will automatically fetch, compile and configure Redundans together with all dependencies. It should work on most UNIX systems, but was only tested on some platforms.
 It will install all dependencies from the scratch, ignoring versions already installed. 
-**This is EXPERIMENTAL version, so you may want to create new user for installation process, so your working environment is not damaged!**   
+**This is EXPERIMENTAL version, so you may want to create new user for installation process, to avoid data loss!**   
 ```bash
 # sudo adduser test && su test
 bash <(curl -Ls http://bit.ly/redundans_installer)
 ```
 
 ### Docker image
-You need to install [docker](https://www.docker.com/) first `wget -qO- https://get.docker.com/ | sh`.
+First, you  need to install [docker](https://www.docker.com/): `wget -qO- https://get.docker.com/ | sh`  
 Then, you can run the test example by executing: 
 ```bash
 # process the data inside the image - all data will be lost at the end
@@ -173,7 +173,7 @@ Redundans removes all contigs, but the longest one, that fullfill identity & ove
 
 ## FAQ - INSTALL.sh
 ### Installation succeeded, but redundans fails with `ImportError: No module named Bio`
-Make sure you opened new terminal window after installation finished/ 
+Make sure you opened new terminal window after installation finished. 
 
 ### Installation succeeded, but redundans fails with `Bio.MissingPythonDependencyError: Requires sqlite3, which is included Python 2.5+`
 Most likely you didn't install libsqlite3-dev before running installer. Try this:
@@ -181,10 +181,10 @@ Most likely you didn't install libsqlite3-dev before running installer. Try this
 # install missing library
 sudo apt-get install sqlite3 libsqlite3-dev
 # uninstall all
-rm -rI ~/.pythonbrew ~/.perlbrew ~/src/{*SSPACE,bwa,blat,GapCloser,last,redundans}*
+rm -rI ~/.pythonbrew ~/src/{*SSPACE,bwa,blat,GapCloser,last,redundans}*
 cp ~/.bashrc_bak ~/.bashrc
 # open new terminal and relaunch installer
-bash <(curl -s https://raw.githubusercontent.com/lpryszcz/redundans/master/INSTALL.sh)
+bash <(curl -Ls http://bit.ly/redundans_installer)
 ```
 
 ## Citation
