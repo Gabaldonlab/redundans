@@ -16,12 +16,12 @@ exists()
 }
 
 clear
-echo "#####################################################################"
-echo "#                                                                   #"
-echo "#                        Redundans installer                        #"
-echo "#                                                                   #"
-echo "#                                           l.p.pryszcz@gmail.com   #"
-echo "#####################################################################"
+echo "#######################################################################"
+echo "#                                                                     #"
+echo "#                         Redundans installer                         #"
+echo "#                                                                     #"
+echo "#                                           l.p.pryszcz@gmail.com     #"
+echo "#######################################################################"
 echo ""
 echo "Redundans and its dependencies will be installed in $installdir"
 echo "Python with all dependencies will be installed in ~/.pythonbrew"
@@ -36,7 +36,7 @@ echo "This is EXPERIMENTAL software! You may want to create new user and "
 echo "run installer there, to avoid data loss:"
 echo "  sudo adduser test && su test"
 echo ""
-echo "Installation may take 20-30 minutes!"
+echo "Installation may take ~30 minutes!"
 echo "To track the installation status execute in the new terminal:"
 echo "  tail -f $log"
 echo ""
@@ -53,7 +53,7 @@ echo ""
 
 error=""
 # check if all programs exists
-for cmd in echo wget curl gcc make cd ln date ldconfig sqlite3; do
+for cmd in echo wget curl gcc make cd ln date ldconfig sqlite3 unzip perl; do
     if ! exists $cmd; then
         echo "Install $cmd first!"
         error=1
@@ -92,7 +92,7 @@ echo 'export PATH=$PATH:'$installdir/SSPACE:$installdir/bwa:$installdir/last/src
 
 # export PATH 
 # source ~/.bashrc # not working as not interactive shell
-source "$HOME/.pythonbrew/etc/bashrc"
+source $HOME/.pythonbrew/etc/bashrc
 export PATH=$PATH:$installdir/SSPACE:$installdir/bwa:$installdir/last/src:$installdir/last/scripts:$installdir
 
 # install python 
@@ -111,7 +111,7 @@ tar xpfj bwa-0.7.12.tar.bz2
 ln -s bwa-0.7.12 bwa
 cd bwa 
 make >> $log 2>&1
-cd ..
+cd $installdir
 
 
 # BLAT
@@ -127,7 +127,7 @@ unzip -q last-714.zip
 ln -s last-714 last
 cd last
 make >> $log 2>&1
-cd ..
+cd $installdir
 
 
 echo `date` " Perl $plversion (needed by SSPACE)"
@@ -136,11 +136,14 @@ curl -Ls http://install.perlbrew.pl | bash >> $log 2>&1
 # add imports
 echo "# perl brew activation" >> ~/.bashrc
 echo '[[ -s "$HOME/perl5/perlbrew/etc/bashrc" ]] && source "$HOME/perl5/perlbrew/etc/bashrc"' >> ~/.bashrc
+echo 'export PATH=$PATH:'~/perl5/bin >> ~/.bashrc
 . $HOME/perl5/perlbrew/etc/bashrc
+export PATH=$PATH:~/perl5/bin
 # compile perl with threads module
 perlbrew install -v $plversion -Dusethreads >> $log 2>&1
 perlbrew switch $plversion >> $log 2>&1
 # getopts.pl https://github.com/lpryszcz/redundans/#sspace-fails-with-an-error-cant-locate-getoptspl-in-inc
+curl -Ls https://cpanmin.us | perl - App::cpanminus >> $log 2>&1
 cpanm Perl4::CoreLibs >> $log 2>&1
 
 echo `date` " SSPACE"
