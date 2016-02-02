@@ -2,7 +2,7 @@
 ###
 # Redundans installer for UNIX.
 # bash <(curl -Ls http://bit.ly/redundans_installer)
-# version 0.1a
+# version 0.1b
 ###
 
 log="redundans.install.log"
