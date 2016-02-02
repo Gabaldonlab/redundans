@@ -2,11 +2,13 @@
 ###
 # Redundans installer for UNIX.
 # bash <(curl -Ls http://bit.ly/redundans_installer)
+# version 0.1a
 ###
 
 log="redundans.install.log"
 installdir="$HOME/src"
 pyversion="2.7.10"
+plversion="perl-5.20.3"
 
 exists()
 {
@@ -130,9 +132,15 @@ cd ..
 
 echo `date` " Perl & SSPACE"
 # perl
-curl -Ls http://xrl.us/installperlnix | bash >> $log 2>&1
-# getopts.pl https://github.com/lpryszcz/redundans/#sspace-fails-with-an-error-cant-locate-getoptspl-in-inc
+curl -Ls http://install.perlbrew.pl | bash >> $log 2>&1
+# add imports
+echo "# perl brew activation" >> ~/.bashrc
+echo '[[ -s "$HOME/perl5/perlbrew/etc/bashrc" ]] && source "$HOME/perl5/perlbrew/etc/bashrc"' >> ~/.bashrc
 . $HOME/perl5/perlbrew/etc/bashrc
+# compile perl with threads module
+perlbrew install -v $plversion -Dusethreads >> $log 2>&1
+perlbrew switch $plversion >> $log 2>&1
+# getopts.pl https://github.com/lpryszcz/redundans/#sspace-fails-with-an-error-cant-locate-getoptspl-in-inc
 cpanm Perl4::CoreLibs >> $log 2>&1
 
 # SSPACE - note tar.gz and dir are different!
