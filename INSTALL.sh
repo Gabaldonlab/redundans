@@ -5,8 +5,8 @@
 # version 0.1b
 ###
 
-log="redundans.install.log"
 installdir="$HOME/src"
+log="$installdir/redundans.install.log"
 pyversion="2.7.10"
 
 exists()
@@ -24,9 +24,8 @@ echo "#######################################################################"
 echo ""
 echo "Redundans and its dependencies will be installed in $installdir"
 echo "Python with all dependencies will be installed in ~/.pythonbrew"
-echo "Perl will be installed in ~/.perlbrew, ~/perl5 and ~/.cpanm"
 echo "Necessary imports will be added to ~/.bashrc automatically. "
-echo " Original file will be backed up as ~/.bashrc_bak"
+echo " Original file will be backed up to ~/.bashrc_bak"
 echo ""
 echo "!!! Make sure libsqlite3-dev, libssl-dev & zlib.h are installed !!!"
 echo "  sudo apt-get install zlib1g-dev sqlite3 libsqlite3-dev libssl-dev"
@@ -48,7 +47,7 @@ if echo "$answer" | grep -viq "^y" ; then
     exit 0
 fi
 
-echo ""
+echo -e "\n"`date` "Checking dependencies..."
 
 error=""
 # check if all programs exists
@@ -69,7 +68,7 @@ done
 
 # skip if error
 if [ ! -z $error ]; then
-    echo "Aborted due to missing dependencies (see above)"
+    echo -e "\nAborted due to missing dependencies (see above)"
     exit 1;
 fi
 
