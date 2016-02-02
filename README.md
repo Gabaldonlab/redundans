@@ -31,17 +31,23 @@ For more information have a look at the [poster](/docs/poster.pdf) or [manuscrip
 ![Flowchart](/docs/redundans_flowchart.png)
 
 ## Prerequisites
-You can try installer to automatically fetch, compile and configure Redundans together with all dependencies. It should work on most UNIX systems.
-Make sure libsqlite3-dev, libssl & zlib.h are installed ie. `sudo apt-get install zlib1g-dev sqlite3 libsqlite3-dev libssl-dev` before running the installer.
+### UNIX installer
+UNIX installer will automatically fetch, compile and configure Redundans together with all dependencies. It should work on most UNIX systems, but was only tested on several platforms.
+**This is EXPERIMENTAL version, so you may want to create new user for installation process, so your working environment is not damaged!**
 ```bash
 bash <(curl -Ls http://bit.ly/redundans_installer)
 ```
 
+### Manual installation
 Alternatively, you can download and configure all dependencies manually: 
 - Python 2.7+ & dependencies `sudo pip install -U biopython numpy scipy`
-- [BLAT](https://genome.ucsc.edu/FAQ/FAQblat.html#blat3) & [LAST](http://last.cbrc.jp/)
+ - biopython requires (sqlite3)[https://www.sqlite.org/]
+- [BLAT](https://genome.ucsc.edu/FAQ/FAQblat.html#blat3)
+- [LAST](http://last.cbrc.jp/)
 - [BWA](http://bio-bwa.sourceforge.net/)
 - [SSPACE3](http://www.baseclear.com/genomics/bioinformatics/basetools/SSPACE)
+ - SSPACE require Perl; for perl5+ you will need to copy (getopts.pl)[http://cpansearch.perl.org/src/GBARR/perl5.005_03/lib/getopts.pl] into SSPACE/dotlib
+ - by default Redundans looks for SSPACE in ~/src/SSPACE directory (`--sspacebin` parameter)
 - [GapCloser](http://sourceforge.net/projects/soapdenovo2/files/GapCloser/)
 
 ## Running the pipeline
