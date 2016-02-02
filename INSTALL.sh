@@ -29,7 +29,7 @@ echo "Perl will be installed in ~/.perlbrew, ~/perl5 and ~/.cpanm"
 echo "Necessary imports will be added to ~/.bashrc automatically. "
 echo " Original file will be backed as ~/.bashrc_bak"
 echo ""
-echo "Installation may take 20 minutes!"
+echo "Installation may take 20-30 minutes!"
 echo "To track the installation status open in new terminal:"
 echo "  tail -f $log"
 echo ""
@@ -80,7 +80,7 @@ cp ~/.bashrc ~/.bashrc_bak
 if [ ! -d $installdir ]; then mkdir -p $installdir; fi
 cd $installdir
 
-echo `date` "Installing Python & dependencies..."
+echo `date` "Installing Python $pyversion & dependencies..."
 # install pythonbrew to ~/.pythonbrew
 curl -kLs http://xrl.us/pythonbrewinstall | bash >> $log 2>&1
  
@@ -130,7 +130,7 @@ make >> $log 2>&1
 cd ..
 
 
-echo `date` " Perl & SSPACE"
+echo `date` " Perl $plversion (needed by SSPACE)"
 # perl
 curl -Ls http://install.perlbrew.pl | bash >> $log 2>&1
 # add imports
@@ -143,6 +143,7 @@ perlbrew switch $plversion >> $log 2>&1
 # getopts.pl https://github.com/lpryszcz/redundans/#sspace-fails-with-an-error-cant-locate-getoptspl-in-inc
 cpanm Perl4::CoreLibs >> $log 2>&1
 
+echo `date` " SSPACE"
 # SSPACE - note tar.gz and dir are different!
 wget -q http://www.baseclear.com/base/download/41SSPACE-STANDARD-3.0_linux-x86_64.tar.gz
 tar xpfz 41SSPACE-STANDARD-3.0_linux-x86_64.tar.gz
