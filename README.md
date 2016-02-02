@@ -32,7 +32,8 @@ For more information have a look at the [poster](/docs/poster.pdf) or [manuscrip
 
 ## Prerequisites
 ### UNIX installer
-UNIX installer will automatically fetch, compile and configure Redundans together with all dependencies. It should work on most UNIX systems, but was only tested on some platforms.   
+UNIX installer will automatically fetch, compile and configure Redundans together with all dependencies. It should work on most UNIX systems, but was only tested on some platforms.
+It will install all dependencies from the scratch, ignoring versions already installed. 
 **This is EXPERIMENTAL version, so you may want to create new user for installation process, so your working environment is not damaged!**   
 ```bash
 # sudo adduser test && su test
@@ -40,8 +41,8 @@ bash <(curl -Ls http://bit.ly/redundans_installer)
 ```
 
 ### Docker image
-You need to install (docker)[https://www.docker.com/] first `wget -qO- https://get.docker.com/ | sh`.
-Then, you can run test example by: 
+You need to install [docker](https://www.docker.com/) first `wget -qO- https://get.docker.com/ | sh`.
+Then, you can run the test example by executing: 
 ```bash
 # process the data inside the image - all data will be lost at the end
 docker run -it -w /root/src/redundans lpryszcz/redundans:v0.11b ./redundans.py -v -i test/{600,5000}_{1,2}.fq.gz -f test/contigs.fa -o test/run1
@@ -50,6 +51,9 @@ docker run -it -w /root/src/redundans lpryszcz/redundans:v0.11b ./redundans.py -
 ## make sure you are in redundans repo directory (containing test/ directory)
 docker run -v `pwd`/test:/test:rw -it lpryszcz/redundans:v0.11b /root/src/redundans/redundans.py -v -i test/*.fq.gz -f test/contigs.fa -o test/run1
 ```
+Docker images are very handy, but they have certain limitation. 
+The most annoying for me is the **lack of autocompletion**, unless you specify the path in host and container in the exactly same manner as in the example above.
+In addition, the volume needs to be mounted every time, leading to a bit complex commands. 
 
 ### Manual installation
 Alternatively, you can download and configure all dependencies manually: 
