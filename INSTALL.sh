@@ -51,7 +51,7 @@ echo -e "\n"`date` "Checking dependencies..."
 
 error=""
 # check if all programs exists
-for cmd in echo wget curl gcc make cd ln date ldconfig sqlite3 unzip perl; do
+for cmd in echo wget curl gcc make cd ln date ldconfig sqlite3 unzip perl python; do
     if ! exists $cmd; then
         echo "Install $cmd first!"
         error=1
@@ -163,7 +163,7 @@ echo "###" >> ~/.bashrc
 echo `date` "Installation finished!"
 echo ""
 echo "To uninstall execute:"
-echo " rm -rI ~/{.pythonbrew,.perlbrew,.cpanm,perl5} ~/src/{*SSPACE,bwa,blat,GapCloser,last,redundans}*"
+echo " rm -rI ~/.pythonbrew ~/src/{*SSPACE,bwa,blat,last,GapCloser,redundans}*"
 echo " cp ~/.bashrc_bak ~/.bashrc"
 echo ""
 echo "To try Redundans, open new terminal and execute:"
