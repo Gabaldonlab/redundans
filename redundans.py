@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 desc="""Heterozygous genome assembly pipeline. It consists of three steps:
 reduction, scaffolding and gap closing. 
+More info at: https://github.com/lpryszcz/redundans
 """
 epilog="""Author:
 l.p.pryszcz@gmail.com
@@ -103,7 +104,7 @@ def get_read_limit(fasta, readLimit, verbose):
     return limit
     
 def run_scaffolding(outdir, scaffoldsFname, fastq, libraries, reducedFname, mapq, threads, \
-                    joins, limit, iters, sspacebin, verbose, \
+                    joins, linkratio, limit, iters, sspacebin, verbose, \
                     identity, overlap, minLength, lib=""):
     """Execute scaffolding step."""        
     # run scaffolding using libraries with increasing insert size in multiple iterations
@@ -120,7 +121,7 @@ def run_scaffolding(outdir, scaffoldsFname, fastq, libraries, reducedFname, mapq
             lib = ""
             # run fastq scaffolding
             fastq2sspace(out, open(pout), lib, libnames, libFs, libRs, orients, \
-                         libIS, libISStDev, threads, mapq, limit, joins, \
+                         libIS, libISStDev, threads, mapq, limit, linkratio, joins, \
                          sspacebin, verbose=0)
             # store out info
             pout = out+".fa"
@@ -233,9 +234,10 @@ def run_gapclosing(outdir, mapq, libraries, nogapsFname, scaffoldsFname, \
     # create symlink to final scaffolds or pout
     symlink(os.path.basename(pout), nogapsFname)
         
-def redundants(fastq, fasta, outdir, mapq, threads, identity, overlap, minLength, \
-               joins, readLimit, iters, sspacebin, reduction=1, scaffolding=1, \
-               gapclosing=1, cleaning=1, verbose=1, log=sys.stderr):
+def redundans(fastq, fasta, outdir, mapq, threads, identity, overlap, minLength, \
+              joins, linkratio, readLimit, iters, sspacebin, \
+              reduction=1, scaffolding=1, \
+              gapclosing=1, cleaning=1, verbose=1, log=sys.stderr):
     """Launch redundans pipeline."""
     # redirect stderr
     #sys.stderr = log
@@ -350,6 +352,8 @@ def main():
     scaf = parser.add_argument_group('Scaffolding options')
     scaf.add_argument("-j", "--joins",  default=5, type=int, 
                       help="min pairs to join contigs [%(default)s]")
+    scaf.add_argument("-a", "--linkratio", default=0.7, type=float,
+                       help="max link ratio between two best contig pairs [%(default)s]")    
     scaf.add_argument("-l", "--limit",  default=0.2, type=float, 
                       help="align subset of reads [%(default)s]")
     scaf.add_argument("-q", "--mapq",    default=10, type=int, 
@@ -384,11 +388,11 @@ def main():
             sys.exit(1)
 
     # initialise pipeline
-    redundants(o.fastq, o.fasta, o.outdir, o.mapq, o.threads, \
-               o.identity, o.overlap, o.minLength, \
-               o.joins, o.limit, o.iters, o.sspacebin, \
-               o.noreduction, o.noscaffolding, o.nogapclosing, o.nocleaning, \
-               o.verbose, o.log)
+    redundans(o.fastq, o.fasta, o.outdir, o.mapq, o.threads, \
+              o.identity, o.overlap, o.minLength, \
+              o.joins, o.linkratio, o.limit, o.iters, o.sspacebin, \
+              o.noreduction, o.noscaffolding, o.nogapclosing, o.nocleaning, \
+              o.verbose, o.log)
 
 if __name__=='__main__': 
     t0 = datetime.now()
