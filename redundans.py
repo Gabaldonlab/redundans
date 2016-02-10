@@ -103,7 +103,7 @@ def get_read_limit(fasta, readLimit, verbose):
     return limit
     
 def run_scaffolding(outdir, scaffoldsFname, fastq, libraries, reducedFname, mapq, threads, \
-                    joins, limit, iters, sspacebin, verbose, \
+                    joins, limit, iters, sspacebin, gapclosing, verbose, \
                     identity, overlap, minLength, lib=""):
     """Execute scaffolding step."""        
     # run scaffolding using libraries with increasing insert size in multiple iterations
@@ -131,7 +131,7 @@ def run_scaffolding(outdir, scaffoldsFname, fastq, libraries, reducedFname, mapq
             stats     = fasta_stats(open(pout))
             fastaSize = int(stats.split('\t')[2])
             gapSize   = int(stats.split('\t')[-2])
-            if 1.0 * gapSize / fastaSize > 0.01:
+            if gapclosing and 1.0 * gapSize / fastaSize > 0.01:
                 # close gaps
                 if verbose:
                     sys.stderr.write("  closing gaps ...\n")
@@ -276,7 +276,7 @@ def redundants(fastq, fasta, outdir, mapq, threads, identity, overlap, minLength
             sys.stderr.write("%sScaffolding...\n"%timestamp())
         # estimate read limit
         libraries = run_scaffolding(outdir, scaffoldsFname, fastq, libraries, reducedFname, mapq, \
-                                    threads, joins, limit, iters, sspacebin, verbose, \
+                                    threads, joins, limit, iters, sspacebin, gapclosing, verbose, \
                                     identity, overlap, minLength)
     else:
         symlink(os.path.basename(reducedFname), scaffoldsFname)
