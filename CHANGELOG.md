@@ -1,4 +1,4 @@
-####0.12
+####0.12 (work in progress...)
 - depth-of-coverage is used in reduction step
 - calculate insert size from global distribution maximun, not mean
 
