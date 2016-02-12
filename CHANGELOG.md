@@ -3,7 +3,7 @@
 - calculate insert size from global distribution maximun, not mean
 
 ####0.11c
-- UNIX installer and docker image (https://github.com/lpryszcz/redundans#prerequisites)
+- [UNIX installer](/#unix-installer) and [docker image](/#docker-image)
 - added new parameters
   - `--log`
   - `-S / --sortopt`
