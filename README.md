@@ -31,7 +31,7 @@ For more information have a look at the [poster](/docs/poster.pdf) or [manuscrip
 ![Flowchart](/docs/redundans_flowchart.png)
 
 ## Prerequisites
-- Python 2.7+ & Biopython 1.6+ `sudo easy_install -U biopython`
+- Python 2.7+ & Biopython 1.6+ & numpy & scipy `sudo easy_install -U biopython numpy scipy`
 - [BLAT](https://genome.ucsc.edu/FAQ/FAQblat.html#blat3) & [LAST](http://last.cbrc.jp/)
 - [BWA](http://bio-bwa.sourceforge.net/)
 - [SSPACE3](http://www.baseclear.com/genomics/bioinformatics/basetools/SSPACE)
