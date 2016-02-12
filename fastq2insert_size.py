@@ -110,7 +110,7 @@ def get_isize_stats(fq1, fq2, fasta, mapqTh=10, threads=1,
         sys.stderr.write("[WARNING] Couldn't write library statistics to %s\n"%(fq2+".is.txt",))
     return ismedian, ismean, isstd, pairs
 
-def fastq2insert_size(out, fastq, fasta, mapq, threads, limit, verbose):
+def fastq2insert_size(out, fastq, fasta, mapq, threads, limit, verbose, log=sys.stderr):
     """Report insert size statistics and return all information."""
     header  = "Insert size statistics\t\t\t\tMates orientation stats\n"
     header += "FastQ files\tmedian\tmean\tstdev\tFF\tFR\tRF\tRR\n"
@@ -122,7 +122,7 @@ def fastq2insert_size(out, fastq, fasta, mapq, threads, limit, verbose):
         # get IS stats
         ismedian, ismean, isstd, pairs = get_isize_stats(fq1, fq2, fasta, mapq, threads, limit, verbose)
         if not sum(pairs):
-            sys.stderr.write("[WARNING] No alignments for %s - %s!\n"%(fq1, fq2))
+            log.write("[WARNING] No alignments for %s - %s!\n"%(fq1, fq2))
             continue
         # report
         if verbose:

@@ -1,6 +1,14 @@
-####0.11c
+####0.12
 	-depth-of-coverage is used in reduction step
 	-calculate insert size from global distribution maximun, not mean
+
+####0.11c
+    - added new parameters
+      - `--log`
+      - `-S / --sortopt`
+      - `-a / --linkratio` 
+    - code polished
+    - solved minor issues
 
 ####0.11b
     - two similarity search algorithms: BLAT for `--identity 0.85`+ and LAST for `--identity` < 0.85

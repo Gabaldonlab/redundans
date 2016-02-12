@@ -238,11 +238,11 @@ def get_coverage(faidx, fasta, libraries, limit, verbose):
 
 def fasta2homozygous(out, fasta, identity, overlap, minLength, \
                      libraries, limit, threads=1, joinOverlap=200, endTrimming=0,
-                     verbose=0, sortopt=""):
+                     sortopt="", verbose=0, log=sys.stderr):
     """Parse alignments and report homozygous contigs"""
     #create/load fasta index
     if verbose:
-        sys.stderr.write("Indexing fasta...\n")
+        log.write("Indexing fasta...\n")
     faidx = SeqIO.index_db(fasta.name+".db3", fasta.name, "fasta")
     genomeSize = sum(len(faidx[c]) for c in faidx) 
 
@@ -264,11 +264,11 @@ def fasta2homozygous(out, fasta, identity, overlap, minLength, \
     psl = fasta.name + ".psl.gz"
     if not os.path.isfile(psl):
         if verbose:
-            sys.stderr.write("Running %s...\n"%name)
+            log.write("Running %s...\n"%name)
         similarity(fasta.name, identity, threads, verbose, sortopt)
     
     if verbose:
-        sys.stderr.write("Parsing alignments...\n")
+        log.write("Parsing alignments...\n")
     #filter alignments
     hits, overlapping = psl2hits(psl, identity, overlap, joinOverlap, endTrimming)
 
@@ -283,9 +283,9 @@ def fasta2homozygous(out, fasta, identity, overlap, minLength, \
     
     #summary    
     info = "%s\t%s\t%s\t%s\t%.2f\t%s\t%.2f\t%.3f\t%s\t%s\t%.2f\t%s\t%.2f\n"
-    sys.stderr.write(info%(fasta.name, genomeSize, len(faidx), ssize, 100.0*ssize/genomeSize, \
-                           skipped, 100.0*skipped/len(faidx), identity, len(merged), \
-                           nsize, 100.0*nsize/genomeSize, k, 100.0*k/len(faidx)))
+    log.write(info%(fasta.name, genomeSize, len(faidx), ssize, 100.0*ssize/genomeSize, \
+                    skipped, 100.0*skipped/len(faidx), identity, len(merged), \
+                    nsize, 100.0*nsize/genomeSize, k, 100.0*k/len(faidx)))
 
     return genomeSize, len(faidx), ssize, skipped, identity
 
@@ -386,7 +386,7 @@ def main():
         out = gzip.open(fasta.name+".homozygous.fa.gz", "w")
         fasta2homozygous(out, fasta, o.identity, o.overlap, o.minLength, \
                          libraries, limit, o.threads, o.joinOverlap, o.endTrimming,
-                         o.verbose, o.sortopt)
+                         o.sortopt, o.verbose)
         out.close()
 
 if __name__=='__main__': 
