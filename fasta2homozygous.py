@@ -17,7 +17,7 @@ import gzip, math, os, sys, subprocess
 from datetime import datetime
 from Bio import SeqIO
 
-def last_single(fasta, identity, threads, verbose):
+def last_single(fasta, identity, threads, verbose, sortopt=""):
     """Start LAST with single thread.
     Python 2.6 compatible."""
     # build db
@@ -26,10 +26,10 @@ def last_single(fasta, identity, threads, verbose):
     # run LAST
     cmd  = "lastal %s %s | maf-convert psl - | "%(fasta, fasta)
     # sort and take into account only larger vs smaller
-    cmd += "awk '$10!=$14 && $11>=$15' | sort -S %s -k11nr,11 -k12n,12 -k13nr,13 | gzip > %s.psl.gz"%("80%", fasta)
+    cmd += "awk '$10!=$14 && $11>=$15' | sort %s -k11nr,11 -k12n,12 -k13nr,13 | gzip > %s.psl.gz"%(sortopt, fasta)
     os.system(cmd)
 
-def last_multi(fasta, identity, threads, verbose):
+def last_multi(fasta, identity, threads, verbose, sortopt=""):
     """Start LAST with multiple threads.
     Works only on Python 2.7, stalls on 2.6.
     """
@@ -60,14 +60,14 @@ def last_multi(fasta, identity, threads, verbose):
         proc2.wait()
         out.close() #'''
     # sort and take into account only larger vs smaller
-    cmd2 = "awk '$10!=$14 && $11>=$15' %s*.psl | sort -S %s -k11nr,11 -k12n,12 -k13nr,13 | gzip > %s.psl.gz"%(fasta, "80%", fasta)
+    cmd2 = "awk '$10!=$14 && $11>=$15' %s*.psl | sort %s -k11nr,11 -k12n,12 -k13nr,13 | gzip > %s.psl.gz"%(fasta, sortopt, fasta)
     if verbose:
         sys.stderr.write(cmd2+'\n')
     os.system(cmd2)
     # clean-up
     os.system("rm %s*.psl"%fasta)
 
-def blat_multi(fasta, identity, threads, verbose):
+def blat_multi(fasta, identity, threads, verbose, sortopt=""):
     """Start BLAT"""
     #prepare BLAT command
     identity = int(100*identity)
@@ -99,14 +99,14 @@ def blat_multi(fasta, identity, threads, verbose):
     #run BLAT
     os.system(cmd)
     # sort and take into account only larger vs smaller
-    cmd2 = "awk '$10!=$14 && $11>=$15' %s*.psl | sort -k11nr,11 -k12n,12 -k13nr,13 | gzip > %s.psl.gz"%(fasta, fasta)
+    cmd2 = "awk '$10!=$14 && $11>=$15' %s*.psl | sort %s -k11nr,11 -k12n,12 -k13nr,13 | gzip > %s.psl.gz"%(fasta, sortopt, fasta)
     if verbose:
         sys.stderr.write(cmd2+'\n')
     os.system(cmd2)
     # clean-up
     os.system("rm %s.psl %s.11.ooc"%(fasta, fasta))
     
-def blat(fasta, identity, threads, verbose):
+def blat(fasta, identity, threads, verbose, sortopt=""):
     """Start BLAT"""
     #prepare BLAT command
     identity = int(100*identity)
@@ -124,7 +124,7 @@ def blat(fasta, identity, threads, verbose):
     #run BLAT
     os.system(cmd)
     # sort and take into account only larger vs smaller
-    cmd2 = "awk '$10!=$14 && $11>=$15' %s.psl | sort -k11nr,11 -k12n,12 -k13nr,13 | gzip > %s.psl.gz"%(fasta, fasta)
+    cmd2 = "awk '$10!=$14 && $11>=$15' %s.psl | sort %s -k11nr,11 -k12n,12 -k13nr,13 | gzip > %s.psl.gz"%(fasta, sortopt, fasta)
     if verbose:
         sys.stderr.write(cmd2+'\n')
     os.system(cmd2)
@@ -237,8 +237,8 @@ def get_coverage(faidx, fasta, libraries, limit, verbose):
     return c2cov, covTh
 
 def fasta2homozygous(out, fasta, identity, overlap, minLength, \
-                     libraries, limit, \
-                     threads=1, joinOverlap=200, endTrimming=0, verbose=0):
+                     libraries, limit, threads=1, joinOverlap=200, endTrimming=0,
+                     verbose=0, sortopt=""):
     """Parse alignments and report homozygous contigs"""
     #create/load fasta index
     if verbose:
@@ -265,7 +265,7 @@ def fasta2homozygous(out, fasta, identity, overlap, minLength, \
     if not os.path.isfile(psl):
         if verbose:
             sys.stderr.write("Running %s...\n"%name)
-        similarity(fasta.name, identity, threads, verbose)
+        similarity(fasta.name, identity, threads, verbose, sortopt)
     
     if verbose:
         sys.stderr.write("Parsing alignments...\n")
@@ -321,17 +321,9 @@ def merge_fasta(out, faidx, contig2skip, overlapping, minLength, verbose):
         #add
         joins[tname] = (qname, data)
         joins[qname] = (tname, data)
-
-    """
-    for k, v in sorted(joins.iteritems()):
-        print k, v[0]
-    print len(joins)
-    sys.exit()
-    #"""
         
     #merging
     merged = {}
-    
     
     #report not skipper, nor joined
     k = skipped = ssize = 0
@@ -375,6 +367,8 @@ def main():
                         help="max. end trim on contig join [%(default)s]")
     parser.add_argument("--minLength",   default=200, type=int, 
                         help="min. contig length [%(default)s]")
+    parser.add_argument("-S", "--sortopt",   default="-T /tmp -S 66%", 
+                        help="UNIX sort options [%(default)s]")
     #parser.add_argument("-p", "--ploidy",    default=2, type=int, 
     #                    help="ploidy          [%(default)s]")
     
@@ -391,8 +385,8 @@ def main():
     for fasta in o.fasta:
         out = gzip.open(fasta.name+".homozygous.fa.gz", "w")
         fasta2homozygous(out, fasta, o.identity, o.overlap, o.minLength, \
-                         libraries, limit, 
-                         o.threads, o.joinOverlap, o.endTrimming, o.verbose)
+                         libraries, limit, o.threads, o.joinOverlap, o.endTrimming,
+                         o.verbose, o.sortopt)
         out.close()
 
 if __name__=='__main__': 

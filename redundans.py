@@ -226,10 +226,11 @@ def run_gapclosing(outdir, mapq, libraries, nogapsFname, scaffoldsFname, \
     # create symlink to final scaffolds or pout
     symlink(os.path.basename(pout), nogapsFname)
         
-def redundans(fastq, fasta, outdir, mapq, threads, identity, overlap, minLength, \
+def redundans(fastq, fasta, outdir, mapq, threads,
+              identity, overlap, minLength, sortopt, \
               joins, linkratio, readLimit, iters, sspacebin, \
-              reduction=1, scaffolding=1, \
-              gapclosing=1, cleaning=1, verbose=1, log=sys.stderr):
+              reduction=1, scaffolding=1, gapclosing=1, cleaning=1, \
+              verbose=1, log=sys.stderr):
     """Launch redundans pipeline."""
     # redirect stderr
     #sys.stderr = log
@@ -255,7 +256,7 @@ def redundans(fastq, fasta, outdir, mapq, threads, identity, overlap, minLength,
             sys.stderr.write("#file name\tgenome size\tcontigs\theterozygous size\t[%]\theterozygous contigs\t[%]\tidentity [%]\tpossible joins\thomozygous size\t[%]\thomozygous contigs\t[%]\n")
         with open(reducedFname, "w") as out:
             info = fasta2homozygous(out, open(contigsFname), identity, overlap, \
-                                    minLength, libraries, limit, threads)
+                                    minLength, libraries, limit, threads, sortopt)
     else:
         symlink(os.path.basename(contigsFname), reducedFname)
     # update fasta list
@@ -340,7 +341,8 @@ def main():
                       help="min. overlap  [%(default)s]")
     redu.add_argument("--minLength",       default=200, type=int, 
                       help="min. contig length [%(default)s]")
-    ##missing redu options
+    redu.add_argument("-S", "--sortopt",   default="-T /tmp -S 66%", 
+                      help="UNIX sort options [%(default)s]")
     scaf = parser.add_argument_group('Scaffolding options')
     scaf.add_argument("-j", "--joins",  default=5, type=int, 
                       help="min pairs to join contigs [%(default)s]")
@@ -381,7 +383,7 @@ def main():
 
     # initialise pipeline
     redundans(o.fastq, o.fasta, o.outdir, o.mapq, o.threads, \
-              o.identity, o.overlap, o.minLength, \
+              o.identity, o.overlap, o.minLength, o.sortopt, \
               o.joins, o.linkratio, o.limit, o.iters, o.sspacebin, \
               o.noreduction, o.noscaffolding, o.nogapclosing, o.nocleaning, \
               o.verbose, o.log)
