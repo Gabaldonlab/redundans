@@ -31,10 +31,41 @@ For more information have a look at the [poster](/docs/poster.pdf) or [manuscrip
 ![Flowchart](/docs/redundans_flowchart.png)
 
 ## Prerequisites
-- Python 2.7+ & Biopython 1.6+ & numpy & scipy `sudo easy_install -U biopython numpy scipy`
-- [BLAT](https://genome.ucsc.edu/FAQ/FAQblat.html#blat3) & [LAST](http://last.cbrc.jp/)
+
+### UNIX installer
+UNIX installer will automatically fetch, compile and configure Redundans together with all dependencies. It should work on most UNIX systems, but was only tested on some platforms.
+It will install all dependencies from the scratch, ignoring versions already installed. 
+**This is EXPERIMENTAL version, so you may want to create new user for installation process, to avoid data loss!**   
+```bash
+# sudo adduser test && su test
+bash <(curl -Ls http://bit.ly/redundans_installer)
+```
+
+### Docker image
+First, you  need to install [docker](https://www.docker.com/): `wget -qO- https://get.docker.com/ | sh`  
+Then, you can run the test example by executing: 
+```bash
+# process the data inside the image - all data will be lost at the end
+docker run -it -w /root/src/redundans lpryszcz/redundans ./redundans.py -v -i test/{600,5000}_{1,2}.fq.gz -f test/contigs.fa -o test/run1
+
+# if you wish to process local files, you need to mount the volume with -v
+## make sure you are in redundans repo directory (containing test/ directory)
+docker run -v `pwd`/test:/test:rw -it lpryszcz/redundans /root/src/redundans/redundans.py -v -i test/*.fq.gz -f test/contigs.fa -o test/run1
+```
+Docker images are very handy, but they have certain limitation. 
+The most annoying for me is the **lack of autocompletion**, unless you specify the path in host and container in the exactly same manner as in the example above.
+In addition, the volume needs to be mounted every time, leading to a bit complex commands. 
+
+### Manual installation
+Alternatively, you can download and configure all dependencies manually: 
+- Python 2.7+ & dependencies `sudo pip install -U biopython numpy scipy`
+ - biopython requires [sqlite3](https://www.sqlite.org/)
+- [BLAT](https://genome.ucsc.edu/FAQ/FAQblat.html#blat3)
+- [LAST](http://last.cbrc.jp/)
 - [BWA](http://bio-bwa.sourceforge.net/)
 - [SSPACE3](http://www.baseclear.com/genomics/bioinformatics/basetools/SSPACE)
+ - SSPACE require Perl; for perl5+ you will need to copy [getopts.pl](http://cpansearch.perl.org/src/GBARR/perl5.005_03/lib/getopts.pl) into SSPACE/dotlib
+ - by default Redundans looks for SSPACE in ~/src/SSPACE directory (`--sspacebin` parameter)
 - [GapCloser](http://sourceforge.net/projects/soapdenovo2/files/GapCloser/)
 
 ## Running the pipeline
@@ -140,6 +171,22 @@ To limit speed difference between these two algorithms, LAST **runs in multiple 
 
 ### How is multiple redundancy handled? 
 Redundans removes all contigs, but the longest one, that fullfill identity & overlap critaria during reduction step. For more info see [issue #8](https://github.com/lpryszcz/redundans/issues/8). 
+
+## FAQ - INSTALL.sh
+### Installation succeeded, but redundans fails with `ImportError: No module named Bio`
+Make sure you opened new terminal window after installation finished. 
+
+### Installation succeeded, but redundans fails with `Bio.MissingPythonDependencyError: Requires sqlite3, which is included Python 2.5+`
+Most likely you didn't install libsqlite3-dev before running installer. Try this:
+```bash
+# install missing library
+sudo apt-get install sqlite3 libsqlite3-dev
+# uninstall all
+rm -rI ~/.pythonbrew ~/src/{*SSPACE,bwa,blat,GapCloser,last,redundans}*
+cp ~/.bashrc_bak ~/.bashrc
+# open new terminal and relaunch installer
+bash <(curl -Ls http://bit.ly/redundans_installer)
+```
 
 ## Citation
 Leszek P. Pryszcz and Toni Gabaldón (Submitted) Redundans: an assembly pipeline for highly heterozygous genomes. 

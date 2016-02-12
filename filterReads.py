@@ -41,7 +41,7 @@ Fixes:
 import argparse, locale, subprocess, gzip, os, sys, numpy as np
 from datetime import datetime
 from Bio import SeqIO
-locale.setlocale(locale.LC_ALL, 'en_US.utf8')
+#locale.setlocale(locale.LC_ALL, 'en_US.utf8')
 
 def checkQualityEncoding(inFile, number_reads, qual64offset, qseq):
 

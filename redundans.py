@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 desc="""Heterozygous genome assembly pipeline. It consists of three steps:
 reduction, scaffolding and gap closing. 
+More info at: https://github.com/lpryszcz/redundans
 """
 epilog="""Author:
 l.p.pryszcz@gmail.com
@@ -103,13 +104,13 @@ def get_read_limit(fasta, readLimit, verbose):
     return limit
     
 def run_scaffolding(outdir, scaffoldsFname, fastq, libraries, reducedFname, mapq, threads, \
-                    joins, limit, iters, sspacebin, verbose, \
+                    joins, linkratio, limit, iters, sspacebin, gapclosing, verbose, \
                     identity, overlap, minLength, lib=""):
-    """Execute scaffolding step."""        
-    # run scaffolding using libraries with increasing insert size in multiple iterations
+    """Execute scaffolding step using libraries with increasing insert size
+    in multiple iterations.
+    """
     pout = reducedFname
     i = 0
-    #for i, (libnames, libFs, libRs, orients, libIS, libISStDev) in enumerate(libraries, 1):
     while i < len(libraries):
         libnames, libFs, libRs, orients, libIS, libISStDev = libraries[i]
         i += 1
@@ -120,7 +121,7 @@ def run_scaffolding(outdir, scaffoldsFname, fastq, libraries, reducedFname, mapq
             lib = ""
             # run fastq scaffolding
             fastq2sspace(out, open(pout), lib, libnames, libFs, libRs, orients, \
-                         libIS, libISStDev, threads, mapq, limit, joins, \
+                         libIS, libISStDev, threads, mapq, limit, linkratio, joins, \
                          sspacebin, verbose=0)
             # store out info
             pout = out+".fa"
@@ -131,7 +132,7 @@ def run_scaffolding(outdir, scaffoldsFname, fastq, libraries, reducedFname, mapq
             stats     = fasta_stats(open(pout))
             fastaSize = int(stats.split('\t')[2])
             gapSize   = int(stats.split('\t')[-2])
-            if 1.0 * gapSize / fastaSize > 0.01:
+            if gapclosing and 1.0 * gapSize / fastaSize > 0.01:
                 # close gaps
                 if verbose:
                     sys.stderr.write("  closing gaps ...\n")
@@ -140,18 +141,10 @@ def run_scaffolding(outdir, scaffoldsFname, fastq, libraries, reducedFname, mapq
                 run_gapclosing(outdir, mapq, [libraries[i-1],], nogapsFname, pout, \
                                threads, limit, 1, 0, basename)
                 pout = nogapsFname
-                # reduce
-                '''reducedFname = ".".join(pout.split(".")[:-1]) + ".reduced.fa"
-                with open(reducedFname, "w") as out:
-                    fasta2homozygous(out, open(nogapsFname), identity, overlap, \
-                                     minLength, libraries, limit, threads)
-                # update pout
-                pout = reducedFname #nogapsFname'''
         # update library insert size estimation, especially for mate-pairs
         libraries = get_libraries(fastq, pout, mapq, threads, verbose=0)
     # create symlink to final scaffolds or pout
-    symlink(pout, scaffoldsFname)
-
+    symlink(os.path.basename(pout), scaffoldsFname)
     return libraries
 
 def filter_reads(outdir, fq1, fq2, minlen, maxlen, limit, minqual):
@@ -173,8 +166,8 @@ def filter_reads(outdir, fq1, fq2, minlen, maxlen, limit, minqual):
     out2.close()
     return fn1, fn2
     
-def prepare_gapcloser(outdir, mapq, configFn, libFs, libRs, orientations, libIS, libISStDev, \
-                      minlen, maxlen, limit, verbose): 
+def prepare_gapcloser(outdir, mapq, configFn, libFs, libRs, orientations,
+                      libIS, libISStDev, minlen, maxlen, limit, verbose): 
     """Return SOAPdenovo2 config file needed by GapCloser."""
     lines  = "[LIB]\navg_ins=%s\nreverse_seq=%s\nasm_flags=3\nrank=%s\npair_num_cutoff=5\nmap_len=35\nq1=%s\nq2=%s\n"
     config = ["max_rd_len=%s"%maxlen]
@@ -231,11 +224,12 @@ def run_gapclosing(outdir, mapq, libraries, nogapsFname, scaffoldsFname, \
             # store out info
             pout = out
     # create symlink to final scaffolds or pout
-    symlink(pout, nogapsFname)
+    symlink(os.path.basename(pout), nogapsFname)
         
-def redundants(fastq, fasta, outdir, mapq, threads, identity, overlap, minLength, \
-               joins, readLimit, iters, sspacebin, reduction=1, scaffolding=1, \
-               gapclosing=1, cleaning=1, verbose=1, log=sys.stderr):
+def redundans(fastq, fasta, outdir, mapq, threads, identity, overlap, minLength, \
+              joins, linkratio, readLimit, iters, sspacebin, \
+              reduction=1, scaffolding=1, \
+              gapclosing=1, cleaning=1, verbose=1, log=sys.stderr):
     """Launch redundans pipeline."""
     # redirect stderr
     #sys.stderr = log
@@ -263,7 +257,7 @@ def redundants(fastq, fasta, outdir, mapq, threads, identity, overlap, minLength
             info = fasta2homozygous(out, open(contigsFname), identity, overlap, \
                                     minLength, libraries, limit, threads)
     else:
-        symlink(contigsFname, reducedFname)
+        symlink(os.path.basename(contigsFname), reducedFname)
     # update fasta list
     fastas  = [contigsFname, reducedFname]
 
@@ -276,10 +270,10 @@ def redundants(fastq, fasta, outdir, mapq, threads, identity, overlap, minLength
             sys.stderr.write("%sScaffolding...\n"%timestamp())
         # estimate read limit
         libraries = run_scaffolding(outdir, scaffoldsFname, fastq, libraries, reducedFname, mapq, \
-                                    threads, joins, limit, iters, sspacebin, verbose, \
+                                    threads, joins, linkratio, limit, iters, sspacebin, gapclosing, verbose, \
                                     identity, overlap, minLength)
     else:
-        symlink(reducedFname, scaffoldsFname)
+        symlink(os.path.basename(reducedFname), scaffoldsFname)
     # update fasta list
     fastas += sorted(glob.glob(os.path.join(outdir, "_sspace.*.fa")))
     fastas.append(scaffoldsFname)
@@ -293,7 +287,7 @@ def redundants(fastq, fasta, outdir, mapq, threads, identity, overlap, minLength
         run_gapclosing(outdir, mapq, libraries, nogapsFname, scaffoldsFname, threads, \
                        limit, iters, verbose)
     else:
-        symlink(scaffoldsFname, nogapsFname)
+        symlink(os.path.basename(scaffoldsFname), nogapsFname)
     # update fasta list
     fastas += sorted(glob.glob(os.path.join(outdir, "_gap*.fa")))
     fastas.append(nogapsFname)
@@ -350,6 +344,8 @@ def main():
     scaf = parser.add_argument_group('Scaffolding options')
     scaf.add_argument("-j", "--joins",  default=5, type=int, 
                       help="min pairs to join contigs [%(default)s]")
+    scaf.add_argument("-a", "--linkratio", default=0.7, type=float,
+                       help="max link ratio between two best contig pairs [%(default)s]")    
     scaf.add_argument("-l", "--limit",  default=0.2, type=float, 
                       help="align subset of reads [%(default)s]")
     scaf.add_argument("-q", "--mapq",    default=10, type=int, 
@@ -384,11 +380,11 @@ def main():
             sys.exit(1)
 
     # initialise pipeline
-    redundants(o.fastq, o.fasta, o.outdir, o.mapq, o.threads, \
-               o.identity, o.overlap, o.minLength, \
-               o.joins, o.limit, o.iters, o.sspacebin, \
-               o.noreduction, o.noscaffolding, o.nogapclosing, o.nocleaning, \
-               o.verbose, o.log)
+    redundans(o.fastq, o.fasta, o.outdir, o.mapq, o.threads, \
+              o.identity, o.overlap, o.minLength, \
+              o.joins, o.linkratio, o.limit, o.iters, o.sspacebin, \
+              o.noreduction, o.noscaffolding, o.nogapclosing, o.nocleaning, \
+              o.verbose, o.log)
 
 if __name__=='__main__': 
     t0 = datetime.now()

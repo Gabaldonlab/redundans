@@ -185,7 +185,7 @@ def get_libs( outdir,libFn,libNames,tabFnames,inserts,iBounds,orientations,verbo
     return outfn
 
 def fastq2sspace(out, fasta, lib, libnames, libFs, libRs, orientations,  \
-                 libIS, libISStDev, cores, mapq, upto, minlinks, \
+                 libIS, libISStDev, cores, mapq, upto, minlinks, linkratio, \
                  sspacebin, verbose):
     """Map reads onto contigs, prepare library file and execute SSPACE2"""
     # get dir variables
@@ -210,8 +210,8 @@ def fastq2sspace(out, fasta, lib, libnames, libFs, libRs, orientations,  \
     # run sspace
     ## change dir to outdir - sspace output intermediate files always in curdir
     os.chdir(outdir)
-    CMD = "perl %s -l %s -a 0.7 -k %s -s %s -b %s > %s.sspace.log"
-    cmd = CMD%(sspacebin, os.path.basename(libFn), minlinks, \
+    CMD = "perl %s -l %s -a %s -k %s -s %s -b %s > %s.sspace.log"
+    cmd = CMD%(sspacebin, os.path.basename(libFn), minlinks, linkratio, \
                os.path.basename(fasta.name), outfn, outfn)
     if verbose:
         sys.stderr.write(" %s\n"%cmd)
@@ -229,6 +229,8 @@ def main():
                        help="genome fasta        [mandatory]")
     parser.add_argument("-k", dest="minlinks",   default=5, type=int,
                        help="min number of links [%(default)s]")    
+    parser.add_argument("-a", "--linkratio",     default=0.7, type=float,
+                       help="max link ratio between two best contig pairs [%(default)s]")    
     parser.add_argument("-l", dest="lib",        default="",
                        help="lib file            [No libs]")    
     parser.add_argument("-o", dest="out",        default="sspace_out",
@@ -262,7 +264,7 @@ def main():
         parser.error("Wrong number of arguments!")
 
     fastq2sspace(o.out, o.fasta, o.lib, o.libnames, o.libFs, o.libRs, o.orientations, \
-                 o.libIS, o.libISStDev, o.cores, o.mapq, o.upto, o.minlinks, \
+                 o.libIS, o.libISStDev, o.cores, o.mapq, o.upto, o.minlinks, o.linkratio, \
                  o.sspacebin, o.verbose)
     
 if __name__=='__main__': 
