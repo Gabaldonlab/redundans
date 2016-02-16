@@ -1,10 +1,14 @@
 ### Table of Contents
 - **[Redundans](#redundans)**  
   - **[Prerequisites](#prerequisites)**  
+    - **[UNIX installer](#unix-installer)**  
+    - **[Docker image](#docker-image)** 
+    - **[Manual installation](#manual-installation)**  
   - **[Running the pipeline](#running-the-pipeline)**  
     - **[Parameters](#parameters)**  
     - **[Test run](#test-run)**  
-  - **[FAQ](#faq)**  
+  - **[FAQ](#faq)**
+  - **[FAQ - INSTALL.sh](#faq---installsh)**  
   - **[Citation](#citation)**  
 
 # Redundans
@@ -22,7 +26,7 @@ The pipeline consists of three steps/modules:
 
 Redundans is: 
 - **fast** & **lightweight**, multi-core support and memory-optimised, 
-so it can be run even on then laptop for small-to-medium size genomes
+so it can be run even on the laptop for small-to-medium size genomes
 - **flexible** toward many sequencing technologies (Illumina, 454 or Sanger) and library types (paired-end, mate pairs, fosmids)
 - **modular**: every step can be ommited or replaced by another tools
 
