@@ -390,7 +390,7 @@ if __name__=='__main__':
     try:
         main()
     except KeyboardInterrupt:
-        log.write("\nCtrl-C pressed!      \n")
+        sys.stderr.write("\nCtrl-C pressed!      \n")
     #except IOError as e:
     #    log.write("I/O error({0}): {1}\n{2}\n".format(e.errno, e.strerror, str(e)))
     #[Errno 95] Operation not supported ie symlinks over samba or in NFS shares
