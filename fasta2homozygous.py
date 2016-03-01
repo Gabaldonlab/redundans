@@ -26,7 +26,7 @@ def last_single(fasta, identity, threads, verbose, sortopt=""):
     # run LAST
     cmd  = "lastal %s %s | maf-convert psl - | "%(fasta, fasta)
     # sort and take into account only larger vs smaller
-    cmd += "awk '$10!=$14 && $11>=$15' | sort %s -k11nr,11 -k12n,12 -k13nr,13 | gzip > %s.psl.gz"%(sortopt, fasta)
+    cmd += "awk '$10!=$14 && $11>=$15' | gzip > %s.psl.gz"%(fasta,)
     os.system(cmd)
 
 def last_multi(fasta, identity, threads, verbose, sortopt=""):
@@ -60,7 +60,7 @@ def last_multi(fasta, identity, threads, verbose, sortopt=""):
         proc2.wait()
         out.close() #'''
     # sort and take into account only larger vs smaller
-    cmd2 = "awk '$10!=$14 && $11>=$15' %s*.psl | sort %s -k11nr,11 -k12n,12 -k13nr,13 | gzip > %s.psl.gz"%(fasta, sortopt, fasta)
+    cmd2 = "awk '$10!=$14 && $11>=$15' %s*.psl | gzip > %s.psl.gz"%(fasta, fasta)
     if verbose:
         sys.stderr.write(cmd2+'\n')
     os.system(cmd2)
@@ -99,7 +99,7 @@ def blat_multi(fasta, identity, threads, verbose, sortopt=""):
     #run BLAT
     os.system(cmd)
     # sort and take into account only larger vs smaller
-    cmd2 = "awk '$10!=$14 && $11>=$15' %s*.psl | sort %s -k11nr,11 -k12n,12 -k13nr,13 | gzip > %s.psl.gz"%(fasta, sortopt, fasta)
+    cmd2 = "awk '$10!=$14 && $11>=$15' %s*.psl | gzip > %s.psl.gz"%(fasta, fasta)
     if verbose:
         sys.stderr.write(cmd2+'\n')
     os.system(cmd2)
@@ -124,7 +124,7 @@ def blat(fasta, identity, threads, verbose, sortopt=""):
     #run BLAT
     os.system(cmd)
     # sort and take into account only larger vs smaller
-    cmd2 = "awk '$10!=$14 && $11>=$15' %s.psl | sort %s -k11nr,11 -k12n,12 -k13nr,13 | gzip > %s.psl.gz"%(fasta, sortopt, fasta)
+    cmd2 = "awk '$10!=$14 && $11>=$15' %s.psl | gzip > %s.psl.gz"%(fasta, fasta)
     if verbose:
         sys.stderr.write(cmd2+'\n')
     os.system(cmd2)
@@ -144,9 +144,7 @@ def get_ranges(starts, sizes, offset=1):
 
 def psl2hits(psl, identityTh, overlapTh, joinOverlap, endTrimming, \
              dblength=0, Lambda=0.318, K=0.13):
-    """Return valid hits.
-    PSL has to be sorted by q size: sort -k11nr,11 -k12n,12 -k13nr,13
-    """
+    """Return valid hits. """
     overlapping = []
     hits = []
     added = set()
@@ -157,7 +155,7 @@ def psl2hits(psl, identityTh, overlapTh, joinOverlap, endTrimming, \
         (matches, mismatches, repm, Ns, Qgapc, Qgaps, Tgapc, Tgaps, strand, \
          q, qsize, qstart, qend, t, tsize, tstart, tend, blocks, bsizes, \
          qstarts, tstarts) = l.split('\t')
-        #skip reverse matches - pairs tracking
+        # skip reverse matches - pairs tracking
         if q==t or (t,q) in added:
             continue
         added.add((q,t))

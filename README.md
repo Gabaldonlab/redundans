@@ -168,7 +168,7 @@ OSError: [Errno 2] No such file or directory
 [ERROR] maf-convert: not found
 ```
 
-### Redundans fails with `IOError: [Errno 2] No such file or directory:`.  
+### Redundans fails with `IOError`.  
 Make sure the `--sspacebin` point to the path containing SSPACE3 binaries ie. /home/user/bin/SSPACE-STANDARD-3.0_linux-x86_64/SSPACE_Standard_v3.0.pl
 
 ```bash
