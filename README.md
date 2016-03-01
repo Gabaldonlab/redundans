@@ -168,6 +168,13 @@ OSError: [Errno 2] No such file or directory
 [ERROR] maf-convert: not found
 ```
 
+### Redundans fails with `IOError: [Errno 2] No such file or directory:`.  
+Make sure the `--sspacebin` point to the path containing SSPACE3 binaries ie. /home/user/bin/SSPACE-STANDARD-3.0_linux-x86_64/SSPACE_Standard_v3.0.pl
+
+```bash
+IOError: [Errno 2] No such file or directory: '.../test/run11/_sspace.1.1.fa'
+```
+
 ### Why does Redundans use two similarity search algorithms, [BLAT](https://genome.ucsc.edu/FAQ/FAQblat.html#blat3) & [LAST](http://last.cbrc.jp/)?   
 BLAT is lightweight & very fast, but lack sensitivity for more diverged sequences. If you specify `--identity` below 0.85, the pipeline will use LAST, that is ~4x slower, but more sensitive than BLAT.
 Our simulations shows LAST is capable of correctly reducing heterozygous assemblies with up to 45% divergence between haplotypes.   
