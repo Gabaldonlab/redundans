@@ -181,7 +181,11 @@ Our simulations shows LAST is capable of correctly reducing heterozygous assembl
 To limit speed difference between these two algorithms, LAST **runs in multiple threads**, so using `-t 4` you shouldn't see any difference in runtime between runs for `--identity 0.9` or `--identity 0.5`. Note, this only works in Python 2.7! 
 
 ### How is multiple redundancy handled? 
-Redundans removes all contigs, but the longest one, that fullfill identity & overlap critaria during reduction step. For more info see [issue #8](https://github.com/lpryszcz/redundans/issues/8). 
+Redundans removes all contigs, but the longest one, that fullfill identity & overlap critaria during reduction step. For more info see [issue #8](https://github.com/lpryszcz/redundans/issues/8).
+
+### Why there are two github repositories for Redundans?
+https://github.com/Gabaldonlab/redundans is the official repository for Redundans, but we keep https://github.com/lpryszcz/redundans for back-compatibility, as some of the very first users of Redundans use it.
+**Both Redundans repositories contain the same code and are regularly updated.**
 
 ## FAQ - INSTALL.sh
 ### Installation succeeded, but redundans fails with `ImportError: No module named Bio`
