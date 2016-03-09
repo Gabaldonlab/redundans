@@ -98,7 +98,7 @@ def main():
             continue
         if f.name.endswith('.gz'):
             f=gzip.open(f.name)
-        o.out.write(fasta_stats(f), header)
+        o.out.write(fasta_stats(f, header))
 	
 if __name__=='__main__': 
     t0 = datetime.now()
