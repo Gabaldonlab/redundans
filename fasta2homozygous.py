@@ -1,13 +1,11 @@
 #!/usr/bin/env python
-desc="""Align genome onto itself (BLAT) and remove heterozygous (redundant) scaffolds.
+desc="""Align genome onto itself (LAST) and keep only the longest
+from heterozygous (redundant) contigs/scaffolds.
 
 TO ADD:
-- multicore BLAT (blat_multi)
 - scaffold extension based on overlapping matches (overlapping already recognised)
 - reporting of haplotypes
 - recognise heterozygous contigs with translocations
-- add min contig length, ignore shorter contigs
-- in memory sorting (so far patched with 80%) #https://github.com/lpryszcz/redundans/issues/9
 """
 epilog="""Author: l.p.pryszcz@gmail.com
 Mizerow, 26/08/2014
@@ -17,184 +15,44 @@ import gzip, math, os, sys, subprocess
 from datetime import datetime
 from Bio import SeqIO
 
-def last_single(fasta, identity, threads, verbose, sortopt=""):
-    """Start LAST with single thread.
-    Python 2.6 compatible."""
+def run_last(fasta, identity, threads, verbose):
+    """Start LAST with multi-threads. """
+    if verbose:
+        log.write(" Running LAST...\n")
     # build db
     if not os.path.isfile(fasta+".suf"):
         os.system("lastdb %s %s" % (fasta, fasta))
     # run LAST
-    cmd  = "lastal %s %s | maf-convert psl - | "%(fasta, fasta)
-    # sort and take into account only larger vs smaller
-    cmd += "awk '$10!=$14 && $11>=$15' | gzip > %s.psl.gz"%(fasta,)
-    os.system(cmd)
-
-def last_multi(fasta, identity, threads, verbose, sortopt=""):
-    """Start LAST with multiple threads.
-    Works only on Python 2.7, stalls on 2.6.
-    """
-    # build db
-    if not os.path.isfile(fasta+".suf"):
-        os.system("lastdb %s %s" % (fasta, fasta))
-    # run LAST as subprocess batch
-    procs1, procs2, outs = [], [], []
-    cmd11 = ["lastal", fasta, "-"] 
-    cmd12 = ["maf-convert", "psl", "-"]
-    for i in range(threads):
-        out   = open("%s_%s.psl"%(fasta, i), "w")
-        log1  = open("%s_%s.psl.log1"%(fasta, i), "w")
-        log2  = open("%s_%s.psl.log2"%(fasta, i), "w")
-        proc1 = subprocess.Popen(cmd11, stdin=subprocess.PIPE, \
-                                 stdout=subprocess.PIPE, stderr=log1)
-        proc2 = subprocess.Popen(cmd12, stdin=proc1.stdout, \
-                                 stdout=out, stderr=log2)
-        outs.append(out)
-        procs1.append(proc1)
-        procs2.append(proc2)
-    # parse fasta
-    for i, r in enumerate(SeqIO.parse(fasta, 'fasta')):
-        procs1[i%threads].stdin.write(r.format('fasta'))
-    # wait until all finish
-    for out, proc1, proc2 in zip(outs, procs1, procs2):
-        proc1.stdin.close()
-        proc2.wait()
-        out.close() #'''
-    # sort and take into account only larger vs smaller
-    cmd2 = "awk '$10!=$14 && $11>=$15' %s*.psl | gzip > %s.psl.gz"%(fasta, fasta)
-    if verbose:
-        sys.stderr.write(cmd2+'\n')
-    os.system(cmd2)
-    # clean-up
-    os.system("rm %s*.psl"%fasta)
-
-def blat_multi(fasta, identity, threads, verbose, sortopt=""):
-    """Start BLAT"""
-    #prepare BLAT command
-    identity = int(100*identity)
-    args = ["-ooc=%s.11.ooc"%fasta, "-dots=1000", "-noHead", "-extendThroughN", \
-            "-minMatch=5", "-repMatch=10", \
-            "-minScore=%s"%identity, "-minIdentity=%s"%identity]
+    args = ["lastal", "-T", "1", "-f", "TAB", "-P", str(threads), fasta, fasta]
+    proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=sys.stderr)        
+    return proc.stdout
     
-    for i in range(threads):
-        cmd = "blat %s %s %s%s %s%s.psl"%(" ".join(args), fasta, fasta, '', fasta, '')
-        if not verbose:
-            cmd += " > /dev/null"
-        else:
-            sys.stderr.write(cmd+'\n')
-        #generate overepresented 11mers if not exists
-        if not os.path.isfile(fasta+".11.ooc"):
-            os.system(cmd.replace("-ooc=", "-makeOoc="))
-        
-        out   = open("%s_%s.psl"%(fasta, i), "w")
-        log1  = open("%s_%s.psl.log1"%(fasta, i), "w")
-        log2  = open("%s_%s.psl.log2"%(fasta, i), "w")
-        proc1 = subprocess.Popen(cmd11, stdin=subprocess.PIPE, \
-                                 stdout=subprocess.PIPE, stderr=log1)
-        proc2 = subprocess.Popen(cmd12, stdin=proc1.stdout, \
-                                 stdout=out, stderr=log2)
-        outs.append(out)
-        procs1.append(proc1)
-        procs2.append(proc2)
-    
-    #run BLAT
-    os.system(cmd)
-    # sort and take into account only larger vs smaller
-    cmd2 = "awk '$10!=$14 && $11>=$15' %s*.psl | gzip > %s.psl.gz"%(fasta, fasta)
-    if verbose:
-        sys.stderr.write(cmd2+'\n')
-    os.system(cmd2)
-    # clean-up
-    os.system("rm %s.psl %s.11.ooc"%(fasta, fasta))
-    
-def blat(fasta, identity, threads, verbose, sortopt=""):
-    """Start BLAT"""
-    #prepare BLAT command
-    identity = int(100*identity)
-    args = ["-ooc=%s.11.ooc"%fasta, "-dots=1000", "-noHead", "-extendThroughN", \
-            "-minMatch=5", "-repMatch=10", \
-            "-minScore=%s"%identity, "-minIdentity=%s"%identity] 
-    cmd = "blat %s %s %s %s.psl"%(" ".join(args), fasta, fasta, fasta)
-    if not verbose:
-        cmd += " > /dev/null"
-    else:
-        sys.stderr.write(cmd+'\n')
-    #generate overepresented 11mers if not exists
-    #if not os.path.isfile(fasta+".11.ooc"):
-    os.system(cmd.replace("-ooc=", "-makeOoc="))
-    #run BLAT
-    os.system(cmd)
-    # sort and take into account only larger vs smaller
-    cmd2 = "awk '$10!=$14 && $11>=$15' %s.psl | gzip > %s.psl.gz"%(fasta, fasta)
-    if verbose:
-        sys.stderr.write(cmd2+'\n')
-    os.system(cmd2)
-    # clean-up
-    os.system("rm %s.psl %s.11.ooc"%(fasta, fasta))
-
-def get_ranges(starts, sizes, offset=1):
-    """Return str representation of alg ranges"""
-    ranges = []
-    for start, size in zip(starts.split(',')[:-1], sizes.split(',')[:-1]):
-        start, size = int(start), int(size)
-        start += offset
-        end = start + size - offset
-        coords = "%s-%s"%(start, end)
-        ranges.append(coords)
-    return " ".join(ranges)
-
-def psl2hits(psl, identityTh, overlapTh, joinOverlap, endTrimming, \
-             dblength=0, Lambda=0.318, K=0.13):
+def fasta2hits(fasta, threads, identityTh, overlapTh, joinOverlap, endTrimming, verbose):
     """Return valid hits. """
     overlapping = []
     hits = []
     added = set()
-    for l in gzip.open(psl):
-        if not l.strip() or not l.split()[0].isdigit():
+    for l in run_last(fasta.name, identityTh, threads, verbose):
+        if l.startswith('#'):
             continue
-        ##BLAT PSL without header
-        (matches, mismatches, repm, Ns, Qgapc, Qgaps, Tgapc, Tgaps, strand, \
-         q, qsize, qstart, qend, t, tsize, tstart, tend, blocks, bsizes, \
-         qstarts, tstarts) = l.split('\t')
-        # skip reverse matches - pairs tracking
-        if q==t or (t,q) in added:
+        # unpack
+        (score, q, qstart, qalg, qstrand, qsize, t, tstart, talg, tstrand, tsize, blocks) = l.split()[:12]
+        (score, qstart, qalg, qsize, tstart, talg, tsize) = map(int, (score, qstart, qalg, qsize, tstart, talg, tsize))
+        # skip reverse matches
+        if q==t or tsize<qsize or (t,q) in added: 
             continue
         added.add((q,t))
-        #unpack batch
-        matches, mismatches = int(matches), int(mismatches)
-        Tgapc, Tgaps = int(Tgapc), int(Tgaps)
-        qstart, qend = int(qstart), int(qend)
-        qstart, qend, qsize = int(qstart), int(qend), int(qsize)
-        tstart, tend, tsize = int(tstart), int(tend), int(tsize)
         #get score, identity & overlap
-        score    = matches * 5 + mismatches * -3 + Tgapc * -4 + Tgaps * -1
-        alglen   = int(tend) - int(tstart)
-        identity = 1.0 * matches / alglen
-        overlap  = 1.0 * alglen / tsize
-        #bitscore & evalue
-        bitscore = (Lambda*score-math.log(K))/math.log(2)
-        pvalue = evalue = 0
-        if dblength:
-            pvalue = 2**-bitscore
-            evalue = len(qseqs[0]) * dblength * pvalue
-        data = (q, qsize, qstart, qend, t, tsize, tstart, tend, strand, \
-                     identity, overlap, bitscore, evalue)
+        identity = 1.0 * score / qalg
+        overlap  = 1.0 * qalg / qsize
         #filter by identity and overlap
-        if identity < identityTh:
+        if identity < identityTh or overlap < overlapTh:
             continue
-        #capture overlapping #overlap
-        elif overlap < overlapTh:
-            if matches >= joinOverlap and qsize > tsize:
-                if   strand == "+":
-                    if qstart < endTrimming and tsize-tend < endTrimming \
-                       or tstart < endTrimming and qsize-qend < endTrimming:
-                        overlapping.append(data)
-                elif strand == "-":
-                    if qstart < endTrimming and tstart < endTrimming \
-                       or tsize-tend < endTrimming and qsize-qend < endTrimming:
-                        overlapping.append(data)
-        #store
-        else:
-            hits.append(data)
+        # store
+        strand = tstrand
+        qend, tend = qstart + qalg, tstart + talg
+        data = (t, tsize, tstart, tend, q, qsize, qstart, qend, strand, identity, overlap)
+        hits.append(data)
         
     return hits, overlapping
     
@@ -205,7 +63,7 @@ def hits2skip(hits, faidx, verbose):
     for c in faidx.keys():
         contig2skip[c] = 0
     for i, data in enumerate(hits, 1):
-        (q, qsize, qstart, qend, t, tsize, tstart, tend, strand, identity, overlap, bitscore, evalue) = data
+        (q, qsize, qstart, qend, t, tsize, tstart, tend, strand, identity, overlap) = data
         if q not in contig2skip:
             sys.stderr.write(' [ERROR] `%s` (%s) not in contigs!\n'%(q, str(hits[i-1])))
             continue
@@ -236,7 +94,7 @@ def get_coverage(faidx, fasta, libraries, limit, verbose):
 
 def fasta2homozygous(out, fasta, identity, overlap, minLength, \
                      libraries, limit, threads=1, joinOverlap=200, endTrimming=0,
-                     sortopt="", verbose=0, log=sys.stderr):
+                     verbose=0, log=sys.stderr):
     """Parse alignments and report homozygous contigs"""
     #create/load fasta index
     if verbose:
@@ -247,33 +105,16 @@ def fasta2homozygous(out, fasta, identity, overlap, minLength, \
     # depth-of-coverage info
     c2cov, covTh = None, None
     if libraries:
-        c2cov, covTh = get_coverage(faidx, fasta.name, libraries, limit, \
-                                    verbose)
-    # run blat for identity >= 0.85
-    similarity, name = blat, "BLAT"
-    # or run last for more diverged haplotypes
-    if identity < 0.85:
-        similarity, name = last_single, "LAST"
-        # multi-threading on python 2.7+ only, as 2.6 stalls
-        if threads > 1 and sys.version_info[0] == 2 \
-           and sys.version_info[1] > 6:
-            similarity, name = last_multi, "multithreaded LAST"
-    #run blat
-    psl = fasta.name + ".psl.gz"
-    if not os.path.isfile(psl):
-        if verbose:
-            log.write("Running %s...\n"%name)
-        similarity(fasta.name, identity, threads, verbose, sortopt)
+        c2cov, covTh = get_coverage(faidx, fasta.name, libraries, limit, verbose)
     
     if verbose:
         log.write("Parsing alignments...\n")
     #filter alignments
-    hits, overlapping = psl2hits(psl, identity, overlap, joinOverlap, endTrimming)
+    hits, overlapping = fasta2hits(fasta, threads, identity, overlap, joinOverlap, endTrimming, verbose)
 
     #remove redundant
     ## maybe store info about removed also
     contig2skip, identity = hits2skip(hits, faidx, verbose)
-    #print "\n".join("\t".join(map(str, x)) for x in overlapping[:100]); return
     
     #report homozygous fasta
     nsize, k, skipped, ssize, merged = merge_fasta(out, faidx, contig2skip, \
@@ -346,7 +187,7 @@ def main():
     parser  = argparse.ArgumentParser(description=desc, epilog=epilog, \
                                       formatter_class=argparse.RawTextHelpFormatter)
   
-    parser.add_argument('--version', action='version', version='1.01b')   
+    parser.add_argument('--version', action='version', version='1.01d')   
     parser.add_argument("-v", "--verbose", default=False, action="store_true",
                         help="verbose")    
     parser.add_argument("-i", "-f", "--fasta", nargs="+", type=file, 
@@ -365,10 +206,6 @@ def main():
                         help="max. end trim on contig join [%(default)s]")
     parser.add_argument("--minLength",   default=200, type=int, 
                         help="min. contig length [%(default)s]")
-    parser.add_argument("-S", "--sortopt",   default="-T /tmp -S 66%", 
-                        help="UNIX sort options [%(default)s]")
-    #parser.add_argument("-p", "--ploidy",    default=2, type=int, 
-    #                    help="ploidy          [%(default)s]")
     
     o = parser.parse_args()
     if o.verbose:
@@ -383,8 +220,7 @@ def main():
     for fasta in o.fasta:
         out = gzip.open(fasta.name+".homozygous.fa.gz", "w")
         fasta2homozygous(out, fasta, o.identity, o.overlap, o.minLength, \
-                         libraries, limit, o.threads, o.joinOverlap, o.endTrimming,
-                         o.sortopt, o.verbose)
+                         libraries, limit, o.threads, o.joinOverlap, o.endTrimming, o.verbose)
         out.close()
 
 if __name__=='__main__': 
