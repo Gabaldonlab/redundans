@@ -29,7 +29,7 @@ so it can be run even on the laptop for small-to-medium size genomes
 - **flexible** toward many sequencing technologies (Illumina, 454 or Sanger) and library types (paired-end, mate pairs, fosmids)
 - **modular**: every step can be ommited or replaced by another tools
 
-For more information have a look at the [poster](/docs/poster.pdf) or [manuscript](/docs/manuscript.pdf).
+For more information have a look at the [documentation](/docs), [poster](/docs/poster.pdf) or [manuscript](/docs/manuscript.pdf).
 
 ![Flowchart](/docs/redundans_flowchart.png)
 
