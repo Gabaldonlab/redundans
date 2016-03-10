@@ -1,6 +1,9 @@
-####0.12 (work in progress...)
+####0.12 (planned...)
 - depth-of-coverage is used in reduction step
 - calculate insert size from global distribution maximun, not mean
+- write propietary FastA indexing module
+  - get rid of SeqIO.index_db
+  - incorporate fasta stats
 
 ####0.11d (work in progress...)
 - improved reduction step performance (fasta2homozygous.py)
@@ -8,7 +11,9 @@
     - removed `-S / --sortopt` parameter
   - no BLAT - unable to multi-thread BLAT, thus relying on LAST completely
   - enabled [multi-threading in LAST from v693](http://last.cbrc.jp/last/index.cgi/rev/4174fdbdb9a1)
-  - pipes instead of tmp files where possible
+  - no temp files
+    - all is processed through pipes
+    - removed unnecessary maf-convert, gzip and file parsing
 - code polished
 
 ####0.11c

@@ -236,8 +236,7 @@ lastal -f TAB ../ref.fa scaffolds.filled.fa | last-dotplot - scaffolds.filled.fa
 # open plot
 eog scaffolds.filled.fa.png
 ```
-
 [Figure 4: Pairwise alignment of reference sequence and Redundans contigs](/docs/scaffolds.filled.fa.png)
 
 
-All programs/scripts not disclosed in this repository (i.e.  fasta2diverged.py), can be found in https://github.com/lpryszcz/bin. 
+All programs/scripts not disclosed in this repository (i.e. fasta2diverged.py), can be found in https://github.com/lpryszcz/bin. 

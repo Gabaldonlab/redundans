@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 desc="""Heterozygous genome assembly pipeline. It consists of three steps:
-reduction, scaffolding and gap closing. 
+reduction, scaffolding and gap closing.
+
 More info at: https://github.com/lpryszcz/redundans
 """
 epilog="""Author:
@@ -320,7 +321,7 @@ def main():
                                       formatter_class=argparse.RawTextHelpFormatter)
   
     parser.add_argument("-v", dest="verbose",  default=False, action="store_true", help="verbose")    
-    parser.add_argument('--version', action='version', version='0.11c')   
+    parser.add_argument('--version', action='version', version='0.11d')   
     parser.add_argument("-i", "--fastq", nargs="+", required=1, 
                         help="FASTQ PE/MP files")
     parser.add_argument("-f", "--fasta", required=1, 
@@ -370,7 +371,7 @@ def main():
 
     # check if all executables exists
     message = "Make sure you have installed all dependencies from https://github.com/lpryszcz/redundans#prerequisites !"
-    for cmd in ('blat', 'lastal', 'maf-convert', 'bwa', o.sspacebin, 'GapCloser'): 
+    for cmd in ('lastal', 'bwa', o.sspacebin, 'GapCloser'): 
         info = _check_executable(cmd)
         if "not found" in info:
             sys.stderr.write("[ERROR] %s\n%s\n\n"%(info, message))
