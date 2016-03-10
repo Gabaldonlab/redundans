@@ -53,9 +53,10 @@ IOError: [Errno 2] No such file or directory: '.../test/run11/_sspace.1.1.fa'
 ```
 
 ### Why does Redundans use two similarity search algorithms, [BLAT](https://genome.ucsc.edu/FAQ/FAQblat.html#blat3) & [LAST](http://last.cbrc.jp/)?   
-BLAT is lightweight & very fast, but lack sensitivity for more diverged sequences. If you specify `--identity` below 0.85, the pipeline will use LAST, that is ~4x slower, but more sensitive than BLAT.
+Prior to version v0.11d, Redundans was using BLAT or LAST for reduction step, in newer version only multi-threaded LAST is used. 
+~~BLAT is lightweight & very fast, but lack sensitivity for more diverged sequences. If you specify `--identity` below 0.85, the pipeline will use LAST, that is ~4x slower, but more sensitive than BLAT.
 Our simulations shows LAST is capable of correctly reducing heterozygous assemblies with up to 45% divergence between haplotypes.   
-To limit speed difference between these two algorithms, LAST **runs in multiple threads**, so using `-t 4` you shouldn't see any difference in runtime between runs for `--identity 0.9` or `--identity 0.5`. 
+To limit speed difference between these two algorithms, LAST **runs in multiple threads**, so using `-t 4` you shouldn't see any difference in runtime between runs for `--identity 0.9` or `--identity 0.5`.~~
 
 ### How is multiple redundancy handled? 
 Redundans removes all contigs, but the longest one, that fullfill identity & overlap critaria during reduction step. For more info see [issue #8](https://github.com/lpryszcz/redundans/issues/8).
@@ -77,7 +78,7 @@ Most likely you didn't install libsqlite3-dev before running installer. Try this
 # install missing library
 sudo apt-get install sqlite3 libsqlite3-dev
 # uninstall all
-rm -rI ~/.pythonbrew ~/src/{*SSPACE,bwa,blat,GapCloser,last,redundans}*
+rm -rI ~/.pythonbrew ~/src/{*SSPACE,bwa,GapCloser,last,redundans}*
 cp ~/.bashrc_bak ~/.bashrc
 # open new terminal and relaunch installer
 bash <(curl -Ls http://bit.ly/redundans_installer)

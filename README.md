@@ -63,7 +63,6 @@ In addition, the volume needs to be mounted every time, leading to a bit complex
 Alternatively, you can download and configure all dependencies manually: 
 - Python 2.7+ & dependencies `sudo pip install -U biopython numpy scipy`
  - biopython requires [sqlite3](https://www.sqlite.org/)
-- [BLAT](https://genome.ucsc.edu/FAQ/FAQblat.html#blat3)
 - [LAST](http://last.cbrc.jp/)
 - [BWA](http://bio-bwa.sourceforge.net/)
 - [SSPACE3](http://www.baseclear.com/genomics/bioinformatics/basetools/SSPACE)

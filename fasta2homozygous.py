@@ -6,6 +6,7 @@ TO ADD:
 - scaffold extension based on overlapping matches (overlapping already recognised)
 - reporting of haplotypes
 - recognise heterozygous contigs with translocations
+- replace gzip with bgzip and indexing on the fly
 """
 epilog="""Author: l.p.pryszcz@gmail.com
 Mizerow, 26/08/2014
@@ -192,7 +193,7 @@ def main():
                         help="verbose")    
     parser.add_argument("-i", "-f", "--fasta", nargs="+", type=file, 
                         help="FASTA file(s)")
-    parser.add_argument("-t", "--threads", default=1, type=int, 
+    parser.add_argument("-t", "--threads", default=4, type=int, 
                         help="max threads to run [%(default)s]")
     #parser.add_argument("-o", "--output",    default=sys.stdout, type=argparse.FileType('w'), 
     #                    help="output stream   [stdout]")

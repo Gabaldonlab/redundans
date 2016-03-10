@@ -278,7 +278,6 @@ def redundans(fastq, fasta, outdir, mapq, threads,
     fastas.append(scaffoldsFname)
         
     # GAP CLOSING
-    ## gapclosing is only necessary after scaffolding 
     nogapsFname = os.path.join(outdir, "scaffolds.filled.fa")
     if gapclosing and libraries:
         if verbose:
@@ -300,14 +299,12 @@ def redundans(fastq, fasta, outdir, mapq, threads,
         log.write(fasta_stats(open(fn)))
 
     # Clean-up
-    # rm fq.is.txt 
     if cleaning:
         if verbose:
             log.write("%sCleaning-up...\n"%timestamp())
         for root, dirs, fnames in os.walk(outdir):
             for fn in filter(lambda x: not x.endswith(('.fa', '.fasta', '.stats')), fnames):
                 os.unlink(os.path.join(root, fn))
-            # remove empty dirs!
 
 def _check_executable(cmd):
     """Check if executable exists."""
@@ -371,7 +368,7 @@ def main():
 
     # check if all executables exists
     message = "Make sure you have installed all dependencies from https://github.com/lpryszcz/redundans#prerequisites !"
-    for cmd in ('lastal', 'bwa', o.sspacebin, 'GapCloser'): 
+    for cmd in ('lastal', 'lastdb', 'bwa', o.sspacebin, 'GapCloser'): 
         info = _check_executable(cmd)
         if "not found" in info:
             sys.stderr.write("[ERROR] %s\n%s\n\n"%(info, message))

@@ -4,12 +4,14 @@
 - write propietary FastA indexing module
   - get rid of SeqIO.index_db
   - incorporate fasta stats
+  - replace gzip with bgzip and fasta indexing on the fly
 
-####0.11d (work in progress...)
+####0.11d
 - improved reduction step performance (fasta2homozygous.py)
   - no sorting - greatly improves performance on large and fragmented genomes
     - removed `-S / --sortopt` parameter
   - no BLAT - unable to multi-thread BLAT, thus relying on LAST completely
+    - global alignment `-T 1`, instead of local - speed-up and less permissive (more accurate) reduction
   - enabled [multi-threading in LAST from v693](http://last.cbrc.jp/last/index.cgi/rev/4174fdbdb9a1)
   - no temp files
     - all is processed through pipes
