@@ -183,7 +183,9 @@ run1/scaffolds.filled.fa | 1 | 100,818 | 39.762 | 1 | 100,818 | 100,818 | 100,81
 
 ## Accuracy estimation
 Accuracy of recovered contigs can be assessed by alignment of final scaffolds (`run1/scaffolds.filled.fa`) back onto reference (`ref.fa`).
-This can be quickly achieved with nucmer:
+
+### NUCMER
+This can be quickly achieved with nucmer (works for small genomes):
 
 ```bash
 cd run1
@@ -220,6 +222,22 @@ mummerplot --png --large nucmer.ref_dipspades.delta -p nucmer.ref_dipspades.plot
 eog nucmer.ref_dipspades.plot.png
 ```
 [Figure 3: Pairwise alignment of reference sequence and dipSPAdes consensus contigs](/docs/nucmer.ref_dipspades.plot.png)
+
+### LAST
+The same can be done using LAST (this will work also for large genomes):
+
+```bash
+# index reference genome (need to be done only once per each reference)
+lastdb ../ref.fa ../ref.fa
+
+# align & generate dotplot on the fly
+lastal -f TAB ../ref.fa scaffolds.filled.fa | last-dotplot - scaffolds.filled.fa.png
+
+# open plot
+eog scaffolds.filled.fa.png
+```
+
+[Figure 4: Pairwise alignment of reference sequence and Redundans contigs](/docs/scaffolds.filled.fa.png)
 
 
 All programs/scripts not disclosed in this repository (i.e.  fasta2diverged.py), can be found in https://github.com/lpryszcz/bin. 
