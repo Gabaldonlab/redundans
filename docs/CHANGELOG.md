@@ -2,6 +2,15 @@
 - depth-of-coverage is used in reduction step
 - calculate insert size from global distribution maximun, not mean
 
+####0.11d (work in progress...)
+- improved reduction step performance (fasta2homozygous.py)
+  - no sorting - greatly improves performance on large and fragmented genomes
+    - removed `-S / --sortopt` parameter
+  - no BLAT - unable to multi-thread BLAT, thus relying on LAST completely
+  - enabled [multi-threading in LAST from v693](http://last.cbrc.jp/last/index.cgi/rev/4174fdbdb9a1)
+  - pipes instead of tmp files where possible
+- code polished
+
 ####0.11c
 - [UNIX installer](https://github.com/lpryszcz/redundans#unix-installer) and [docker image](https://github.com/lpryszcz/redundans#docker-image)
 - added new parameters
