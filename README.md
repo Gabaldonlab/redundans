@@ -7,7 +7,7 @@
   - **[Running the pipeline](#running-the-pipeline)**  
     - **[Parameters](#parameters)**  
     - **[Test run](#test-run)**  
-  - **[Support](#suppor)**
+  - **[Support](#support)**
   - **[Citation](#citation)**  
 
 # Redundans
@@ -128,8 +128,8 @@ i.e. `-i 600_1.fq.gz 600_2.fq.gz 5000_1.fq.gz 5000_2.fq.gz` would be interpreted
 For more details have a look in [test directory](/test). 
 
 ## Support 
-If you have any issues or doubts check [documentation and FAQ (Frequently Asked Questions)](/doc).  
-You may want to also sign to [our forum](https://groups.google.com/d/forum/redundans).
+If you have any issues or doubts check [documentation](/docs) and [FAQ (Frequently Asked Questions)](/doc#faq).  
+You may want also to sign to [our forum](https://groups.google.com/d/forum/redundans).
 
 
 ## Citation
