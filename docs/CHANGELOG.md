@@ -1,12 +1,5 @@
-####0.12 (planned...)
-- depth-of-coverage is used in reduction step
-- calculate insert size from global distribution maximun, not mean
-- write propietary FastA indexing module
-  - get rid of SeqIO.index_db
-  - incorporate fasta stats
-  - replace gzip with bgzip and fasta indexing on the fly
 
-####0.11d
+####0.12-alpha
 - improved reduction step performance (fasta2homozygous.py)
   - no sorting - greatly improves performance on large and fragmented genomes
     - removed `-S / --sortopt` parameter
@@ -18,7 +11,7 @@
     - removed unnecessary maf-convert, gzip and file parsing
 - code polished
 
-####0.11c
+####0.11-beta
 - [UNIX installer](https://github.com/lpryszcz/redundans#unix-installer) and [docker image](https://github.com/lpryszcz/redundans#docker-image)
 - added new parameters
   - `--log`
