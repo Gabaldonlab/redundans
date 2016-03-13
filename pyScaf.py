@@ -1,65 +1,105 @@
 #/usr/bin/env python
-""" """
+"""
+
+
+Note, memory usage can be dropped by half using str instead of tuple for links storage
+
+from pympler import asizeof
+l = g.links['NODE_1_length_29603_cov_57.5935_ID_1']['NODE_3_length_7388_cov_80.798_ID_5']
+l2=['%s.%s.%s'%e for e in l]
+1.0*asizeof.asizeof(l2)/asizeof.asizeof(l) # 0.45321229050279327
+
+"""
 
 import sys
+import numpy as np
 
 class SimpleGraph(object):
     """Graph class to represent scaffolds."""
-    def __init__(self, contigs=[], printlimit=10, log=sys.stderr):
+    def __init__(self, contigs, sizes, mapq=10, limit=float('inf'), mingap=50, 
+                 ratio=0.75, minlinks=5, printlimit=10, log=sys.stderr):
         """Construct a graph with the given vertices & features"""
+        self.name = "SimpleGraph"
         self.log = log
         self.printlimit = printlimit
-        # prepare storage 
-        self.contigs = set(contigs)
-        self.links   = {c: {} for c in self.contigs}
-        self.ilinks  = 0
-
-    def add_line(self, ref1, ref2, links=0, rev1=0, rev2=0):
-        # store connection details
-        self.links[ref1][ref2] = (links, rev1, rev2) # it can be int int(""%)
-        self.links[ref2][ref1] = (links, rev2, rev1) 
-        # update connection counter 
-        self.ilinks += 1
-        
-class Graph(object):
-    """Graph class to represent scaffolds."""
-    def __init__(self, contigs=[], sizes=[], frac=1.5, \
-                 isize=300, stdev=50, orientation="FR", ratio=0.75, \
-                 log=sys.stderr, printlimit=10):
-        """Construct a graph with the given vertices & features"""
-        self.log = log
-        self.printlimit = printlimit
-        # prepare storage 
+        # prepare storage
         self.contigs = {c: s  for c, s in zip(contigs, sizes)}# if s>isize/frac}
-        self.links   = {c: {} for c in self.contigs}
+        self.links   = {c: [0, 0] for c in self.contigs}
         self.ilinks  = 0
-        # scaffolding options
-        self.ratio = ratio
-        # init orientation
-        self._update_library_info(frac, isize, stdev, orientation)
-                    
+        # alignment options
+        self.mapq  = mapq
+        self.frac  = frac
+        self.limit = limit
+        # scaffolding
+        self.ratio    = ratio
+        self.minlinks = minlinks
+        self.mingap  = mingap
+        # read libraries storage
+        self.reads = []
+
+    def shorter(self, v, i=4, sep="_"):
+        """Return shortened contig name"""
+        return sep.join(v.split(sep)[:i])
+        
     def __str__(self):
         """Produce string representation of the graph"""
-        # header
-        out = '%s Vertices: %s\n%s Lines:\n' % (len(self.contigs), self.contigs.keys()[:self.printlimit], self.ilinks)
+        out = '%s\n%s contigs: %s\n\n%s links:\n' % (self.name, len(self.contigs), self.contigs.keys()[:self.printlimit], self.ilinks)
         i = 0
         for v1 in sorted(self.contigs, key=lambda x: self.contigs[x], reverse=1):
-            for v2 in sorted(self.links[v1], key=lambda x: self.contigs[x], reverse=1):
+            for end1 in range(2):
+                if not self.links[v1][end1]:
+                    continue
+                v2, end2, links, gap = self.links[v1][end1]
                 # skip if v2 longer than v1
                 if self.contigs[v1] < self.contigs[v2]:
                     continue
-                # get positions of links
-                positions = self.links[v1][v2]
+                out += ' %s (%s) - %s (%s) with %s links; %s bp gap\n' % (self.shorter(v1), end1, self.shorter(v2), end2, links, gap)
                 # print up to printlimit
                 i += 1
                 if i > self.printlimit:
                     break
-                out += '\t%s - %s with %s links: %s\n' % (v1, v2, len(positions), str(positions[:self.printlimit]))
         return out
+        
+    def add_line(self, ref1, ref2, end1, end2, links, gap):
+        """Add connection between contigs. """
+        # store connection details
+        if not self.links[ref1][end1]:
+            self.links[ref1][end1] = (ref2, end2, links, gap)
+            self.links[ref2][end2] = (ref1, end1, links, gap) 
+            # update connection counter 
+            self.ilinks += 1
+        elif self.links[ref1][end1][0] != ref2:
+            log.write("[WARNING] Overwritting existing connection %s with %s!\n"%(str(self.links[ref1][end1]), str((ref2, end2, links, gap))))
 
-    def _update_library_info(self, frac, isize, stdev, orientation):
-        """Update orientatation dependent stuff"""
-        # set _check function
+    def simplify(self):
+        """Simplify scaffold graph.
+
+        For not it's doing nothing.
+        """
+        ## make sure there is not circles
+
+    def save(self, out, genome, format='fasta'):
+        """Report scaffolds 
+
+        For not it's doing nothing.
+        """
+        # simplify graph
+        s.simplify()
+
+
+class ReadGraph(SimpleGraph):
+    """Graph class to represent paired alignments."""
+    def __init__(self, handle, name="ReadGraph", \
+                 isize=300, stdev=50, orientation="FR", \
+                 frac=1.5, log=sys.stderr, printlimit=10):
+        self.name = name
+        self.log = log
+        self.printlimit = printlimit
+        # prepare storage 
+        self.links   = {c: [{},{}] for c in self.contigs}
+        self.ilinks  = 0
+        # alignment options
+        # set distance function
         if   orientation in (1, "FR"):
             self.get_distance = self._get_distance_FR
         elif orientation in (2, "RF"):
@@ -67,12 +107,36 @@ class Graph(object):
         else:
             self.log.write("[WARNING] Provided orientation (%s) is not supported!\n"%orientation)
         # insert size
-        self.frac  = frac
         self.isize = isize
         self.stdev = stdev
         self.orientation = orientation
         # max dist
-        self.maxdist = self.isize + self.frac*self.stdev
+        self.maxdist = self.isize + frac*self.stdev
+        # load alignments
+        self.load_from_SAM(handle)
+                    
+    def __str__(self):
+        """Produce string representation of the graph"""
+        # header
+        out = '%s\n%s contigs: %s\n\n%s links' % (self.name, len(self.contigs), self.contigs.keys()[:self.printlimit], self.ilinks)
+        i = 0
+        for v1 in sorted(self.contigs, key=lambda x: self.contigs[x], reverse=1):
+            for end1 in range(2):
+                for v2 in sorted(self.links[v1][end1], key=lambda x: self.contigs[x], reverse=1):
+                    for end2 in range(2):
+                        # skip if v2 longer than v1
+                        if self.contigs[v1] < self.contigs[v2]:
+                            continue
+                        # get positions of links
+                        positions = self.links[v1][end1][v2][end2]
+                        if not positions:
+                            continue
+                        # print up to printlimit
+                        i += 1
+                        if i > self.printlimit:
+                            break
+                        out += ' %s (%s) - %s (%s) with %s links: %s\n' % (self.shorter(v1), end1, self.shorter(v2), end2, len(positions), ", ".join(positions[:self.printlimit]))
+        return out
 
     def _present(self, c):
         """Return True if v in present in the graph"""
@@ -84,128 +148,151 @@ class Graph(object):
     def _get_distance_FR(self, ref, pos, flag):
         """Return True if distance from the v end is smaller that frac * isize"""
         # FR - /1 and /2 doesn't matter, only F / R
-        if self._present(ref):
-            # reverse -> beginning of the contig
-            if flag&16:
-                return pos
-            # forward -> end of the contig
-            else:
-                return self.contigs[ref]-pos
+        # reverse -> beginning of the contig
+        if flag&16:
+            return pos, 0
+        # forward -> end of the contig
+        else:
+            return self.contigs[ref]-pos, 1
 
     def _get_distance_RF(self, ref, pos, flag):
-        """Return True if distance from the v end is smaller that frac * isize"""
-        # FR - /1 and /2 doesn't matter, only F / R
-        if self._present(ref):
-            # reverse -> beginning of the contig
-            if not flag&16:
-                return pos
-            # forward -> end of the contig
-            else:
-                return self.contigs[ref]-pos
+        """Return distance and end from which the read is originating"""
+        # RF - /1 and /2 doesn't matter, only F / R
+        # forward -> beginning of the contig
+        if not flag&16:
+            return pos, 0
+        # reverse -> end of the contig
+        else:
+            return self.contigs[ref]-pos, 1
                 
     def add_line(self, ref1, ref2, pos1, pos2, flag1, flag2):
         """Add a line from v1 to v2"""
+        if not self._present(ref1) or not self._present(ref2):
+            return
         # check if distance is correct
         ## note, distance is corrected by pair orientation
-        d1 = self.get_distance(ref1, pos1, flag1)
-        d2 = self.get_distance(ref2, pos2, flag2)
-        if not d1 or not d2 or d1 + d2 > self.maxdist:
+        d1, end1 = self.get_distance(ref1, pos1, flag1)
+        d2, end2 = self.get_distance(ref2, pos2, flag2)
+        if d1 + d2 > self.maxdist:
             return
         # add connection
-        if ref2 not in self.links[ref1]:
-            self.links[ref1][ref2] = []
-            self.links[ref2][ref1] = []
+        if ref2 not in self.links[ref1][end1]:
+            self.links[ref1][end1][ref2] = [[],[]]
+        if ref1 not in self.links[ref2][end2]:
+            self.links[ref2][end2][ref1] = [[],[]]
         # store connection details
-        self.links[ref1][ref2].append((pos1, pos2))
-        self.links[ref2][ref1].append((pos2, pos1))
+        self.links[ref1][end1][ref2][end2].append('%s-%s'%(d1, d2))
+        self.links[ref2][end2][ref1][end1].append('%s-%s'%(d2, d1))
         # update connection counter 
         self.ilinks += 1
 
-    def _split_links(self, links):
-        """Sepearte upsteam and downstream connections"""
+    def sam_parser(self, handle):
+        """Return tuple representing paired alignment from SAM format."""
+        q1 = q2 = ""
+        for l in handle:
+            l = l.strip()
+            if not l or l.startswith('@'):
+                continue
+            sam = l.split('\t')
+            #first in pair
+            if int(sam[1]) & 64:
+                #skip multiple matches
+                if sam[0] == q1:
+                    continue
+                q1, flag1, ref1, start1, mapq1, len1 = sam[0], int(sam[1]), sam[2], int(sam[3]), int(sam[4]), len(sam[9])
+            else:
+                #skip multiple matches
+                if sam[0] == q2:
+                    continue
+                q2, flag2, ref2, start2, mapq2, len2 = sam[0], int(sam[1]), sam[2], int(sam[3]), int(sam[4]), len(sam[9])
+            #report
+            if q1 == q2:
+                yield q1, flag1, ref1, start1, mapq1, len1, q2, flag2, ref2, start2, mapq2, len2
+
+    def get_start_stop(self, start, length, flag):
+        """Return start-end read boundaries.
+        Return end-start if reverse aligned (flag & 16)."""
+        if flag & 16:
+            end    = start
+            start += length
+        else:
+            end    = start + length
+        return start, end
+            
+    #def load_SAM(handle, mapq=self.mapq, limit=self.limit):
+    def load_from_SAM(self, handle):
+        """Populate graph with links from SAM file.
+
+        Note, SAM file has to be ordered by read name, F read always before R.
+        Multiple alignments are allowed, but only the first (assuming best)
+        alignment is taken into accound. 
+        """
+        # parse SAM
+        i = j = k = pq1 = 0
+        for q1, flag1, r1, s1, mapq1, len1, q2, flag2, r2, s2, mapq2, len2 in self.sam_parser(handle):
+            i   += 1
+            if self.limit and i > self.limit:
+                break        
+            #skip 0 quality pair
+            if self.mapq:
+                if mapq1 < self.mapq or mapq2 < self.mapq:
+                    continue  
+            j   += 1
+            #skip self matches
+            if r1==r2:
+                #isizes.append(abs(s2-s1))
+                continue
+            k += 1
+            # define start-stop ranges - correct distance by orientation and strand!!
+            #start1,end1 = get_start_stop(s1,len1,flag1)
+            #start2,end2 = get_start_stop(s2,len2,flag2)    
+            #print output
+            self.add_line(r1, r2, s1, s2, flag1, flag2)
+        #return isizes
+        
+    def _get_major_link(self, links):
+        """Return major link if any of the links fullfill quality criteria."""
+        if not links:
+            return
+        # reorganise links into list
+        links = [(c, e, pos) for c in links for e, pos in enumerate(links[c])]
+        # sort starting from contig with most links
+        best  = sorted(links, key=lambda x: x[-1], reverse=1)[0]
+        # skip if not enough links or many links to more than one contigs
+        sumi = sum(len(pos) for c, e, pos in links)#; print sumi, best
+        if len(best[-1]) < self.minlinks or len(best[-1]) < self.ratio*sumi:
+            return
+        return best
+
+    def _calculat_gap_size(self, positions):
+        """Return estimated size of the gap"""
+        # unload positions
+        dists = [self.isize - sum(map(int, pos.split('-'))) for pos in positions]
+        return np.median(dists)
         
     def scaffold(self):
         """Perform contig scaffolding"""
-        added = set()
+        if not self.scaffolds:
+            self.scaffolds = SimpleGraph(self.contigs, mingap=self.mingap, printlimit=self.printlimit)
         # process starting from the longest
-        for c1 in sorted(self.contigs, key=lambda x: self.contigs[x], reverse=1):
-            up, down = self._split_links(self.links(c1))
-            #for v2 in sorted(self.links[v1], key=lambda x: self.contigs[x], reverse=1):
-                
-        
-        
-    '''    
-    def delete_line(self, v1, v2):
-        """Delete line between v1 and v2 if any. 
-        Return error if no line between them.
-        """
-        self._check((v1,v2))
-        try:
-            self.links[v1].remove(v2)
-            self.links[v2].remove(v1)
-        except KeyError:
-            raise ValueError('No line between %s and %s' % (v1,v2))
-    '''
-
-
-def parse_sam(handle):
-    """Return sam tuple"""
-    q1 = q2 = ""
-    for l in handle:
-        l = l.strip()
-        if not l or l.startswith('@'):
-            continue
-        sam = l.split('\t')
-        #first in pair
-        if int(sam[1]) & 64:
-            #skip multiple matches
-            if sam[0] == q1:
-                continue
-            q1,flag1,ref1,start1,mapq1,len1 = sam[0],int(sam[1]),sam[2],int(sam[3]),int(sam[4]),len(sam[9])
-        else:
-            #skip multiple matches
-            if sam[0] == q2:
-                continue
-            q2,flag2,ref2,start2,mapq2,len2 = sam[0],int(sam[1]),sam[2],int(sam[3]),int(sam[4]),len(sam[9])
-        #report
-        if q1 == q2:
-            yield q1,flag1,ref1,start1,mapq1,len1,q2,flag2,ref2,start2,mapq2,len2
-
-def get_start_stop( start,length,flag ):
-    """Return start-end read boundaries.
-    Return end-start if reverse aligned (flag & 16)."""
-    if flag & 16:
-        end    = start
-        start += length
-    else:
-        end    = start + length
-    return start, end
-
-def process_alignments(g, handle, orientation=1, mapqTh=0, upto=float('inf'), verbose=False, log=sys.stderr):
-    """Convert SAM to SSPACE TAB file."""
-    i = j = k = pq1 = 0
-    isizes = []
-    for q1, flag1, r1, s1, mapq1, len1, q2, flag2, r2, s2, mapq2, len2 in parse_sam(handle):
-        i   += 1
-        if upto and i>upto:
-            break        
-        #skip 0 quality pair
-        if mapqTh:
-            if mapq1<mapqTh or mapq2<mapqTh:
-                continue  
-        j   += 1
-        #skip self matches
-        if r1==r2:
-            isizes.append(abs(s2-s1))
-            continue
-        k += 1
-        #define start-stop ranges
-        #start1,end1 = get_start_stop(s1,len1,flag1)
-        #start2,end2 = get_start_stop(s2,len2,flag2)    
-        #print output
-        g.add_line(r1, r2, s1, s2, flag1, flag2)
-    return isizes
-
+        for c in sorted(self.contigs, key=lambda x: self.contigs[x], reverse=1):
+            for end in range(2):
+                # major connection
+                major = self._get_major_link(self.links[c][end])
+                if not major:
+                    continue
+                # check if reciprocal
+                c2, end2, pos2 = major
+                rmajor = self._get_major_link(self.links[c2][end2])
+                if not rmajor:
+                    continue
+                c1, end1, pos1 = rmajor
+                if c==c1 and end==end1:    
+                    #print c, end, c2, end2, len(pos2)
+                    # get distance
+                    dist = self._calculat_gap_size(pos1)
+                    # add connection
+                    self.scaffolds.add_line(c1, c2, end1, end2, len(pos1), dist)
     
 if __name__=="__main__":
     """
@@ -228,8 +315,11 @@ for r in SeqIO.parse(fasta, 'fasta'):
     contigs.append(r.id)
     sizes.append(len(r))
 
-reload(ps); g = ps.Graph(contigs, sizes, isize=600, orientation="FR");  isizes = ps.process_alignments(g, open(sam), upto=19571); print g
-reload(ps); g = ps.Graph(contigs, sizes, isize=5000, orientation="FR"); isizes = ps.process_alignments(g, open(sam2), upto=19571); print g
+reload(ps); g = ps.Graph(contigs, sizes, mapq=10, limit=19571);
+g.load_from_SAM(open(sam), isize=600, stdev=100, orientation="FR"); print g
+g.scaffold(); print g.scaffolds
+# g.scaffolds.save()
+g.load_from_SAM(open(sam), isize=5000, stdev=1000, orientation="FR"); print g 
 
     """
     from Bio import SeqIO
@@ -240,8 +330,8 @@ reload(ps); g = ps.Graph(contigs, sizes, isize=5000, orientation="FR"); isizes =
         contigs.append(r.id)
         sizes.append(len(r))
 
-    g = Graph(contigs, sizes, orientation="FR", isize=600)
-    
-    isizes = process_alignments(g, open(sam), upto=19571)
-    print g
+    g = Graph(contigs, sizes, mapq=10, limit=19571);
+    isizes = g.load_from_SAM(open(sam), isize=600, stdev=100, orientation="FR"); print g
+    g.scaffold(); print g.scaffolds
+
 
