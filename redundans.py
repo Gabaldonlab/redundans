@@ -2,12 +2,12 @@
 desc="""Heterozygous genome assembly pipeline. It consists of three steps:
 reduction, scaffolding and gap closing.
 
-More info at: https://github.com/lpryszcz/redundans
+More info at: http://bit.ly/Redundans
 """
 epilog="""Author:
 l.p.pryszcz@gmail.com
 
-Mizerow/Warsaw, 17/10/2014
+Mizerow/Warsaw/Bratislava/Barcelona, 17/10/2014
 """
 
 import os, resource, sys

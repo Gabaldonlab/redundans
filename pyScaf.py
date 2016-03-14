@@ -1,30 +1,32 @@
 #/usr/bin/env python
+"""Perform scaffolding of contigs using information from PE & MP libraries. 
+"""
+epilog="""Author:
+l.p.pryszcz@gmail.com
+
+Warsaw, 12/03/2016
 """
 
-
-Note, memory usage can be dropped by half using str instead of tuple for links storage
-
-from pympler import asizeof
-l = g.links['NODE_1_length_29603_cov_57.5935_ID_1']['NODE_3_length_7388_cov_80.798_ID_5']
-l2=['%s.%s.%s'%e for e in l]
-1.0*asizeof.asizeof(l2)/asizeof.asizeof(l) # 0.45321229050279327
-
-# reduce memory usage even more by using float instead or str
-"""
-
-import sys
+import sys, resource
 import numpy as np
+from Bio import SeqIO
+from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
+from Bio.Alphabet import IUPAC
 
 class SimpleGraph(object):
     """Graph class to represent scaffolds."""
-    def __init__(self, contigs, sizes, mapq=10, limit=float('inf'), frac=1.5,
-                 mingap=50, ratio=0.75, minlinks=5, printlimit=10, log=sys.stderr):
+    def __init__(self, genome, mapq=10, limit=float('inf'), frac=1.5,
+                 mingap=15, ratio=0.75, minlinks=5, printlimit=10, log=sys.stderr):
         """Construct a graph with the given vertices & features"""
         self.name = "SimpleGraph"
         self.log = log
         self.printlimit = printlimit
+        # load fasta into index
+        self.sequences = SeqIO.index_db(genome+".db3", genome, 'fasta')
+        self.seq = self.sequences
         # prepare storage
-        self.contigs = {c: s  for c, s in zip(contigs, sizes)}
+        self.contigs = {c: len(self.seq[c]) for c in self.seq}
         self.links   = {c: [0, 0] for c in self.contigs}
         self.ilinks  = 0
         # alignment options
@@ -37,6 +39,7 @@ class SimpleGraph(object):
         self.mingap  = mingap
         # read libraries storage
         self.libraries = []
+        self.rlen = 100
 
     def shorter(self, v, i=4, sep="_"):
         """Return shortened contig name"""
@@ -46,15 +49,15 @@ class SimpleGraph(object):
         """Produce string representation of the graph"""
         out = '%s\n%s contigs: %s\n\n%s links:\n' % (self.name, len(self.contigs), self.contigs.keys()[:self.printlimit], self.ilinks)
         i = 0
-        for v1 in sorted(self.contigs, key=lambda x: self.contigs[x], reverse=1):
+        for ref1 in sorted(self.contigs, key=lambda x: self.contigs[x], reverse=1):
             for end1 in range(2):
-                if not self.links[v1][end1]:
+                if not self.links[ref1][end1]:
                     continue
-                v2, end2, links, gap = self.links[v1][end1]
+                ref2, end2, links, gap = self.links[ref1][end1]
                 # skip if v2 longer than v1
-                if self.contigs[v1] < self.contigs[v2]:
+                if self.contigs[ref1] < self.contigs[ref2]:
                     continue
-                out += ' %s (%s) - %s (%s) with %s links; %s bp gap\n' % (self.shorter(v1), end1, self.shorter(v2), end2, links, gap)
+                out += ' %s (%s) - %s (%s) with %s links; %s bp gap\n' % (self.shorter(ref1), end1, self.shorter(ref2), end2, links, gap)
                 # print up to printlimit
                 i += 1
                 if i > self.printlimit:
@@ -72,6 +75,11 @@ class SimpleGraph(object):
         elif self.log and self.links[ref1][end1][0] != ref2:
             self.log.write("[WARNING] Overwritting existing connection %s with %s!\n"%(str(self.links[ref1][end1]), str((ref2, end2, links, gap))))
 
+    def info(self):
+        """Add sequencing library as ReadGraph"""
+        if self.log:
+            self.log.write(" %s kb\n"%resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
+        
     def add_library(self, handle, name="lib1", isize=300, stdev=50, orientation="FR"):
         """Add sequencing library as ReadGraph. 
 
@@ -86,24 +94,103 @@ class SimpleGraph(object):
         # populate graph
         for ref1, ref2, end1, end2, links, gap in rg.get_links():
             self._add_line(ref1, ref2, end1, end2, links, gap)
+        self.info()
         
     def _simplify(self):
-        """Simplify scaffold graph.
-
-        For not it's doing nothing.
-        """
+        """Simplify scaffold graph by resolving circles"""
         ## make sure there is not circles
 
-    def save(self, out, genome, format='fasta'):
-        """Report scaffolds 
+    def _populate_scaffold(self, links, pend, sid, scaffold, orientations, gaps, porientation):
+        """Add links to scaffold representation"""
+        ref, end, links, gap = links
+        # skip if already added
+        if ref in self.contig2scaffold:
+            return scaffold, orientations, gaps, porientation
+        # get orientation - get forward/reverse-complement signal by XOR
+        ## if previous is 1 (end) & current is (0) start & orientation is 0 (forward) --> keep forward orientation
+        orientation = (pend != end) != porientation
+        # store at the end if previous contig was F and pend 1
+        if porientation != pend:
+            scaffold.append(ref)
+            orientations.append(not orientation)
+            gaps.append(gap)
+        else:
+            scaffold.insert(0, ref)
+            orientations.insert(0, not orientation)
+            gaps.insert(0, gap)
+        # update contigs2scaffold info
+        self.contig2scaffold[ref] = sid
+        # populate further connections from another end
+        links = self.links[ref][abs(end-1)]
+        # skip if not links
+        if not links:
+            return scaffold, orientations, gaps, orientation
+        # populate further connections from another end
+        return self._populate_scaffold(links, end, sid, scaffold, orientations, gaps, orientation)
 
-        For not it's doing nothing.
-        """
+    def _get_scaffold(self, name, scaffold, orientations, gaps):
+        """"Prepare fasta sequence for given scaffold"""
+        # add empty gap at the end
+        gaps.append(0)
+        seqs = []
+        for c, reverse, gap in zip(scaffold, orientations, gaps):
+            if reverse:
+                seq = self.seq[c].reverse_complement().seq
+            else:
+                seq = self.seq[c].seq
+            # adjust gap size
+            if gap and gap < self.mingap:
+                strip = int(gap - self.mingap)
+                seq = seq[:strip]
+                gap = self.mingap
+            seqs.append(str(seq)+"N"*gap)
+        # generate seq record & report fasta
+        r = SeqRecord(Seq("".join(seqs), IUPAC.ambiguous_dna), id=name)
+        return r
+        
+    def save(self, out, format='fasta'):
+        """Resolve & report scaffolds"""
         # simplify graph
         self._simplify()
-        # and report
         
-
+        # build scaffolds
+        self.scaffolds = []
+        self.contig2scaffold = {}
+        for ref1 in sorted(self.contigs, key=lambda x: self.contigs[x], reverse=1):
+            # skip if already added
+            if ref1 in self.contig2scaffold:
+                continue
+            # get scaffold id
+            sid = len(self.scaffolds)
+            self.contig2scaffold[ref1] = sid
+            # store scaffold and its orientation (0-forward, 1-reverse-complement) and gaps
+            ## consider blist instead of list!
+            scaffold, orientations, gaps = [ref1], [0], []
+            # populate scaffold with connections from both ends
+            for end1 in range(2):
+                links = self.links[ref1][end1]
+                if not links:
+                    continue
+                scaffold, orientations, gaps, porientation = self._populate_scaffold(links, end1, sid, scaffold, orientations, gaps, 0)
+            # store
+            self.scaffolds.append((scaffold, orientations, gaps))
+        # report
+        #print self.contig2scaffold
+        totsize = 0
+        self.log.write("# name\tsize\tcontigs\n")
+        for i, (scaffold, orientations, gaps) in enumerate(self.scaffolds, 1):
+            # scaffold00001
+            name = str("scaffold%5i"%i).replace(' ','0')
+            # save scaffold
+            r = self._get_scaffold(name, scaffold, orientations, gaps)
+            out.write(r.format('fasta'))
+            # report info
+            totsize += len(r)
+            self.log.write("%s\t%s\t%s\n"%(name, len(r), " ".join(scaffold)))
+        # close output
+        out.close()
+        self.log.write("%s bp in %s scaffolds.\n"%(totsize, len(self.scaffolds)))
+            
 class ReadGraph(SimpleGraph):
     """Graph class to represent paired alignments."""
     def __init__(self, contigs, handle, name, isize, stdev, orientation, \
@@ -134,6 +221,7 @@ class ReadGraph(SimpleGraph):
         self.ratio = ratio
         # max dist
         self.maxdist = self.isize + frac * self.stdev
+        self.rlen = None
         # load alignments
         self.load_from_SAM(handle)
                     
@@ -142,22 +230,22 @@ class ReadGraph(SimpleGraph):
         # header
         out = '%s\n%s contigs: %s\n\n%s links' % (self.name, len(self.contigs), self.contigs.keys()[:self.printlimit], self.ilinks)
         i = 0
-        for v1 in sorted(self.contigs, key=lambda x: self.contigs[x], reverse=1):
+        for ref1 in sorted(self.contigs, key=lambda x: self.contigs[x], reverse=1):
             for end1 in range(2):
-                for v2 in sorted(self.links[v1][end1], key=lambda x: self.contigs[x], reverse=1):
+                for ref2 in sorted(self.links[ref1][end1], key=lambda x: self.contigs[x], reverse=1):
                     for end2 in range(2):
                         # skip if v2 longer than v1
-                        if self.contigs[v1] < self.contigs[v2]:
+                        if self.contigs[ref1] < self.contigs[ref2]:
                             continue
                         # get positions of links
-                        positions = self.links[v1][end1][v2][end2]
+                        positions = self.links[ref1][end1][ref2][end2]
                         if not positions:
                             continue
                         # print up to printlimit
                         i += 1
                         if i > self.printlimit:
                             break
-                        out += ' %s (%s) - %s (%s) with %s links: %s\n' % (self.shorter(v1), end1, self.shorter(v2), end2, len(positions), ", ".join(positions[:self.printlimit]))
+                        out += ' %s (%s) - %s (%s) with %s links: %s\n' % (self.shorter(ref1), end1, self.shorter(ref2), end2, len(positions), str(positions[:self.printlimit]))
         return out
 
     def _present(self, c):
@@ -203,8 +291,8 @@ class ReadGraph(SimpleGraph):
         if ref1 not in self.links[ref2][end2]:
             self.links[ref2][end2][ref1] = [[],[]]
         # store connection details
-        self.links[ref1][end1][ref2][end2].append('%s-%s'%(d1, d2))
-        self.links[ref2][end2][ref1][end1].append('%s-%s'%(d2, d1))
+        self.links[ref1][end1][ref2][end2].append(float('%s.%s'%(d1, d2)))
+        self.links[ref2][end2][ref1][end1].append(float('%s.%s'%(d2, d1)))
         # update connection counter 
         self.ilinks += 1
 
@@ -253,9 +341,12 @@ class ReadGraph(SimpleGraph):
         i = j = k = pq1 = 0
         for q1, flag1, r1, s1, mapq1, len1, q2, flag2, r2, s2, mapq2, len2 in self.sam_parser(handle):
             i   += 1
+            # skip
             if self.limit and i > self.limit:
-                break        
-            #skip 0 quality pair
+                break
+            if not self.rlen:
+                self.rlen = int(len1+len2)/2
+            # skip alignments with low quality
             if self.mapq:
                 if mapq1 < self.mapq or mapq2 < self.mapq:
                     continue  
@@ -265,9 +356,6 @@ class ReadGraph(SimpleGraph):
                 #isizes.append(abs(s2-s1))
                 continue
             k += 1
-            # define start-stop ranges - correct distance by orientation and strand!!
-            #start1,end1 = get_start_stop(s1,len1,flag1)
-            #start2,end2 = get_start_stop(s2,len2,flag2)    
             #print output
             self.add_line(r1, r2, s1, s2, flag1, flag2)
         #return isizes
@@ -294,8 +382,8 @@ class ReadGraph(SimpleGraph):
     def _calculat_gap_size(self, positions):
         """Return estimated size of the gap"""
         # unload positions
-        dists = [self.isize - sum(map(int, pos.split('-'))) for pos in positions]
-        return np.median(dists)
+        dists = [self.isize - sum(map(int, str(pos).split('.'))) for pos in positions]
+        return np.median(dists)-self.rlen
         
     def _filter_links(self):
         """Filter links by removing contigs with too many connections
@@ -307,6 +395,8 @@ class ReadGraph(SimpleGraph):
         
     def get_links(self):
         """Generator of contig connections for given library."""
+        # memory profilling
+        #from pympler import asizeof; print "Links: %s bases\n"%asizeof.asizeof(self.links)
         # filter links
         self._filter_links()
         ## one-to-one links
@@ -343,38 +433,38 @@ bwa index test/run1/contigs.reduced.fa
 bwa mem -t4 test/run1/contigs.reduced.fa test/600_?.fq.gz > test/run1/600.sam
 bwa mem -t4 test/run1/contigs.reduced.fa test/5000_?.fq.gz > test/run1/5000.sam
 
+    
 ipython
 
 import pyScaf as ps
 
-from Bio import SeqIO
 sam = 'test/run1/600.sam'
 sam2 = 'test/run1/5000.sam'
-    
 fasta = 'test/run1/contigs.reduced.fa'
-contigs, sizes = [], []
-for r in SeqIO.parse(fasta, 'fasta'):
-    contigs.append(r.id)
-    sizes.append(len(r))
 
-reload(ps); g = ps.SimpleGraph(contigs, sizes, limit=19571);
-g.load_from_SAM(open(sam), isize=600, stdev=100, orientation="FR"); print g
-g.scaffold(); print g.scaffolds
-# g.scaffolds.save()
-g.load_from_SAM(open(sam), isize=5000, stdev=1000, orientation="FR"); print g 
+reload(ps); s = ps.SimpleGraph(fasta, mapq=10, limit=19571, log=sys.stderr);
+s.add_library(open(sam), name=sam, isize=600, stdev=100, orientation="FR"); print s
+s.add_library(open(sam2), name=sam2, isize=5000, stdev=1000, orientation="FR"); print s
+
+s.save(out=open(fasta+".scaffolds.fa", "w"))
+
+
+bwa index test/run1/contigs.reduced.fa.scaffolds.fa
+bwa mem -t4 test/run1/contigs.reduced.fa.scaffolds.fa test/5000_?.fq.gz > test/run1/5000.2.sam
+    
+sam2 = 'test/run1/5000.2.sam'
+fasta = 'test/run1/contigs.reduced.fa.scaffolds.fa'
+
+reload(ps); s = ps.SimpleGraph(fasta, mapq=10, limit=19571, log=sys.stderr);
+s.add_library(open(sam2), name=sam2, isize=5000, stdev=1000, orientation="FR"); print s
 
     """
-    from Bio import SeqIO
     sam = 'test/run1/600.sam'
     sam2 = 'test/run1/5000.sam'
     fasta = 'test/run1/contigs.reduced.fa'
-    contigs, sizes = [], []
-    for r in SeqIO.parse(fasta, 'fasta'):
-        contigs.append(r.id)
-        sizes.append(len(r))
-
-    s = SimpleGraph(contigs, sizes, mapq=10, limit=19571, log=None);
-    #s.add_library(open(sam), name=sam, isize=600, stdev=100, orientation="FR"); print s
-    s.add_library(open(sam2), name=sam2, isize=5000, stdev=1000, orientation="FR"); print s
+    s = SimpleGraph(fasta, mapq=10, limit=19571);
+    s.add_library(open(sam), name=sam, isize=600, stdev=50, orientation="FR"); print s
+    #s.add_library(open(sam2), name=sam2, isize=5000, stdev=1000, orientation="FR"); print s
+    s.save(out=open(fasta+".scaffolds.fa", "w"))
 
 
