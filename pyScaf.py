@@ -27,7 +27,7 @@ class SimpleGraph(object):
         self.seq = self.sequences
         # prepare storage
         self.contigs = {c: len(self.seq[c]) for c in self.seq}
-        self.links   = {c: [0, 0] for c in self.contigs}
+        self.links   = {c: [{}, {}] for c in self.contigs}
         self.ilinks  = 0
         # alignment options
         self.mapq  = mapq
@@ -51,30 +51,38 @@ class SimpleGraph(object):
         i = 0
         for ref1 in sorted(self.contigs, key=lambda x: self.contigs[x], reverse=1):
             for end1 in range(2):
-                if not self.links[ref1][end1]:
+                '''if not self.links[ref1][end1]:
                     continue
-                ref2, end2, links, gap = self.links[ref1][end1]
-                # skip if v2 longer than v1
-                if self.contigs[ref1] < self.contigs[ref2]:
-                    continue
-                out += ' %s (%s) - %s (%s) with %s links; %s bp gap\n' % (self.shorter(ref1), end1, self.shorter(ref2), end2, links, gap)
-                # print up to printlimit
-                i += 1
-                if i > self.printlimit:
-                    break
+                ref2, end2, links, gap = self.links[ref1][end1]'''
+                for (ref2, end2), (links, gap) in self.links[ref1][end1].items():
+                    # skip if v2 longer than v1
+                    if self.contigs[ref1] < self.contigs[ref2]:
+                        continue
+                    out += ' %s (%s) - %s (%s) with %s links; %s bp gap\n' % (self.shorter(ref1), end1, self.shorter(ref2), end2, links, gap)
+                    # print up to printlimit
+                    i += 1
+                    if i > self.printlimit:
+                        break
         return out
         
     def _add_line(self, ref1, ref2, end1, end2, links, gap):
         """Add connection between contigs. """
         # store connection details
-        if not self.links[ref1][end1]:
+        #if not self.links[ref1][end1]:
+        #    self.links[ref1][end1] = {}
+        self.links[ref1][end1][(ref2, end2)] = (links, gap)
+        # update connection counter 
+        self.ilinks += 1
+        '''
             self.links[ref1][end1] = (ref2, end2, links, gap)
-            self.links[ref2][end2] = (ref1, end1, links, gap) 
+            self.links[ref2][end2] = (ref1, end1, links, gap)
+            
             # update connection counter 
             self.ilinks += 1
         elif self.log and self.links[ref1][end1][0] != ref2:
             self.log.write("[WARNING] Overwritting existing connection %s with %s!\n"%(str(self.links[ref1][end1]), str((ref2, end2, links, gap))))
-
+        '''
+            
     def info(self):
         """Add sequencing library as ReadGraph"""
         if self.log:
@@ -98,7 +106,19 @@ class SimpleGraph(object):
         
     def _simplify(self):
         """Simplify scaffold graph by resolving circles"""
-        ## make sure there is not circles
+        # remove non-reciprocal connections
+        for ref1 in sorted(self.contigs, key=lambda x: self.contigs[x], reverse=1):
+            for end1 in range(2):
+                if not self.links[ref1][end1]:
+                    continue
+                for (ref2, end2), (links, gap) in self.links[ref1][end1].items(): 
+                    if not (ref1, end1) in self.contigs[ref2][end2]:
+                        # remove link and update counter
+                        self.log.write("Removing connection %s -> %s\n"%(str(ref1, end1)(), str((ref2, end2))))
+                        self.links[ref1][end1].pop((ref2, end2))
+                        self.ilinks -= 1
+                        
+        ## make sure there are no circles
 
     def _populate_scaffold(self, links, pend, sid, scaffold, orientations, gaps, porientation):
         """Add links to scaffold representation"""
@@ -360,7 +380,7 @@ class ReadGraph(SimpleGraph):
             self.add_line(r1, r2, s1, s2, flag1, flag2)
         #return isizes
         
-    def _get_major_link(self, links):
+    def _get_major_link(self, links, c1, end1):
         """Return major link if any of the links full fill quality criteria.
 
         So far this is too simplistic!
@@ -368,7 +388,7 @@ class ReadGraph(SimpleGraph):
         as many contigs will be shorter than i.e. 5kb insert... 
         """
         if not links:
-            return
+            return 
         # reorganise links into list
         links = [(c, e, pos) for c in links for e, pos in enumerate(links[c])]
         # sort starting from contig with most links
@@ -376,8 +396,52 @@ class ReadGraph(SimpleGraph):
         # skip if not enough links or many links to more than one contigs
         sumi = sum(len(pos) for c, e, pos in links)#; print sumi, best
         if len(best[-1]) < self.minlinks or len(best[-1]) < self.ratio*sumi:
-            return
+            return 
         return best
+
+    def _cluster_links(self, links, maxdist=200):
+        """Merge links from the same regions"""
+        def get_median(positions):
+            """return median value of first pos"""
+            return np.median([int(str(pos).split('.')[0]) for pos in positions])
+            
+        alllinks = {}
+        for (c, e, pos) in sorted(links, key=lambda x: len(x[-1]), reverse=1):
+            # get median pos - maybe use mean & stdev?
+            mpos = get_median(pos)
+            if not alllinks:
+                alllinks[mpos] = [(c, e, pos)]
+                continue
+            # sort by distance #filter(lambda x: abs(x-mpos)<maxdist, alllinks)
+            closest = sorted(alllinks.keys(), key=lambda x: abs(x-mpos))[0]
+            if abs(closest-mpos)<maxdist:
+                alllinks[closest].append((c, e, pos))
+            else:
+                alllinks[mpos] = [(c, e, pos)]
+        
+        for mpos, links in alllinks.items():
+            yield links
+        
+    def _select_links(self, links):
+        """Return best links between set of contigs"""
+        if not links:
+            return []
+        # reorganise links into list
+        links = [(c, e, pos) for c in links for e, pos in enumerate(links[c])]
+        # split links from different regions
+        bests = []
+        alllinks = self._cluster_links(links)
+        for links in alllinks:
+            best = links[0] #sorted(links, key=lambda x: len(x[-1]), reverse=1)[0]
+            # skip if not enough links or many links to more than one contigs
+            sumi = sum(len(pos) for c, e, pos in links)
+            if len(best[-1]) < self.minlinks or len(best[-1]) < self.ratio*sumi:
+                continue
+            ### also check if the same connection in reciprocal bests - no need, will do it during scaffolding
+            bests.append(best)
+        # make sure best links are not overlapping too much
+        
+        return bests
 
     def _calculat_gap_size(self, positions):
         """Return estimated size of the gap"""
@@ -386,11 +450,7 @@ class ReadGraph(SimpleGraph):
         return np.median(dists)-self.rlen
         
     def _filter_links(self):
-        """Filter links by removing contigs with too many connections
-        ie. repeats. 
-
-        
-        """
+        """Filter links by removing contigs with too many connections ie. repeats"""
         # first identify contigs with too many matches
         
     def get_links(self):
@@ -399,32 +459,15 @@ class ReadGraph(SimpleGraph):
         #from pympler import asizeof; print "Links: %s bases\n"%asizeof.asizeof(self.links)
         # filter links
         self._filter_links()
-        ## one-to-one links
-        joined = set()
         # process starting from the longest 
         for c in sorted(self.contigs, key=lambda x: self.contigs[x], reverse=1):
             for end in range(2):
-                # major connection
-                major = self._get_major_link(self.links[c][end])
-                if not major:
-                    continue
-                # check if reciprocal
-                c2, end2, pos2 = major
-                rmajor = self._get_major_link(self.links[c2][end2])
-                if not rmajor:
-                    continue
-                c1, end1, pos1 = rmajor
-                if c==c1 and end==end1:    
-                    #print c, end, c2, end2, len(pos2)
+                # best connections
+                for c2, end2, pos in self._select_links(self.links[c][end]):
                     # get distance
-                    dist = self._calculat_gap_size(pos1)
+                    dist = self._calculat_gap_size(pos)
                     # add connection
-                    yield c1, c2, end1, end2, len(pos1), dist
-                    # keep track of added
-                    joined.add((c1,end1))
-                    joined.add((c2,end2))
-        ## many-to-many
-        pass
+                    yield c, c2, end, end2, len(pos), dist
     
 if __name__=="__main__":
     """
