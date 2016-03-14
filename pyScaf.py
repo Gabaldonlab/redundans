@@ -355,7 +355,7 @@ g.load_from_SAM(open(sam), isize=5000, stdev=1000, orientation="FR"); print g
         sizes.append(len(r))
 
     s = SimpleGraph(contigs, sizes, mapq=10, limit=19571);
-    #s.add_library(open(sam), name=sam, isize=600, stdev=100, orientation="FR"); print s
+    s.add_library(open(sam), name=sam, isize=600, stdev=100, orientation="FR"); print s
     s.add_library(open(sam2), name=sam2, isize=5000, stdev=1000, orientation="FR"); print s
 
 
