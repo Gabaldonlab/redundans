@@ -422,7 +422,7 @@ class ReadGraph(SimpleGraph):
         for mpos, links in alllinks.items():
             yield links
         
-    def _select_links(self, links):
+    def _select_links(self, links): 
         """Return best links between set of contigs"""
         if not links:
             return []
