@@ -273,8 +273,8 @@ class ReadGraph(SimpleGraph):
     def _get_major_link(self, links):
         """Return major link if any of the links full fill quality criteria.
 
-        So far this is super simplistics!
-        It works for PE, but for MP you need to allow for multi-joins,
+        So far this is too simplistic!
+        It works for PE, but for MP you need to allow for multi-joins, 
         as many contigs will be shorter than i.e. 5kb insert... 
         """
         if not links:
@@ -297,7 +297,9 @@ class ReadGraph(SimpleGraph):
         
     def get_links(self):
         """Generator of contig connections for given library."""
-        # process starting from the longest
+        ## one-to-one links
+        joined = set()
+        # process starting from the longest 
         for c in sorted(self.contigs, key=lambda x: self.contigs[x], reverse=1):
             for end in range(2):
                 # major connection
@@ -316,6 +318,11 @@ class ReadGraph(SimpleGraph):
                     dist = self._calculat_gap_size(pos1)
                     # add connection
                     yield c1, c2, end1, end2, len(pos1), dist
+                    # keep track of added
+                    joined.add((c1,end1))
+                    joined.add((c2,end2))
+        ## many-to-many
+        pass
     
 if __name__=="__main__":
     """
