@@ -271,7 +271,12 @@ class ReadGraph(SimpleGraph):
         #return isizes
         
     def _get_major_link(self, links):
-        """Return major link if any of the links fullfill quality criteria."""
+        """Return major link if any of the links full fill quality criteria.
+
+        So far this is super simplistics!
+        It works for PE, but for MP you need to allow for multi-joins,
+        as many contigs will be shorter than i.e. 5kb insert... 
+        """
         if not links:
             return
         # reorganise links into list
@@ -351,6 +356,6 @@ g.load_from_SAM(open(sam), isize=5000, stdev=1000, orientation="FR"); print g
 
     s = SimpleGraph(contigs, sizes, mapq=10, limit=19571);
     #s.add_library(open(sam), name=sam, isize=600, stdev=100, orientation="FR"); print s
-    s.add_library(open(sam2), name=sam2, isize=7000, stdev=1000, orientation="FR"); print s
+    s.add_library(open(sam2), name=sam2, isize=5000, stdev=1000, orientation="FR"); print s
 
 
