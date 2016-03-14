@@ -23,7 +23,7 @@ class SimpleGraph(object):
         self.log = log
         self.printlimit = printlimit
         # prepare storage
-        self.contigs = {c: s  for c, s in zip(contigs, sizes)}# if s>isize/frac}
+        self.contigs = {c: s  for c, s in zip(contigs, sizes)}
         self.links   = {c: [0, 0] for c in self.contigs}
         self.ilinks  = 0
         # alignment options
@@ -68,8 +68,8 @@ class SimpleGraph(object):
             self.links[ref2][end2] = (ref1, end1, links, gap) 
             # update connection counter 
             self.ilinks += 1
-        elif self.links[ref1][end1][0] != ref2:
-            log.write("[WARNING] Overwritting existing connection %s with %s!\n"%(str(self.links[ref1][end1]), str((ref2, end2, links, gap))))
+        elif self.log and self.links[ref1][end1][0] != ref2:
+            self.log.write("[WARNING] Overwritting existing connection %s with %s!\n"%(str(self.links[ref1][end1]), str((ref2, end2, links, gap))))
 
     def add_library(self, handle, name="lib1", isize=300, stdev=50, orientation="FR"):
         """Add sequencing library as ReadGraph. 
@@ -77,7 +77,8 @@ class SimpleGraph(object):
         Contigs are connected later. 
         """
         rg = ReadGraph(self.contigs, handle, name, isize, stdev, orientation, \
-                       self.mapq, self.limit, self.frac, self.ratio, self.minlinks)
+                       self.mapq, self.limit, self.frac, self.ratio, self.minlinks,
+                       log=self.log, printlimit=self.printlimit)
         print rg
         #self.libraries.append(rg)
 
@@ -111,7 +112,7 @@ class ReadGraph(SimpleGraph):
         self.log = log
         self.printlimit = printlimit
         # prepare storage
-        self.contigs = contigs
+        self.contigs = contigs # {c: s for c, s in contigs.items() if s>isize/frac}
         self.links   = {c: [{},{}] for c in self.contigs}
         self.ilinks  = 0
         # alignment options
@@ -361,8 +362,8 @@ g.load_from_SAM(open(sam), isize=5000, stdev=1000, orientation="FR"); print g
         contigs.append(r.id)
         sizes.append(len(r))
 
-    s = SimpleGraph(contigs, sizes, mapq=10, limit=19571);
-    s.add_library(open(sam), name=sam, isize=600, stdev=100, orientation="FR"); print s
+    s = SimpleGraph(contigs, sizes, mapq=10, limit=19571, log=None);
+    #s.add_library(open(sam), name=sam, isize=600, stdev=100, orientation="FR"); print s
     s.add_library(open(sam2), name=sam2, isize=5000, stdev=1000, orientation="FR"); print s
 
 
