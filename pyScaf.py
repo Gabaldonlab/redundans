@@ -126,15 +126,16 @@ class Graph(object):
         
     def scaffold(self):
         """Perform contig scaffolding"""
-        added = set()
+        # start simple graph
+        s = SimpleGraph(self.contigs, log=self.log)
         # process starting from the longest
+        added = set()
         for c1 in sorted(self.contigs, key=lambda x: self.contigs[x], reverse=1):
             up, down = self._split_links(self.links(c1))
+            # connect only contigs with no. of links above ratio
             #for v2 in sorted(self.links[v1], key=lambda x: self.contigs[x], reverse=1):
                 
         
-        
-    '''    
     def delete_line(self, v1, v2):
         """Delete line between v1 and v2 if any. 
         Return error if no line between them.
@@ -145,7 +146,6 @@ class Graph(object):
             self.links[v2].remove(v1)
         except KeyError:
             raise ValueError('No line between %s and %s' % (v1,v2))
-    '''
 
 
 def parse_sam(handle):
