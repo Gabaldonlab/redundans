@@ -16,8 +16,8 @@ import numpy as np
 
 class SimpleGraph(object):
     """Graph class to represent scaffolds."""
-    def __init__(self, contigs, sizes, mapq=10, limit=float('inf'), mingap=50, 
-                 ratio=0.75, minlinks=5, printlimit=10, log=sys.stderr):
+    def __init__(self, contigs, sizes, mapq=10, limit=float('inf'), frac=1.5,
+                 mingap=50, ratio=0.75, minlinks=5, printlimit=10, log=sys.stderr):
         """Construct a graph with the given vertices & features"""
         self.name = "SimpleGraph"
         self.log = log
@@ -35,7 +35,7 @@ class SimpleGraph(object):
         self.minlinks = minlinks
         self.mingap  = mingap
         # read libraries storage
-        self.reads = []
+        self.libraries = []
 
     def shorter(self, v, i=4, sep="_"):
         """Return shortened contig name"""
@@ -60,7 +60,7 @@ class SimpleGraph(object):
                     break
         return out
         
-    def add_line(self, ref1, ref2, end1, end2, links, gap):
+    def _add_line(self, ref1, ref2, end1, end2, links, gap):
         """Add connection between contigs. """
         # store connection details
         if not self.links[ref1][end1]:
@@ -71,7 +71,21 @@ class SimpleGraph(object):
         elif self.links[ref1][end1][0] != ref2:
             log.write("[WARNING] Overwritting existing connection %s with %s!\n"%(str(self.links[ref1][end1]), str((ref2, end2, links, gap))))
 
-    def simplify(self):
+    def add_library(self, handle, name="lib1", isize=300, stdev=50, orientation="FR"):
+        """Add sequencing library as ReadGraph. 
+
+        Contigs are connected later. 
+        """
+        rg = ReadGraph(self.contigs, handle, name, isize, stdev, orientation, \
+                       self.mapq, self.limit, self.frac, self.ratio, self.minlinks)
+        print rg
+        #self.libraries.append(rg)
+
+        # populate graph
+        for ref1, ref2, end1, end2, links, gap in rg.get_links():
+            self._add_line(ref1, ref2, end1, end2, links, gap)
+        
+    def _simplify(self):
         """Simplify scaffold graph.
 
         For not it's doing nothing.
@@ -84,21 +98,25 @@ class SimpleGraph(object):
         For not it's doing nothing.
         """
         # simplify graph
-        s.simplify()
-
+        self._simplify()
+        # and report
+        
 
 class ReadGraph(SimpleGraph):
     """Graph class to represent paired alignments."""
-    def __init__(self, handle, name="ReadGraph", \
-                 isize=300, stdev=50, orientation="FR", \
-                 frac=1.5, log=sys.stderr, printlimit=10):
+    def __init__(self, contigs, handle, name, isize, stdev, orientation, \
+                 mapq, limit, frac, ratio, minlinks, 
+                 log=sys.stderr, printlimit=10):
         self.name = name
         self.log = log
         self.printlimit = printlimit
-        # prepare storage 
+        # prepare storage
+        self.contigs = contigs
         self.links   = {c: [{},{}] for c in self.contigs}
         self.ilinks  = 0
         # alignment options
+        self.mapq  = mapq
+        self.limit = limit
         # set distance function
         if   orientation in (1, "FR"):
             self.get_distance = self._get_distance_FR
@@ -110,8 +128,10 @@ class ReadGraph(SimpleGraph):
         self.isize = isize
         self.stdev = stdev
         self.orientation = orientation
+        self.minlinks = minlinks
+        self.ratio = ratio
         # max dist
-        self.maxdist = self.isize + frac*self.stdev
+        self.maxdist = self.isize + frac * self.stdev
         # load alignments
         self.load_from_SAM(handle)
                     
@@ -270,10 +290,8 @@ class ReadGraph(SimpleGraph):
         dists = [self.isize - sum(map(int, pos.split('-'))) for pos in positions]
         return np.median(dists)
         
-    def scaffold(self):
-        """Perform contig scaffolding"""
-        if not self.scaffolds:
-            self.scaffolds = SimpleGraph(self.contigs, mingap=self.mingap, printlimit=self.printlimit)
+    def get_links(self):
+        """Generator of contig connections for given library."""
         # process starting from the longest
         for c in sorted(self.contigs, key=lambda x: self.contigs[x], reverse=1):
             for end in range(2):
@@ -292,7 +310,7 @@ class ReadGraph(SimpleGraph):
                     # get distance
                     dist = self._calculat_gap_size(pos1)
                     # add connection
-                    self.scaffolds.add_line(c1, c2, end1, end2, len(pos1), dist)
+                    yield c1, c2, end1, end2, len(pos1), dist
     
 if __name__=="__main__":
     """
@@ -315,7 +333,7 @@ for r in SeqIO.parse(fasta, 'fasta'):
     contigs.append(r.id)
     sizes.append(len(r))
 
-reload(ps); g = ps.Graph(contigs, sizes, mapq=10, limit=19571);
+reload(ps); g = ps.SimpleGraph(contigs, sizes, limit=19571);
 g.load_from_SAM(open(sam), isize=600, stdev=100, orientation="FR"); print g
 g.scaffold(); print g.scaffolds
 # g.scaffolds.save()
@@ -324,14 +342,17 @@ g.load_from_SAM(open(sam), isize=5000, stdev=1000, orientation="FR"); print g
     """
     from Bio import SeqIO
     sam = 'test/run1/600.sam'
+    sam2 = 'test/run1/5000.sam'
     fasta = 'test/run1/contigs.reduced.fa'
     contigs, sizes = [], []
     for r in SeqIO.parse(fasta, 'fasta'):
         contigs.append(r.id)
         sizes.append(len(r))
 
-    g = Graph(contigs, sizes, mapq=10, limit=19571);
-    isizes = g.load_from_SAM(open(sam), isize=600, stdev=100, orientation="FR"); print g
-    g.scaffold(); print g.scaffolds
+    s = SimpleGraph(contigs, sizes, mapq=10, limit=19571);
+    s.add_library(open(sam), name=sam, isize=600, stdev=100, orientation="FR")
+    print s
+    s.add_library(open(sam2), name=sam2, isize=5000, stdev=1000, orientation="FR")
+    print s
 
 
