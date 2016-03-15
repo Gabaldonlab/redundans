@@ -705,7 +705,7 @@ def main():
     if o.ref:
         # init
         s = ReferenceGraph(fasta, o.ref, identity=o.identity, overlap=o.overlap, \
-                           maxgap=o.maxgap, threads=4, log=log)
+                           maxgap=o.maxgap, threads=o.threads, log=log)
         # save output
         s.save(out=open(fasta+".scaffolds.ref.fa", "w"))
 
