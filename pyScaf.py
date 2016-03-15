@@ -1,5 +1,9 @@
-#/usr/bin/env python
-"""Perform scaffolding of contigs using information from PE & MP libraries. 
+#!/usr/bin/env python
+desc="""Perform scaffolding of contigs using information from (in this order):
+- paired-end (PE) and/or mate-pair (MP) libraries (!!!NOT IMPLEMENTED YET!!!)
+- synteny to reference genome
+
+More info at: http://bit.ly/Redundans
 """
 epilog="""Author:
 l.p.pryszcz@gmail.com
@@ -9,6 +13,7 @@ Warsaw, 12/03/2016
 
 import os, sys
 import resource, subprocess
+from datetime import datetime
 import numpy as np
 from Bio import SeqIO
 from Bio.Seq import Seq
@@ -42,6 +47,14 @@ class SimpleGraph(object):
         self.libraries = []
         self.rlen = 100
 
+    def logger(self, mssg=""):
+        """Logging function."""
+        head = "\n%s\n"%("#"*50,)
+        timestamp = datetime.ctime(datetime.now())
+        memusage  = "[%s kb]"%resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+        if self.log:
+            self.log.write(" ".join((head, timestamp, memusage, mssg)))
+        
     def shorter(self, v, i=4, sep="_"):
         """Return shortened contig name"""
         return sep.join(v.split(sep)[:i])
@@ -72,12 +85,7 @@ class SimpleGraph(object):
         self.links[ref1][end1][(ref2, end2)] = (links, gap)
         # update connection counter 
         self.ilinks += 1
-            
-    def info(self):
-        """Add sequencing library as ReadGraph"""
-        if self.log:
-            self.log.write(" %s kb\n"%resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
-        
+                   
     def add_library(self, handle, name="lib1", isize=300, stdev=50, orientation="FR"):
         """Add sequencing library as ReadGraph. 
 
@@ -86,13 +94,12 @@ class SimpleGraph(object):
         rg = ReadGraph(self.contigs, handle, name, isize, stdev, orientation, \
                        self.mapq, self.limit, self.frac, self.ratio, self.minlinks,
                        log=self.log, printlimit=self.printlimit)
-        print rg
+        #print rg
         #self.libraries.append(rg)
 
         # populate graph
         for ref1, ref2, end1, end2, links, gap in rg.get_links():
             self._add_line(ref1, ref2, end1, end2, links, gap)
-        self.info()
         
     def _simplify(self):
         """Simplify scaffold graph by resolving circles"""
@@ -187,6 +194,7 @@ class SimpleGraph(object):
         
     def save(self, out, format='fasta'):
         """Resolve & report scaffolds"""
+        self.logger("Reporting scaffolds...\n")
         # generate scaffolds
         self._get_scaffolds()
         # report
@@ -203,8 +211,9 @@ class SimpleGraph(object):
             self.log.write("%s\t%s\t%s\n"%(name, len(r), " ".join(scaffold)))
         # close output
         out.close()
-        self.log.write("%s bp in %s scaffolds.\n"%(totsize, len(self.scaffolds)))
-            
+        self.logger("Scaffolds saved to: %s\n"%out.name)
+        self.log.write(" %s bp in %s scaffolds.\n"%(totsize, len(self.scaffolds)))
+        
 class ReadGraph(SimpleGraph):
     """Graph class to represent paired alignments."""
     def __init__(self, contigs, handle, name, isize, stdev, orientation, \
@@ -493,8 +502,6 @@ class ReferenceGraph(SimpleGraph):
 
     def _lastal(self):
         """Start LAST"""
-        if self.log:
-            self.log.write(" Running LAST...\n")
         # build db
         if not os.path.isfile(self.ref+".suf"):
             os.system("lastdb %s %s" % (self.ref, self.ref))
@@ -554,7 +561,7 @@ class ReferenceGraph(SimpleGraph):
             t2hits[t] = []
             for tstart, tend, q, qstart, qend, strand in sorted(hits):
                 # overlap with previous above threshold
-                if t2hits[t] and tstart-t2hits[t][-1][1]>self.overlap*self.contigs[q]:
+                if t2hits[t] and t2hits[t][-1][1]-tstart > self.overlap*self.contigs[q]:
                     phit = t2hits[t][-1]
                     # do nothing if previous hit is better
                     if tend - tstart <= phit[1]-phit[0]:
@@ -566,31 +573,151 @@ class ReferenceGraph(SimpleGraph):
                 t2hits[t].append((tstart, tend, q, qstart, qend, strand))
         return t2hits, t2size
 
+    def _estimate_gap(self, data, pdata):
+        """Return estimated gap size"""
+        # current start - previous end
+        # this needs to be corrected by qstart and qend !!
+        gap = data[0] - pdata[1]
+        return gap
+        
     def _get_scaffolds(self):
         """Resolve & report scaffolds"""
+        self.logger("Aligning contings on reference...\n")
         # get best ref-match to each contig
         t2hits, t2size = self._get_hits()
 
         # store scaffold structure
         ## [(contigs, orientations, gaps), ]
-        self.scaffolds = []        
+        self.scaffolds = []
+        added = set()
         for t in sorted(t2size, key=lambda x: t2size[x], reverse=1):
             # skip one-to-one matches
             if len(t2hits[t])<2:
                 continue
             # add empty scaffold
             scaffold, orientations, gaps = [], [], []
-            print t, t2size[t]
-            for tstart, tend, q, qstart, qend, strand in t2hits[t]:
+            #print t, t2size[t]
+            for data in t2hits[t]:
+                gap = 0
+                tstart, tend, q, qstart, qend, strand = data
+                # calculate gap only if scaffold has at least one element
+                if scaffold:
+                    gap = self._estimate_gap(data, pdata)
+                    if gap > self.maxgap:
+                        # add to scaffolds
+                        if len(scaffold)>1:
+                            self.scaffolds.append([scaffold, orientations, gaps])
+                            added.update(scaffold)
+                        # reset storage
+                        scaffold, orientations, gaps = [], [], []
+                    else:    
+                        gaps.append(gap)
+                # store contig & orientation
+                scaffold.append(q)
+                orientations.append(strand)
+                # keep track of previous data
+                pdata = data
+                #print " %s %s-%s %s:%s-%s %s %s bp"%(len(self.scaffolds)+1, tstart, tend, self.shorter(q), qstart, qend, strand, gap)
                 
-                print " %s-%s %s:%s-%s %s"%(len(self.scaffolds)+1, tstart, tend, self.shorter(q), qstart, qend, strand)
+            # add to scaffolds
+            if len(scaffold)>1:
+                self.scaffolds.append([scaffold, orientations, gaps])
+                added.update(scaffold)
                 
-            # add to scaffold
-            self.scaffolds.append([scaffold, orientations, gaps])
-        
+        # add missing
+        for c in filter(lambda x: x not in added, self.contigs):
+            self.scaffolds.append([(c,),(0,),()])
+            
+def main():
+    import argparse
+    usage   = "%(prog)s -v" #usage=usage, 
+    parser  = argparse.ArgumentParser(description=desc, epilog=epilog, \
+                                      formatter_class=argparse.RawTextHelpFormatter)
+  
+    parser.add_argument("-v", dest="verbose",  default=False, action="store_true", help="verbose")    
+    parser.add_argument('--version', action='version', version='0.12a')   
+    parser.add_argument("-f", "--fasta", required=1, 
+                        help="assembly FASTA file")
+    parser.add_argument("-o", "--outdir",  default="redundans", 
+                        help="output directory [%(default)s]")
+    parser.add_argument("-t", "--threads", default=4, type=int, 
+                        help="max threads to run [%(default)s]")
+    parser.add_argument("--log",           default=sys.stderr, type=argparse.FileType('w'), 
+                        help="output log to [stderr]")
     
-if __name__=="__main__":
-    """
+    refo = parser.add_argument_group('Reference-based scaffolding options')
+    refo.add_argument("-r", "--ref", "--reference", default='', 
+                      help="reference FASTA file")
+    refo.add_argument("--identity",        default=0.51, type=float,
+                      help="min. identity [%(default)s]")
+    refo.add_argument("--overlap",         default=0.66, type=float,
+                      help="min. overlap  [%(default)s]")
+    
+    scaf = parser.add_argument_group('Scaffolding options')
+    scaf.add_argument("-i", "--fastq", nargs="+",
+                      help="FASTQ PE/MP files")
+    scaf.add_argument("-j", "--joins",  default=5, type=int, 
+                      help="min pairs to join contigs [%(default)s]")
+    scaf.add_argument("-a", "--linkratio", default=0.7, type=float,
+                       help="max link ratio between two best contig pairs [%(default)s]")    
+    scaf.add_argument("-l", "--limit",  default=0.2, type=float, 
+                      help="align subset of reads [%(default)s]")
+    scaf.add_argument("-q", "--mapq",    default=10, type=int, 
+                      help="min mapping quality [%(default)s]")
+    
+    o = parser.parse_args()
+    if o.verbose:
+        o.log.write("Options: %s\n"%str(o))
+
+    # check logic
+    if not o.ref and not o.fastq:
+        sys.stderr.write("Provide FastQ files or reference genome (or both)!")
+        sys.exit(1)
+        
+    # check if input files exists
+    fnames = [o.fasta, o.ref]
+    if o.fastq:
+        fnames += o.fastq
+    for fn in fnames: 
+        if fn and not os.path.isfile(fn):
+            sys.stderr.write("No such file: %s\n"%fn)
+            sys.exit(1)
+            
+    fasta = o.fasta
+    log = o.log
+
+    # perform PE/MP scaffolding if NGS provided
+    if o.fastq:
+        # NOT IMPLEMENTED
+        # get library statistics
+        # init
+        s = ps.SimpleGraph(fasta, mapq=o.mapq, log=log) # limit=19571,
+        s.add_library(open(sam), name=sam, isize=600, stdev=100, orientation="FR"); print s
+        # save output
+        s.save(out=open(fasta+".scaffolds.fa", "w"))
+        
+        # update fasta at the end
+        fasta = fasta
+    
+    # perform referece-based scaffolding only if ref provided
+    if o.ref:
+        # init
+        s = ReferenceGraph(fasta, o.ref, log=log)
+        # save output
+        s.save(out=open(fasta+".scaffolds.ref.fa", "w"))
+
+if __name__=='__main__': 
+    t0 = datetime.now()
+    try:
+        main()
+    except KeyboardInterrupt:
+        sys.stderr.write("\nCtrl-C pressed!      \n")
+    dt = datetime.now()-t0
+    sys.stderr.write("#Time elapsed: %s\n"%dt)
+    
+'''
+#####
+# scaffolding using PE/MP libraries
 ./redundans.py -v -i test/*.fq.gz -f test/contigs.fa -o test/run1
 bwa index test/run1/contigs.reduced.fa
 bwa mem -t4 test/run1/contigs.reduced.fa test/600_?.fq.gz > test/run1/600.sam
@@ -621,32 +748,10 @@ fasta = 'test/run1/contigs.reduced.fa.scaffolds.fa'
 reload(ps); s = ps.SimpleGraph(fasta, mapq=10, limit=19571, log=sys.stderr);
 s.add_library(open(sam2), name=sam2, isize=5000, stdev=1000, orientation="FR"); print s
 
+######
 # reference-based scaffolding
-#lastdb test/ref.fa test/ref.fa
-f=test/run1/contigs.reduced.fa
-lastal -T 1 -f TAB test/ref.fa $f > $f.tab
-
-
 import pyScaf as ps
-fasta = 'test/run1/contigs.reduced.fa'
-ref = 'test/ref.fa'
-
-reload(ps); r = ps.ReferenceGraph(fasta, ref); r._get_scaffolds()
-
-    """
-    fasta = 'test/run1/contigs.reduced.fa'
-    ref = fasta = 'test/ref.fa'
-    r = ReferenceGraph(fasta, ref)
-    
-    sys.exit()
-    
-    sam = 'test/run1/600.sam'
-    sam2 = 'test/run1/5000.sam'
-    fasta = 'test/run1/contigs.reduced.fa'
-    s = SimpleGraph(fasta, mapq=10, limit=19571);
-    s.add_library(open(sam), name=sam, isize=600, stdev=50, orientation="FR"); print s
-    #s.add_library(open(sam2), name=sam2, isize=5000, stdev=1000, orientation="FR"); print s
-    s.save(out=open(fasta+".scaffolds.fa", "w"))
-
-    
+reload(ps); s = ps.ReferenceGraph('test/run1/contigs.reduced.fa', 'test/ref.fa'); s._get_scaffolds();
+s.save(out=open(fasta+".scaffolds.ref.fa", "w"))
+'''    
 
