@@ -641,7 +641,7 @@ def main():
     parser.add_argument("-o", "--outdir",  default="redundans", 
                         help="output directory [%(default)s]")
     parser.add_argument("-t", "--threads", default=4, type=int, 
-                        help="max threads to run [%(default)s]")
+                        help="max no. of threads to run [%(default)s]")
     parser.add_argument("--log",           default=sys.stderr, type=argparse.FileType('w'), 
                         help="output log to [stderr]")
     
@@ -652,6 +652,8 @@ def main():
                       help="min. identity [%(default)s]")
     refo.add_argument("--overlap",         default=0.66, type=float,
                       help="min. overlap  [%(default)s]")
+    refo.add_argument("-g", "--maxgap",   default=10000, type=int,
+                      help="max. distance between adjacent contigs [%(default)s]")
     
     scaf = parser.add_argument_group('Scaffolding options')
     scaf.add_argument("-i", "--fastq", nargs="+",
@@ -702,7 +704,8 @@ def main():
     # perform referece-based scaffolding only if ref provided
     if o.ref:
         # init
-        s = ReferenceGraph(fasta, o.ref, log=log)
+        s = ReferenceGraph(fasta, o.ref, identity=o.identity, overlap=o.overlap, \
+                           maxgap=o.maxgap, threads=4, log=log)
         # save output
         s.save(out=open(fasta+".scaffolds.ref.fa", "w"))
 
