@@ -626,7 +626,7 @@ class ReferenceGraph(SimpleGraph):
                 
         # add missing
         for c in filter(lambda x: x not in added, self.contigs):
-            self.scaffolds.append([(c,),(0,),()])
+            self.scaffolds.append([(c,),(0,),[]])
             
 def main():
     import argparse
