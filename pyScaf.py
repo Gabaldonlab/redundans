@@ -7,7 +7,8 @@ l.p.pryszcz@gmail.com
 Warsaw, 12/03/2016
 """
 
-import sys, resource
+import os, sys
+import resource, subprocess
 import numpy as np
 from Bio import SeqIO
 from Bio.Seq import Seq
@@ -68,20 +69,9 @@ class SimpleGraph(object):
     def _add_line(self, ref1, ref2, end1, end2, links, gap):
         """Add connection between contigs. """
         # store connection details
-        #if not self.links[ref1][end1]:
-        #    self.links[ref1][end1] = {}
         self.links[ref1][end1][(ref2, end2)] = (links, gap)
         # update connection counter 
         self.ilinks += 1
-        '''
-            self.links[ref1][end1] = (ref2, end2, links, gap)
-            self.links[ref2][end2] = (ref1, end1, links, gap)
-            
-            # update connection counter 
-            self.ilinks += 1
-        elif self.log and self.links[ref1][end1][0] != ref2:
-            self.log.write("[WARNING] Overwritting existing connection %s with %s!\n"%(str(self.links[ref1][end1]), str((ref2, end2, links, gap))))
-        '''
             
     def info(self):
         """Add sequencing library as ReadGraph"""
@@ -148,27 +138,7 @@ class SimpleGraph(object):
         # populate further connections from another end
         return self._populate_scaffold(links, end, sid, scaffold, orientations, gaps, orientation)
 
-    def _get_scaffold(self, name, scaffold, orientations, gaps):
-        """"Prepare fasta sequence for given scaffold"""
-        # add empty gap at the end
-        gaps.append(0)
-        seqs = []
-        for c, reverse, gap in zip(scaffold, orientations, gaps):
-            if reverse:
-                seq = self.seq[c].reverse_complement().seq
-            else:
-                seq = self.seq[c].seq
-            # adjust gap size
-            if gap and gap < self.mingap:
-                strip = int(gap - self.mingap)
-                seq = seq[:strip]
-                gap = self.mingap
-            seqs.append(str(seq)+"N"*gap)
-        # generate seq record & report fasta
-        r = SeqRecord(Seq("".join(seqs), IUPAC.ambiguous_dna), id=name)
-        return r
-        
-    def save(self, out, format='fasta'):
+    def _get_scaffolds(self):
         """Resolve & report scaffolds"""
         # simplify graph
         self._simplify()
@@ -194,15 +164,39 @@ class SimpleGraph(object):
                 scaffold, orientations, gaps, porientation = self._populate_scaffold(links, end1, sid, scaffold, orientations, gaps, 0)
             # store
             self.scaffolds.append((scaffold, orientations, gaps))
+            
+    def _get_seqrecord(self, name, scaffold, orientations, gaps):
+        """"Return SeqRecord for given scaffold"""
+        # add empty gap at the end
+        gaps.append(0)
+        seqs = []
+        for c, reverse, gap in zip(scaffold, orientations, gaps):
+            if reverse:
+                seq = self.seq[c].reverse_complement().seq
+            else:
+                seq = self.seq[c].seq
+            # adjust gap size
+            if gap and gap < self.mingap:
+                strip = int(gap - self.mingap)
+                seq = seq[:strip]
+                gap = self.mingap
+            seqs.append(str(seq)+"N"*gap)
+        # generate seq record & report fasta
+        r = SeqRecord(Seq("".join(seqs), IUPAC.ambiguous_dna), id=name)
+        return r
+        
+    def save(self, out, format='fasta'):
+        """Resolve & report scaffolds"""
+        # generate scaffolds
+        self._get_scaffolds()
         # report
-        #print self.contig2scaffold
         totsize = 0
         self.log.write("# name\tsize\tcontigs\n")
         for i, (scaffold, orientations, gaps) in enumerate(self.scaffolds, 1):
             # scaffold00001
             name = str("scaffold%5i"%i).replace(' ','0')
             # save scaffold
-            r = self._get_scaffold(name, scaffold, orientations, gaps)
+            r = self._get_seqrecord(name, scaffold, orientations, gaps)
             out.write(r.format('fasta'))
             # report info
             totsize += len(r)
@@ -468,6 +462,132 @@ class ReadGraph(SimpleGraph):
                     dist = self._calculat_gap_size(pos)
                     # add connection
                     yield c, c2, end, end2, len(pos), dist
+                    
+class ReferenceGraph(SimpleGraph):
+    """Graph class to represent scaffolds."""
+    def __init__(self, genome, reference, identity=0.51, overlap=0.66, threads=4, 
+                 mingap=15, maxgap=10000, printlimit=10, log=sys.stderr):
+        """Construct a graph with the given vertices & features"""
+        self.name = "ReferenceGraph"
+        self.log = log
+        self.printlimit = printlimit
+        # vars
+        self.genome = genome
+        # don't load reference genome - maybe we can avoid that
+        self.reference = reference
+        self.ref = self.reference
+        # load fasta into index
+        self.sequences = SeqIO.index_db(genome+".db3", genome, 'fasta')
+        self.seq = self.sequences
+        # prepare storage
+        self.contigs = {c: len(self.seq[c]) for c in self.seq}
+        self.links   = {c: [{}, {}] for c in self.contigs}
+        self.ilinks  = 0
+        # alignment options
+        self.identity = identity
+        self.overlap  = overlap
+        self.threads  = threads
+        # scaffolding
+        self.mingap  = mingap
+        self.maxgap  = maxgap
+
+    def _lastal(self):
+        """Start LAST"""
+        if self.log:
+            self.log.write(" Running LAST...\n")
+        # build db
+        if not os.path.isfile(self.ref+".suf"):
+            os.system("lastdb %s %s" % (self.ref, self.ref))
+        # run LAST
+        args = ["lastal", "-T", "1", "-f", "TAB", "-P", str(self.threads), self.ref, self.genome]
+        proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=sys.stderr)        
+        return proc.stdout
+        
+    def _get_hits(self):
+        """Resolve & report scaffolds"""
+        ## consider splitting into two functions
+        ## to facilitate more input formats
+        t2hits = {}
+        t2size = {}
+        q2hits = {}
+        for l in self._lastal():
+            if l.startswith('#'):
+                continue
+            # unpack
+            (score, t, tstart, talg, tstrand, tsize, q, qstart, qalg, qstrand, qsize, blocks) = l.split()[:12]
+            (score, qstart, qalg, qsize, tstart, talg, tsize) = map(int, (score, qstart, qalg, qsize, tstart, talg, tsize))
+            #get score, identity & overlap
+            identity = 1.0 * score / qalg
+            overlap  = 1.0 * qalg / qsize
+            #filter by identity and overlap
+            if identity < self.identity or overlap < self.overlap:
+                continue
+            # keep only best match to ref for each q
+            if q in q2hits:
+                pt, pscore = q2hits[q]
+                # skip if worse score
+                if score < q2hits[q][1]:
+                    continue
+                # update if better score
+                q2hits[q] = (t, score)
+                # remove previous q hit
+                # normally should be at the end of matches to pt
+                t2hits[pt].pop(-1)
+            else:
+                q2hits[q] = (t, score)
+            # store
+            if t not in t2hits:
+                t2hits[t] = []
+                t2size[t] = tsize            
+            # For - strand matches, coordinates in the reverse complement of the 2nd sequence are used.
+            strand = 0 # forward
+            if qstrand == "-":
+                strand = 1 # reverse
+            qend, tend = qstart + qalg, tstart + talg
+            t2hits[t].append((tstart, tend, q, qstart, qend, strand))
+        
+        # remove q that overlap too much on t
+        # sort by r pos
+        for t in t2hits:
+            hits = t2hits[t]
+            # remove hits overlapping too much
+            t2hits[t] = []
+            for tstart, tend, q, qstart, qend, strand in sorted(hits):
+                # overlap with previous above threshold
+                if t2hits[t] and tstart-t2hits[t][-1][1]>self.overlap*self.contigs[q]:
+                    phit = t2hits[t][-1]
+                    # do nothing if previous hit is better
+                    if tend - tstart <= phit[1]-phit[0]:
+                        continue
+                    # remove previous match
+                    t2hits[t].pop(-1)
+                # add match only if first,
+                # no overlap with previous or better than previous
+                t2hits[t].append((tstart, tend, q, qstart, qend, strand))
+        return t2hits, t2size
+
+    def _get_scaffolds(self):
+        """Resolve & report scaffolds"""
+        # get best ref-match to each contig
+        t2hits, t2size = self._get_hits()
+
+        # store scaffold structure
+        ## [(contigs, orientations, gaps), ]
+        self.scaffolds = []        
+        for t in sorted(t2size, key=lambda x: t2size[x], reverse=1):
+            # skip one-to-one matches
+            if len(t2hits[t])<2:
+                continue
+            # add empty scaffold
+            scaffold, orientations, gaps = [], [], []
+            print t, t2size[t]
+            for tstart, tend, q, qstart, qend, strand in t2hits[t]:
+                
+                print " %s-%s %s:%s-%s %s"%(len(self.scaffolds)+1, tstart, tend, self.shorter(q), qstart, qend, strand)
+                
+            # add to scaffold
+            self.scaffolds.append([scaffold, orientations, gaps])
+        
     
 if __name__=="__main__":
     """
@@ -501,7 +621,25 @@ fasta = 'test/run1/contigs.reduced.fa.scaffolds.fa'
 reload(ps); s = ps.SimpleGraph(fasta, mapq=10, limit=19571, log=sys.stderr);
 s.add_library(open(sam2), name=sam2, isize=5000, stdev=1000, orientation="FR"); print s
 
+# reference-based scaffolding
+#lastdb test/ref.fa test/ref.fa
+f=test/run1/contigs.reduced.fa
+lastal -T 1 -f TAB test/ref.fa $f > $f.tab
+
+
+import pyScaf as ps
+fasta = 'test/run1/contigs.reduced.fa'
+ref = 'test/ref.fa'
+
+reload(ps); r = ps.ReferenceGraph(fasta, ref); r._get_scaffolds()
+
     """
+    fasta = 'test/run1/contigs.reduced.fa'
+    ref = fasta = 'test/ref.fa'
+    r = ReferenceGraph(fasta, ref)
+    
+    sys.exit()
+    
     sam = 'test/run1/600.sam'
     sam2 = 'test/run1/5000.sam'
     fasta = 'test/run1/contigs.reduced.fa'
@@ -510,4 +648,5 @@ s.add_library(open(sam2), name=sam2, isize=5000, stdev=1000, orientation="FR"); 
     #s.add_library(open(sam2), name=sam2, isize=5000, stdev=1000, orientation="FR"); print s
     s.save(out=open(fasta+".scaffolds.fa", "w"))
 
+    
 
