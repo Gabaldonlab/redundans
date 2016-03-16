@@ -3,7 +3,9 @@
   - **[FAQ](#faq)**
   - **[FAQ - INSTALL.sh](#faq---installsh)**
   
-- **[pyScaf docs](#pyScaf-docs)**  
+- **[pyScaf docs](#pyscaf-docs)**  
+  - **[NGS-based scaffolding](#ngs-based-scaffolding)**  
+  - **[Reference-based scaffolding](#reference-based-scaffolding)**  
 
 # Redundans docs
 
@@ -98,16 +100,16 @@ This is under development... Stay tuned.
 In reference-based mode, pyScaf uses synteny to the genome of closely related species in order to order contigs and estimate distances between adjacent contigs.
 
 Contigs are aligned globally (end-to-end) onto reference chromosomes, ignoring:
-- matches not satisfying cut-offs (--identity and --overlap)
+- matches not satisfying cut-offs (`--identity` and `--overlap`)
 - suboptimal matches (only best match of each query to reference is kept) 
-- and removing overlapping matches on reference above
+- and removing overlapping matches on reference. 
 
-In preliminary tests, pyScaf performed superbly on simulated heterozygous genomes based on *C. parapsilosis* (13 Mb; CANPA) and *A. thaliana* (119 Mb; ARATH) chromosomes, reconstructing correctly all chromosomes always for CANPA and nearly always for ARATH ([Figures in dropbox](https://www.dropbox.com/sh/bb7lwggo40xrwtc/AAAZ7pByVQQQ-WhUXZVeJaZVa/pyScaf?dl=0), [CANPA table](https://docs.google.com/spreadsheets/d/1InBExy-qKDLj-upd8tlPItVSKc4mLepZjZxB31ii9OY/edit#gid=2036953672), [ARATH table](https://docs.google.com/spreadsheets/d/1InBExy-qKDLj-upd8tlPItVSKc4mLepZjZxB31ii9OY/edit#gid=1920757821)). 
-Runs took ~0.5 min for CANPA on 4 CPUs and ~2 min for ARATH on 16 CPUs. 
+In preliminary tests, pyScaf performed superbly on simulated heterozygous genomes based on *C. parapsilosis* (13 Mb; CANPA) and *A. thaliana* (119 Mb; ARATH) chromosomes, reconstructing correctly all chromosomes always for CANPA and nearly always for ARATH ([Figures in dropbox](https://www.dropbox.com/sh/bb7lwggo40xrwtc/AAAZ7pByVQQQ-WhUXZVeJaZVa/pyScaf?dl=0), [CANPA table](https://docs.google.com/spreadsheets/d/1InBExy-qKDLj-upd8tlPItVSKc4mLepZjZxB31ii9OY/edit#gid=2036953672), [ARATH table](https://docs.google.com/spreadsheets/d/1InBExy-qKDLj-upd8tlPItVSKc4mLepZjZxB31ii9OY/edit#gid=1920757821)).  
+Runs took ~0.5 min for CANPA on `4 CPUs` and ~2 min for ARATH on `16 CPUs`. 
 
 **Important remarks:**
 - Reduce your assembly before (fasta2homozygous.py) as any redundancy will likely break the synteny.
-- pyScaf works better with contigs than scaffolds, as scaffolds are often affected by mis-assemblies (no de novo assembler / scaffolder is perfect...), which breaks synteny. 
+- pyScaf works better with contigs than scaffolds, as scaffolds are often affected by mis-assemblies (no *de novo assembler* / scaffolder is perfect...), which breaks synteny. 
 - pyScaf works very well if divergence between reference genome and assembled contigs is below 20% at nucleotide level. 
 - pyScaf does not allow any rearrangements (ie. translocations). I don't know also how the tool will behave if there are big gaps in contigs... 
 - Consider closing gaps after scaffolding. 
