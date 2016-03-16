@@ -20,12 +20,29 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from Bio.Alphabet import IUPAC
 
-class SimpleGraph(object):
-    """Graph class to represent scaffolds."""
+class Graph(object):
+    """Graph class to represent scaffolds. It shouldn't be invoked directly,
+    rather use its children: PairedGraph or SyntenyGraph.
+
+    import pyScaf as ps
+    
+    #####
+    # Scaffolding using PE/MP libraries
+    reload(ps); s = ps.PairedGraph(fasta, mapq=10, limit=19571, log=sys.stderr);
+    s.add_library(fastq, name="lib1", isize=600, stdev=100, orientation="FR"); print s
+    s.add_library(fastq, name="lib2", isize=5000, stdev=1000, orientation="FR"); print s
+    s.save(out=open(fasta+".scaffolds.fa", "w"))
+
+    
+    ######
+    # Reference-based scaffolding
+    reload(ps); s = ps.SyntenyGraph('test/run1/contigs.reduced.fa', 'test/ref.fa')
+    s.save(out=open(fasta+".scaffolds.ref.fa", "w"))
+    """
     def __init__(self, genome, mapq=10, limit=float('inf'), frac=1.5,
                  mingap=15, ratio=0.75, minlinks=5, printlimit=10, log=sys.stderr):
         """Construct a graph with the given vertices & features"""
-        self.name = "SimpleGraph"
+        self.name = "Graph"
         self.log = log
         self.printlimit = printlimit
         # load fasta into index
@@ -86,6 +103,81 @@ class SimpleGraph(object):
         # update connection counter 
         self.ilinks += 1
                    
+    def _get_seqrecord(self, name, scaffold, orientations, gaps):
+        """"Return SeqRecord for given scaffold"""
+        # add empty gap at the end
+        gaps.append(0)
+        seqs = []
+        for c, reverse, gap in zip(scaffold, orientations, gaps):
+            if reverse:
+                seq = self.seq[c].reverse_complement().seq
+            else:
+                seq = self.seq[c].seq
+            # adjust gap size
+            if gap and gap < self.mingap:
+                strip = int(gap - self.mingap)
+                seq = seq[:strip]
+                gap = self.mingap
+            seqs.append(str(seq)+"N"*gap)
+        # generate seq record & report fasta
+        r = SeqRecord(Seq("".join(seqs), IUPAC.ambiguous_dna), id=name)
+        return r
+        
+    def save(self, out, format='fasta'):
+        """Resolve & report scaffolds"""
+        # generate scaffolds
+        self._get_scaffolds()
+        # report
+        self.logger("Reporting scaffolds...\n")
+        # log scaffold structure
+        log = open(out.name+".tsv", "w")
+        logline = "%s\t%s\t%s\t%s\t%s\t%s\n"
+        log.write("# name\tsize\tno. of contigs\tordered contigs\tcontig orientations (0-forward; 1-reverse)\tgap sizes (negative gap size = adjacent contigs are overlapping)\n")
+        totsize = 0
+        for i, (scaffold, orientations, gaps) in enumerate(self.scaffolds, 1):
+            # scaffold00001
+            name = str("scaffold%5i"%i).replace(' ','0')
+            # save scaffold
+            r = self._get_seqrecord(name, scaffold, orientations, gaps)
+            out.write(r.format('fasta'))
+            # report info
+            log.write(logline%(name, len(r), len(scaffold), " ".join(scaffold),
+                               " ".join(map(str, (x for x in orientations))),
+                               " ".join(map(str, (x for x in gaps)))))
+            totsize += len(r)
+        # close output & loge
+        out.close()
+        log.close()
+        self.logger("Scaffolds saved to: %s\n"%out.name)
+        self.log.write(" %s bp in %s scaffolds. Details in %s\n"%(totsize, len(self.scaffolds), log.name))
+        
+class PairedGraph(Graph):
+    """Graph class to represent scaffolds derived from NGS libraries."""
+    def __init__(self, genome, mapq=10, limit=float('inf'), frac=1.5,
+                 mingap=15, ratio=0.75, minlinks=5, printlimit=10, log=sys.stderr):
+        """Construct a graph with the given vertices & features"""
+        self.name = "PairedGraph"
+        self.log = log
+        self.printlimit = printlimit
+        # load fasta into index
+        self.sequences = SeqIO.index_db(genome+".db3", genome, 'fasta')
+        self.seq = self.sequences
+        # prepare storage
+        self.contigs = {c: len(self.seq[c]) for c in self.seq}
+        self.links   = {c: [{}, {}] for c in self.contigs}
+        self.ilinks  = 0
+        # alignment options
+        self.mapq  = mapq
+        self.frac  = frac
+        self.limit = limit
+        # scaffolding
+        self.ratio    = ratio
+        self.minlinks = minlinks
+        self.mingap  = mingap
+        # read libraries storage
+        self.libraries = []
+        self.rlen = 100
+      
     def add_library(self, handle, name="lib1", isize=300, stdev=50, orientation="FR"):
         """Add sequencing library as ReadGraph. 
 
@@ -171,57 +263,9 @@ class SimpleGraph(object):
                 scaffold, orientations, gaps, porientation = self._populate_scaffold(links, end1, sid, scaffold, orientations, gaps, 0)
             # store
             self.scaffolds.append((scaffold, orientations, gaps))
-            
-    def _get_seqrecord(self, name, scaffold, orientations, gaps):
-        """"Return SeqRecord for given scaffold"""
-        # add empty gap at the end
-        gaps.append(0)
-        seqs = []
-        for c, reverse, gap in zip(scaffold, orientations, gaps):
-            if reverse:
-                seq = self.seq[c].reverse_complement().seq
-            else:
-                seq = self.seq[c].seq
-            # adjust gap size
-            if gap and gap < self.mingap:
-                strip = int(gap - self.mingap)
-                seq = seq[:strip]
-                gap = self.mingap
-            seqs.append(str(seq)+"N"*gap)
-        # generate seq record & report fasta
-        r = SeqRecord(Seq("".join(seqs), IUPAC.ambiguous_dna), id=name)
-        return r
         
-    def save(self, out, format='fasta'):
-        """Resolve & report scaffolds"""
-        # generate scaffolds
-        self._get_scaffolds()
-        # report
-        self.logger("Reporting scaffolds...\n")
-        # log scaffold structure
-        log = open(out.name+".tsv", "w")
-        logline = "%s\t%s\t%s\t%s\t%s\t%s\n"
-        log.write("# name\tsize\tno. of contigs\tordered contigs\tcontig orientations (0-forward; 1-reverse)\tgap sizes (negative gap size = adjacent contigs are overlapping)\n")
-        totsize = 0
-        for i, (scaffold, orientations, gaps) in enumerate(self.scaffolds, 1):
-            # scaffold00001
-            name = str("scaffold%5i"%i).replace(' ','0')
-            # save scaffold
-            r = self._get_seqrecord(name, scaffold, orientations, gaps)
-            out.write(r.format('fasta'))
-            # report info
-            log.write(logline%(name, len(r), len(scaffold), " ".join(scaffold),
-                               " ".join(map(str, (x for x in orientations))),
-                               " ".join(map(str, (x for x in gaps)))))
-            totsize += len(r)
-        # close output & loge
-        out.close()
-        log.close()
-        self.logger("Scaffolds saved to: %s\n"%out.name)
-        self.log.write(" %s bp in %s scaffolds. Details in %s\n"%(totsize, len(self.scaffolds), log.name))
-        
-class ReadGraph(SimpleGraph):
-    """Graph class to represent paired alignments."""
+class ReadGraph(Graph):
+    """Graph class to represent contig connections from paired alignments."""
     def __init__(self, contigs, handle, name, isize, stdev, orientation, \
                  mapq, limit, frac, ratio, minlinks, 
                  log=sys.stderr, printlimit=10):
@@ -478,8 +522,8 @@ class ReadGraph(SimpleGraph):
                     # add connection
                     yield c, c2, end, end2, len(pos), dist
                     
-class ReferenceGraph(SimpleGraph):
-    """Graph class to represent scaffolds"""
+class SyntenyGraph(Graph):
+    """Graph class to represent scaffolds derived from synteny information"""
     def __init__(self, genome, reference, identity=0.51, overlap=0.66, threads=4, 
                  mingap=15, maxgap=0, printlimit=10, log=sys.stderr):
         """Construct a graph with the given vertices & features"""
@@ -722,8 +766,8 @@ def main():
     # perform referece-based scaffolding only if ref provided
     if o.ref:
         # init
-        s = ReferenceGraph(fasta, o.ref, identity=o.identity, overlap=o.overlap, \
-                           maxgap=o.maxgap, threads=o.threads, log=log)
+        s = SyntenyGraph(fasta, o.ref, identity=o.identity, overlap=o.overlap, \
+                         maxgap=o.maxgap, threads=o.threads, log=log)
         # save output
         s.save(out=open(fasta+".scaffolds.ref.fa", "w"))
 
@@ -736,43 +780,3 @@ if __name__=='__main__':
     dt = datetime.now()-t0
     sys.stderr.write("#Time elapsed: %s\n"%dt)
     
-'''
-#####
-# scaffolding using PE/MP libraries
-./redundans.py -v -i test/*.fq.gz -f test/contigs.fa -o test/run1
-bwa index test/run1/contigs.reduced.fa
-bwa mem -t4 test/run1/contigs.reduced.fa test/600_?.fq.gz > test/run1/600.sam
-bwa mem -t4 test/run1/contigs.reduced.fa test/5000_?.fq.gz > test/run1/5000.sam
-
-    
-ipython
-
-import pyScaf as ps
-
-sam = 'test/run1/600.sam'
-sam2 = 'test/run1/5000.sam'
-fasta = 'test/run1/contigs.reduced.fa'
-
-reload(ps); s = ps.SimpleGraph(fasta, mapq=10, limit=19571, log=sys.stderr);
-s.add_library(open(sam), name=sam, isize=600, stdev=100, orientation="FR"); print s
-s.add_library(open(sam2), name=sam2, isize=5000, stdev=1000, orientation="FR"); print s
-
-s.save(out=open(fasta+".scaffolds.fa", "w"))
-
-
-bwa index test/run1/contigs.reduced.fa.scaffolds.fa
-bwa mem -t4 test/run1/contigs.reduced.fa.scaffolds.fa test/5000_?.fq.gz > test/run1/5000.2.sam
-    
-sam2 = 'test/run1/5000.2.sam'
-fasta = 'test/run1/contigs.reduced.fa.scaffolds.fa'
-
-reload(ps); s = ps.SimpleGraph(fasta, mapq=10, limit=19571, log=sys.stderr);
-s.add_library(open(sam2), name=sam2, isize=5000, stdev=1000, orientation="FR"); print s
-
-######
-# reference-based scaffolding
-import pyScaf as ps
-reload(ps); s = ps.ReferenceGraph('test/run1/contigs.reduced.fa', 'test/ref.fa'); s._get_scaffolds();
-s.save(out=open(fasta+".scaffolds.ref.fa", "w"))
-'''    
-
