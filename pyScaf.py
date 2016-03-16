@@ -200,8 +200,8 @@ class SimpleGraph(object):
         self.logger("Reporting scaffolds...\n")
         # log scaffold structure
         log = open(out.name+".tsv", "w")
-        logline = "%s\t%s\t%s\t%s\t%s\n"
-        log.write("# name\tsize\tcontigs\torientations (0-forward; 1-reverse)\tgap sizes (negative gap size = adjacent contigs are overlapping)\n")
+        logline = "%s\t%s\t%s\t%s\t%s\t%s\n"
+        log.write("# name\tsize\tno. of contigs\tordered contigs\tcontig orientations (0-forward; 1-reverse)\tgap sizes (negative gap size = adjacent contigs are overlapping)\n")
         totsize = 0
         for i, (scaffold, orientations, gaps) in enumerate(self.scaffolds, 1):
             # scaffold00001
@@ -210,7 +210,7 @@ class SimpleGraph(object):
             r = self._get_seqrecord(name, scaffold, orientations, gaps)
             out.write(r.format('fasta'))
             # report info
-            log.write(logline%(name, len(r), " ".join(scaffold),
+            log.write(logline%(name, len(r), len(scaffold), " ".join(scaffold),
                                " ".join(map(str, (x for x in orientations))),
                                " ".join(map(str, (x for x in gaps)))))
             totsize += len(r)
