@@ -274,7 +274,7 @@ class ReadGraph(Graph):
         """Return pipe to stdout of BWA MEM subprocess"""
         # build db if index missing .sa .bwt .ann .amb .pac
         if not os.path.isfile(self.ref+".sa") or not os.path.isfile(self.ref+".bwt"):
-            os.system("bwa index %s" % self.ref)
+            os.system("bwa index %s > %s 2>&1" % (self.ref, bwalog.name))
         # run BWA MEM
         args = ['bwa', 'mem', '-S', '-t', str(self.threads), self.ref] + fastqs
         proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=bwalog)
@@ -689,7 +689,7 @@ def main():
     refo.add_argument("-g", "--maxgap",   default=0, type=int,
                       help="max. distance between adjacent contigs [0.01 * assembly_size]")
     
-    scaf = parser.add_argument_group('Scaffolding options')
+    scaf = parser.add_argument_group('NGS-based scaffolding options (!NOT IMPLEMENTED!)')
     scaf.add_argument("-i", "--fastq", nargs="+",
                       help="FASTQ PE/MP files")
     scaf.add_argument("-j", "--joins",  default=5, type=int, 
@@ -700,13 +700,14 @@ def main():
                       help="align subset of reads [%(default)s]")
     scaf.add_argument("-q", "--mapq",    default=10, type=int, 
                       help="min mapping quality [%(default)s]")
+    
     # standard
     parser.add_argument("-v", dest="verbose",  default=False, action="store_true", help="verbose")    
     parser.add_argument('--version', action='version', version='0.10a')   
     o = parser.parse_args()
     if o.verbose:
         o.log.write("Options: %s\n"%str(o))
-
+    
     # check logic
     if not o.ref and not o.fastq:
         sys.stderr.write("Provide FastQ files or reference genome (or both)!")
@@ -723,12 +724,12 @@ def main():
             
     fasta = o.fasta
     log = o.log
-
+    
     # perform PE/MP scaffolding if NGS provided
     if o.fastq:
         # NOT IMPLEMENTED
         # get library statistics
-        #sys.stderr.write("PE/MP-based scaffolding is not implemented yet!\n"); sys.exit(1)
+        sys.stderr.write("NGS-based scaffolding is not implemented yet! Stay tuned :) \n"); sys.exit(1)
         # init
         s = ReadGraph(fasta, mapq=o.mapq, load=o.load, threads=o.threads, log=log)
         # add library
