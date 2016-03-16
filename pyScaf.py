@@ -49,11 +49,11 @@ class SimpleGraph(object):
 
     def logger(self, mssg=""):
         """Logging function."""
-        head = "\n%s\n"%("#"*50,)
-        timestamp = datetime.ctime(datetime.now())
-        memusage  = "[%s kb]"%resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+        head = "\n%s"%("#"*50,)
+        timestamp = "\n[%s]"% datetime.ctime(datetime.now())
+        memusage  = "[%5i Mb] "%(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss/1024, )
         if self.log:
-            self.log.write(" ".join((head, timestamp, memusage, mssg)))
+            self.log.write("".join((head, timestamp, memusage, mssg)))
         
     def shorter(self, v, i=4, sep="_"):
         """Return shortened contig name"""
@@ -194,12 +194,15 @@ class SimpleGraph(object):
         
     def save(self, out, format='fasta'):
         """Resolve & report scaffolds"""
-        self.logger("Reporting scaffolds...\n")
         # generate scaffolds
         self._get_scaffolds()
         # report
+        self.logger("Reporting scaffolds...\n")
+        # log scaffold structure
+        log = open(out.name+".tsv", "w")
+        logline = "%s\t%s\t%s\t%s\t%s\n"
+        log.write("# name\tsize\tcontigs\torientations (0-forward; 1-reverse)\tgap sizes (negative gap size = adjacent contigs are overlapping)\n")
         totsize = 0
-        self.log.write("# name\tsize\tcontigs\n")
         for i, (scaffold, orientations, gaps) in enumerate(self.scaffolds, 1):
             # scaffold00001
             name = str("scaffold%5i"%i).replace(' ','0')
@@ -207,12 +210,15 @@ class SimpleGraph(object):
             r = self._get_seqrecord(name, scaffold, orientations, gaps)
             out.write(r.format('fasta'))
             # report info
+            log.write(logline%(name, len(r), " ".join(scaffold),
+                               " ".join(map(str, (x for x in orientations))),
+                               " ".join(map(str, (x for x in gaps)))))
             totsize += len(r)
-            self.log.write("%s\t%s\t%s\n"%(name, len(r), " ".join(scaffold)))
-        # close output
+        # close output & loge
         out.close()
+        log.close()
         self.logger("Scaffolds saved to: %s\n"%out.name)
-        self.log.write(" %s bp in %s scaffolds.\n"%(totsize, len(self.scaffolds)))
+        self.log.write(" %s bp in %s scaffolds. Details in %s\n"%(totsize, len(self.scaffolds), log.name))
         
 class ReadGraph(SimpleGraph):
     """Graph class to represent paired alignments."""
@@ -473,9 +479,9 @@ class ReadGraph(SimpleGraph):
                     yield c, c2, end, end2, len(pos), dist
                     
 class ReferenceGraph(SimpleGraph):
-    """Graph class to represent scaffolds."""
+    """Graph class to represent scaffolds"""
     def __init__(self, genome, reference, identity=0.51, overlap=0.66, threads=4, 
-                 mingap=15, maxgap=10000, printlimit=10, log=sys.stderr):
+                 mingap=15, maxgap=0, printlimit=10, log=sys.stderr):
         """Construct a graph with the given vertices & features"""
         self.name = "ReferenceGraph"
         self.log = log
@@ -496,9 +502,21 @@ class ReferenceGraph(SimpleGraph):
         self.identity = identity
         self.overlap  = overlap
         self.threads  = threads
-        # scaffolding
+        # scaffolding options
         self.mingap  = mingap
-        self.maxgap  = maxgap
+        self._set_maxgap(maxgap)
+        
+    def _set_maxgap(self, maxgap=0, frac=0.01, min_maxgap=10000):
+        """Set maxgap to 0.01 of assembly size, 0.01 of assembly size"""
+        # set to 0.01 of assembly size
+        if not maxgap:
+            maxgap = int(round(frac * sum(self.contigs.itervalues())))
+        # check if big enough
+        if maxgap < min_maxgap:
+            maxgap = min_maxgap
+        # set variable
+        self.maxgap = maxgap
+        #self.log.write(" maxgap cut-off of %s bp\n"%self.maxgap)
 
     def _lastal(self):
         """Start LAST"""
@@ -630,19 +648,16 @@ class ReferenceGraph(SimpleGraph):
             
 def main():
     import argparse
-    usage   = "%(prog)s -v" #usage=usage, 
     parser  = argparse.ArgumentParser(description=desc, epilog=epilog, \
                                       formatter_class=argparse.RawTextHelpFormatter)
   
-    parser.add_argument("-v", dest="verbose",  default=False, action="store_true", help="verbose")    
-    parser.add_argument('--version', action='version', version='0.12a')   
     parser.add_argument("-f", "--fasta", required=1, 
                         help="assembly FASTA file")
-    parser.add_argument("-o", "--outdir",  default="redundans", 
-                        help="output directory [%(default)s]")
+    #parser.add_argument("-o", "--outdir",  default="redundans", 
+    #                    help="output directory [%(default)s]")
     parser.add_argument("-t", "--threads", default=4, type=int, 
                         help="max no. of threads to run [%(default)s]")
-    parser.add_argument("--log",           default=sys.stderr, type=argparse.FileType('w'), 
+    parser.add_argument("--log", default=sys.stderr, type=argparse.FileType('w'), 
                         help="output log to [stderr]")
     
     refo = parser.add_argument_group('Reference-based scaffolding options')
@@ -652,8 +667,8 @@ def main():
                       help="min. identity [%(default)s]")
     refo.add_argument("--overlap",         default=0.66, type=float,
                       help="min. overlap  [%(default)s]")
-    refo.add_argument("-g", "--maxgap",   default=10000, type=int,
-                      help="max. distance between adjacent contigs [%(default)s]")
+    refo.add_argument("-g", "--maxgap",   default=0, type=int,
+                      help="max. distance between adjacent contigs [0.01 * assembly_size]")
     
     scaf = parser.add_argument_group('Scaffolding options')
     scaf.add_argument("-i", "--fastq", nargs="+",
@@ -666,7 +681,9 @@ def main():
                       help="align subset of reads [%(default)s]")
     scaf.add_argument("-q", "--mapq",    default=10, type=int, 
                       help="min mapping quality [%(default)s]")
-    
+    # standard
+    parser.add_argument("-v", dest="verbose",  default=False, action="store_true", help="verbose")    
+    parser.add_argument('--version', action='version', version='0.10a')   
     o = parser.parse_args()
     if o.verbose:
         o.log.write("Options: %s\n"%str(o))
@@ -692,6 +709,7 @@ def main():
     if o.fastq:
         # NOT IMPLEMENTED
         # get library statistics
+        sys.stderr.write("PE/MP-based scaffolding is not implemented yet!\n"); sys.exit(1)
         # init
         s = ps.SimpleGraph(fasta, mapq=o.mapq, log=log) # limit=19571,
         s.add_library(open(sam), name=sam, isize=600, stdev=100, orientation="FR"); print s
