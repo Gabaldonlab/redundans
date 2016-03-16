@@ -727,20 +727,19 @@ def main():
     
     # perform PE/MP scaffolding if NGS provided
     if o.fastq:
-        # NOT IMPLEMENTED
+        # NOT IMPLEMENTED YET
+        sys.stderr.write("NGS-based scaffolding is not implemented yet! Stay tuned :)\n"); sys.exit(1)
         # get library statistics
-        sys.stderr.write("NGS-based scaffolding is not implemented yet! Stay tuned :) \n"); sys.exit(1)
         # init
         s = ReadGraph(fasta, mapq=o.mapq, load=o.load, threads=o.threads, log=log)
         # add library
         s.add_library(o.fastq, isize=600, stdev=100, orientation="FR"); s.show()
         # add another library
-        
+
         # save output
         s.save(out=open(fasta+".scaffolds.fa", "w"))
-        
         # update fasta at the end
-        fasta = fasta
+        fasta = fasta+".scaffolds.fa"
     
     # perform referece-based scaffolding only if ref provided
     if o.ref:
