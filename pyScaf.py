@@ -3,7 +3,7 @@ desc="""Perform scaffolding of contigs using information from (in this order):
 - paired-end (PE) and/or mate-pair (MP) libraries (!!!NOT IMPLEMENTED YET!!!)
 - synteny to reference genome
 
-More info at: http://bit.ly/Redundans
+More info at: http://bit.ly/pyScaf
 """
 epilog="""Author:
 l.p.pryszcz@gmail.com

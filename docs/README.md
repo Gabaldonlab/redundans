@@ -89,9 +89,9 @@ bash <(curl -Ls http://bit.ly/redundans_installer)
 ```
 
 # pyScaf docs
-pyScaf can utilise several types of information in order to order contigs:
-- paired-end (PE) and/or mate-pair libraries (NGS-based mode)
-- synteny to the genome of some related species (reference-based mode)
+pyScaf orders contigs from genome assemblies utilising several types of information:
+- paired-end (PE) and/or mate-pair libraries ([NGS-based mode](#ngs-based-scaffolding))
+- synteny to the genome of some related species ([reference-based mode](#reference-based-scaffolding))
 
 ## NGS-based scaffolding
 This is under development... Stay tuned. 
