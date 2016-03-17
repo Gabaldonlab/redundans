@@ -115,4 +115,7 @@ Runs took ~0.5 min for CANPA on `4 CPUs` and ~2 min for ARATH on `16 CPUs`.
 - Consider closing gaps after scaffolding. 
 
 
+```bash
+./pyScaf.py -f test/run1/contigs.reduced.fa -r test/ref.fa
+```
 
