@@ -322,7 +322,7 @@ def main():
     parser.add_argument("-i", "--fastq", nargs="+", required=1, 
                         help="FASTQ PE/MP files")
     parser.add_argument("-f", "--fasta", required=1, 
-                        help="assembly FASTA file")
+                        help="FASTA file with contigs")
     parser.add_argument("-o", "--outdir",  default="redundans", 
                         help="output directory [%(default)s]")
     parser.add_argument("-t", "--threads", default=4, type=int, 
