@@ -63,7 +63,7 @@ In addition, the volume needs to be mounted every time, leading to a bit complex
 Alternatively, you can download and configure all dependencies manually: 
 - Python 2.7+ & dependencies `sudo pip install -U biopython numpy scipy`
  - biopython requires [sqlite3](https://www.sqlite.org/)
-- [LAST](http://last.cbrc.jp/)
+- [LAST](http://last.cbrc.jp/) v700+
 - [BWA](http://bio-bwa.sourceforge.net/)
 - [SSPACE3](http://www.baseclear.com/genomics/bioinformatics/basetools/SSPACE)
  - SSPACE require Perl; for perl5+ you will need to copy [getopts.pl](http://cpansearch.perl.org/src/GBARR/perl5.005_03/lib/getopts.pl) into SSPACE/dotlib
