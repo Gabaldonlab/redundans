@@ -132,4 +132,4 @@ You may want also to sign to [our forum](https://groups.google.com/d/forum/redun
 
 
 ## Citation
-Leszek P. Pryszcz and Toni Gabaldón (Submitted) Redundans: an assembly pipeline for highly heterozygous genomes. NAR
+Leszek P. Pryszcz and Toni Gabaldón (2016) Redundans: an assembly pipeline for highly heterozygous genomes. NAR. [doi: 10.1093/nar/gkw294](http://nar.oxfordjournals.org/content/early/2016/04/29/nar.gkw294.abstract)
