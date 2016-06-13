@@ -36,7 +36,7 @@ If you see warning messages like the ones below while running the test set:
 
 The problem is because older version of BWA lack MEM algorithm (check it by executing `bwa mem`). If it gives you an error, download the latest [BWA](http://bio-bwa.sourceforge.net/).  
 
-### Redundans fails with `OSError` or `maf-convert: not found`.  
+### Redundans fails with `OSError` or `maf-convert: not found` or `lastal: can't interpret: TAB`.  
 Make sure you are using the latest version of [LAST](http://last.cbrc.jp/) aligner and that all dependencies are accessible through your PATH environmental variable. 
 
 ```bash
