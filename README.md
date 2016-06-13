@@ -127,7 +127,7 @@ i.e. `-i 600_1.fq.gz 600_2.fq.gz 5000_1.fq.gz 5000_2.fq.gz` would be interpreted
 For more details have a look in [test directory](/test). 
 
 ## Support 
-If you have any issues or doubts check [documentation](/docs) and [FAQ (Frequently Asked Questions)](/doc#faq).  
+If you have any issues or doubts check [documentation](/docs) and [FAQ (Frequently Asked Questions)](/docs#faq).  
 You may want also to sign to [our forum](https://groups.google.com/d/forum/redundans).
 
 
