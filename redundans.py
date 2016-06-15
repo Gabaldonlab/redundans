@@ -10,7 +10,7 @@ l.p.pryszcz@gmail.com
 Mizerow/Warsaw/Bratislava/Barcelona, 17/10/2014
 """
 
-import os, resource, sys
+import commands, os, resource, sys
 import glob, subprocess, time
 from datetime import datetime
 import numpy as np
@@ -310,7 +310,28 @@ def _check_executable(cmd):
     """Check if executable exists."""
     p = subprocess.Popen("type " + cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     return "".join(p.stdout.readlines())
-        
+
+def _check_dependencies(dependencies):
+    """Return error if wrong software version"""
+    warning = 0
+    info = "[WARNING] Old version of %s: %s. Update to version %s+!\n"
+    for cmd, version in dependencies.iteritems():
+        out = _check_executable(cmd)
+        if "not found" in out:
+            warning = 1
+            sys.stderr.write("[ERROR] %s\n"%out)
+        elif version:
+            out = commands.getoutput("%s --version"%cmd)
+            curver = int(out.split()[-1])
+            if curver<version:
+                warning = 1
+                sys.stderr.write(info%(cmd, curver, version))
+                
+    message = "Make sure you have installed all dependencies from https://github.com/lpryszcz/redundans#manual-installation !"
+    if warning:
+        sys.stderr.write("\n%s\n\n"%message)
+        sys.exit(1)
+    
 def main():
     import argparse
     usage   = "%(prog)s -v" #usage=usage, 
@@ -366,13 +387,9 @@ def main():
             sys.stderr.write("No such file: %s\n"%fn)
             sys.exit(1)
 
-    # check if all executables exists
-    message = "Make sure you have installed all dependencies from https://github.com/lpryszcz/redundans#prerequisites !"
-    for cmd in ('lastal', 'lastdb', 'bwa', o.sspacebin, 'GapCloser'): 
-        info = _check_executable(cmd)
-        if "not found" in info:
-            sys.stderr.write("[ERROR] %s\n%s\n\n"%(info, message))
-            sys.exit(1)
+    # check if all executables exists & in correct versions
+    dependencies = {'lastal': 700, 'lastdb': 700, 'bwa': 0, o.sspacebin: 0, 'GapCloser': 0}
+    _check_dependencies(dependencies)
 
     # initialise pipeline
     redundans(o.fastq, o.fasta, o.outdir, o.mapq, o.threads, \
