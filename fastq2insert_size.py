@@ -49,7 +49,7 @@ def get_bwa_subprocess(fq1, fq2, fasta, threads, verbose):
     bwa = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     return bwa
 
-def percentile(N, percent):
+def percentile(N, percent, key=lambda x:x):
     """
     Find the percentile of a list of values. 
 
@@ -71,9 +71,9 @@ def percentile(N, percent):
     d1 = key(N[int(c)]) * (k-f)
     return d0+d1
 
-def median(N):
+def median(N, key=lambda x:x):
     """median is 50th percentile."""
-    return percentile(N, 0.5)
+    return percentile(N, 0.5, key)
 
 def mean(data):
     """Return the sample arithmetic mean of data.
@@ -84,14 +84,23 @@ def mean(data):
         raise ValueError('mean requires at least one data point')
     return sum(data)/float(n) 
 
-def stdev(data):
+def _ss(data):
     """Return sum of square deviations of sequence data."""
     c = mean(data)
     ss = sum((x-c)**2 for x in data)
     return ss
+
+def pstdev(data):
+    """Calculates the population standard deviation."""
+    n = len(data)
+    if n < 2:
+        raise ValueError('variance requires at least two data points')
+    ss = _ss(data)
+    pvar = ss/n # the population variance
+    return pvar**0.5    
     
 def get_isize_stats(fq1, fq2, fasta, mapqTh=10, threads=1,
-                    limit=1e5, verbose=0, percentile=5): 
+                    limit=1e5, verbose=0, percent=5): 
     """Return estimated insert size median, mean, stdev and
     pairing orientation counts (FF, FR, RF, RR). 
     Ignore bottom and up percentile for insert size statistics. 
@@ -137,11 +146,11 @@ def get_isize_stats(fq1, fq2, fasta, mapqTh=10, threads=1,
         return 0, 0, 0, []
     #get rid of 5 percentile from both sides
     isizes.sort()
-    maxins = percentile(isizes, 0.01*(100-percentile)) 
-    minins = percentile(isizes, 0.01*percentile) 
+    maxins = percentile(isizes, 0.01*(100-percent))
+    minins = percentile(isizes, 0.01*percent)
     isizes = [x for x in isizes if x>minins and x<maxins]
     # get stats
-    ismedian, ismean, isstd = median(isizes), mean(isizes), stdev(isizes)
+    ismedian, ismean, isstd = median(isizes), mean(isizes), pstdev(isizes)
     # save info
     try:
         with open(fq2+".is.txt", "w") as out:
