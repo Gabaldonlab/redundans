@@ -10,9 +10,8 @@ l.p.pryszcz@gmail.com
 Mizerow, 10/04/2015
 """
 
-import os, sys, commands, subprocess
+import math, os, sys, commands, subprocess
 from datetime import datetime
-import numpy as np
 
 def flag2orientation(flag):
     """Return pair orientation: FF: 0; FR: 1; RF: 2; RR: 4."""
@@ -49,7 +48,48 @@ def get_bwa_subprocess(fq1, fq2, fasta, threads, verbose):
     #    sys.stderr.write(" %s\n"%" ".join(cmd))
     bwa = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     return bwa
-        
+
+def percentile(N, percent):
+    """
+    Find the percentile of a list of values. 
+
+    @parameter N - is a list of values. Note N MUST BE already sorted.
+    @parameter percent - a float value from 0.0 to 1.0.
+
+    @return - the percentile of the values
+
+    From http://code.activestate.com/recipes/511478-finding-the-percentile-of-the-values/
+    """
+    if not N:
+        return None
+    k = (len(N)-1) * percent
+    f = math.floor(k)
+    c = math.ceil(k)
+    if f == c:
+        return key(N[int(k)])
+    d0 = key(N[int(f)]) * (c-k)
+    d1 = key(N[int(c)]) * (k-f)
+    return d0+d1
+
+def median(N):
+    """median is 50th percentile."""
+    return percentile(N, 0.5)
+
+def mean(data):
+    """Return the sample arithmetic mean of data.
+    http://stackoverflow.com/a/27758326/632242
+    """
+    n = len(data)
+    if n < 1:
+        raise ValueError('mean requires at least one data point')
+    return sum(data)/float(n) 
+
+def stdev(data):
+    """Return sum of square deviations of sequence data."""
+    c = mean(data)
+    ss = sum((x-c)**2 for x in data)
+    return ss
+    
 def get_isize_stats(fq1, fq2, fasta, mapqTh=10, threads=1,
                     limit=1e5, verbose=0, percentile=5): 
     """Return estimated insert size median, mean, stdev and
@@ -96,11 +136,12 @@ def get_isize_stats(fq1, fq2, fasta, mapqTh=10, threads=1,
     if sum(pairs)<100:
         return 0, 0, 0, []
     #get rid of 5 percentile from both sides
-    maxins = np.percentile(isizes, 100-percentile) 
-    minins = np.percentile(isizes, percentile) 
-    isizes = np.array(filter(lambda x: minins<x<maxins, isizes), dtype='int')
+    isizes.sort()
+    maxins = percentile(isizes, 0.01*(100-percentile)) 
+    minins = percentile(isizes, 0.01*percentile) 
+    isizes = [x for x in isizes if x>minins and x<maxins]
     # get stats
-    ismedian, ismean, isstd = np.median(isizes), isizes.mean(), isizes.std()
+    ismedian, ismean, isstd = median(isizes), mean(isizes), stdev(isizes)
     # save info
     try:
         with open(fq2+".is.txt", "w") as out:

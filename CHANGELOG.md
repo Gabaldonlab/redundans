@@ -1,4 +1,12 @@
 
+####0.12-beta
+- LASTal version checked on runtime
+- added FastaIndex.py
+  - generate stats into .fai file - `samtools faidx` compatible
+- simplified dependencies
+  - Biopython, scipy, numpy & SQLite no longer needed
+
+
 ####0.12-alpha
 - improved reduction step performance (fasta2homozygous.py)
   - no sorting - greatly improves performance on large and fragmented genomes

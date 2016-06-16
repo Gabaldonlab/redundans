@@ -61,7 +61,7 @@ In addition, the volume needs to be mounted every time, leading to a bit complex
 
 ### Manual installation
 Alternatively, you can download and configure all dependencies manually: 
-- Python 2.7+ & dependencies `sudo pip install -U numpy`
+- Python 2.7
 - [LAST](http://last.cbrc.jp/) v700+
 - [BWA](http://bio-bwa.sourceforge.net/)
 - [SSPACE3](http://www.baseclear.com/genomics/bioinformatics/basetools/SSPACE)
