@@ -13,7 +13,6 @@ Mizerow/Warsaw/Bratislava/Barcelona, 17/10/2014
 import commands, os, resource, sys
 import glob, subprocess, time
 from datetime import datetime
-import numpy as np
 
 from fasta2homozygous import fasta2homozygous
 from fastq2sspace import fastq2sspace
@@ -303,7 +302,7 @@ def redundans(fastq, fasta, outdir, mapq, threads,
         if verbose:
             log.write("%sCleaning-up...\n"%timestamp())
         for root, dirs, fnames in os.walk(outdir):
-            for fn in filter(lambda x: not x.endswith(('.fa', '.fasta', '.stats')), fnames):
+            for fn in filter(lambda x: not x.endswith(('.fa', '.fasta', '.fai')), fnames):
                 os.unlink(os.path.join(root, fn))
 
 def _check_executable(cmd):

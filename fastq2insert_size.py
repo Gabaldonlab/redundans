@@ -12,7 +12,6 @@ Mizerow, 10/04/2015
 
 import os, sys, commands, subprocess
 from datetime import datetime
-#from scipy import stats#, signal
 import numpy as np
 
 def flag2orientation(flag):
@@ -97,8 +96,8 @@ def get_isize_stats(fq1, fq2, fasta, mapqTh=10, threads=1,
     if sum(pairs)<100:
         return 0, 0, 0, []
     #get rid of 5 percentile from both sides
-    maxins = np.percentile(isizes, 100-percentile) #stats.scoreatpercentile(isizes, 100-percentile)
-    minins = np.percentile(isizes, percentile) #stats.scoreatpercentile(isizes, percentile)
+    maxins = np.percentile(isizes, 100-percentile) 
+    minins = np.percentile(isizes, percentile) 
     isizes = np.array(filter(lambda x: minins<x<maxins, isizes), dtype='int')
     # get stats
     ismedian, ismean, isstd = np.median(isizes), isizes.mean(), isizes.std()

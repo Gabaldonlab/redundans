@@ -5,6 +5,7 @@ EXPERIMENTAL VERSION!
 TBD:
 - fix read orientation
 - estimate which IS shall be generated
+- need proprietary FastQ parser
 
 More info at: https://github.com/lpryszcz/redundans
 """
@@ -16,7 +17,10 @@ Warsaw, 26/02/2016
 
 import os, sys, gzip
 from datetime import datetime
-from Bio import SeqIO
+
+def fastq_parser(fastq):
+    """Parse fastq file"""
+    pass
 
 def read2mates(out, r, readlen=50, window=25, minLen=400, i=0):
     """Write mates from given read."""
@@ -54,7 +58,7 @@ def fastq2mates(fastq, outbase, readlen, verbose, minLen=400):
     # open gzipped files
     if fastq.endswith('.gz'):
         fastq = gzip.open(fastq)
-    for i, r in enumerate(SeqIO.parse(fastq, 'fastq'), 1):
+    for i, r in enumerate(fastq_parser(fastq), 1):
         if verbose and not i % 1e5:
             sys.stderr.write("  %s long: %s [%5.2f%s]  PE reads: %s  \r"%(i, i-short, 100.0*(i-short)/i, '%', k))
         # skip too short

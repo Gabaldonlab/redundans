@@ -38,9 +38,8 @@ Fixes:
 --include reads with '.' bases -> 'N'
 """
 
-import argparse, locale, subprocess, gzip, os, sys, numpy as np
+import argparse, locale, subprocess, gzip, os, sys
 from datetime import datetime
-from Bio import SeqIO
 #locale.setlocale(locale.LC_ALL, 'en_US.utf8')
 
 def checkQualityEncoding(inFile, number_reads, qual64offset, qseq):
@@ -61,17 +60,17 @@ def checkQualityEncoding(inFile, number_reads, qual64offset, qseq):
         counter -= 1
     iFile.close()
 
-    minQ,maxQ,medQ = np.min(qualities), np.max(qualities), np.median(qualities)
+    minQ, maxQ = min(qualities), max(qualities)
 
     ## for PHRED+33, values will be 33-126 and for PHRED+64: 64/59-126.
     if qual64offset and minQ < 59:
         msg = ("\nERROR: Check quality encoding. Selected [PHRED+64]. MinQ: %d "
-            + "- MaxQ: %d - MedianQ: %d\n") % (minQ, maxQ, medQ)
+            + "- MaxQ: %d\n") % (minQ, maxQ)
         return False, msg
 
     if not qual64offset and minQ > 58 and (maxQ - 68) < minQ:
         msg = ("\nERROR: Check quality encoding. Selected [PHRED+33]. MinQ: %d "
-            + "- MaxQ: %d - MedianQ: %d\n") % (minQ, maxQ, medQ)
+            + "- MaxQ: %d\n") % (minQ, maxQ)
         return False, msg
 
     return True, ""
@@ -451,10 +450,11 @@ def main():
     ## min_length size
     global phixReads, phixSeq
     phixReads, phixSeq = set(), None
+    '''
     if o.phix_seq and os.path.isfile(o.phix_seq):
         phixSeq = str((SeqIO.read(open(o.phix_seq, "rU"), "fasta")).seq)
         end = len(phixSeq) - o.minlen + 1
-        phixReads = set([phixSeq[pos:pos+o.minlen] for pos in range(0, end)])
+        phixReads = set([phixSeq[pos:pos+o.minlen] for pos in range(0, end)])'''
 
     ## Check if quality encoding correct
     ## Quality offset checking need to be done!

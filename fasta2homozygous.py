@@ -14,7 +14,7 @@ Mizerow, 26/08/2014
 
 import gzip, math, os, sys, subprocess
 from datetime import datetime
-from Bio import SeqIO
+from FastaIndex import FastaIndex
 
 def run_last(fasta, identity, threads, verbose):
     """Start LAST with multi-threads. """
@@ -61,7 +61,7 @@ def hits2skip(hits, faidx, verbose):
     """Return contigs to skip."""
     identities, algLengths = [], []
     contig2skip = {}
-    for c in faidx.keys():
+    for c in faidx: #.keys():
         contig2skip[c] = 0
     for i, data in enumerate(hits, 1):
         (q, qsize, qstart, qend, t, tsize, tstart, tend, strand, identity, overlap) = data
@@ -85,14 +85,14 @@ def hits2skip(hits, faidx, verbose):
         identity = 0
     return contig2skip, identity
 
-def get_coverage(faidx, fasta, libraries, limit, verbose):
+'''def get_coverage(faidx, fasta, libraries, limit, verbose):
     """Align subset of reads and calculate per contig coverage"""
     # init c2cov make it python 2.6 compatible 
     c2cov = {} #c: 0 for c in faidx}
     covTh = 0
     
     return c2cov, covTh
-
+'''
 def fasta2homozygous(out, fasta, identity, overlap, minLength, \
                      libraries, limit, threads=1, joinOverlap=200, endTrimming=0,
                      verbose=0, log=sys.stderr):
@@ -100,14 +100,14 @@ def fasta2homozygous(out, fasta, identity, overlap, minLength, \
     #create/load fasta index
     if verbose:
         log.write("Indexing fasta...\n")
-    faidx = SeqIO.index_db(fasta.name+".db3", fasta.name, "fasta")
-    genomeSize = sum(len(faidx[c]) for c in faidx) 
+    faidx = FastaIndex(fasta)
+    genomeSize = faidx.genomeSize
 
-    # depth-of-coverage info
+    '''# depth-of-coverage info
     c2cov, covTh = None, None
     if libraries:
         c2cov, covTh = get_coverage(faidx, fasta.name, libraries, limit, verbose)
-    
+    '''
     if verbose:
         log.write("Parsing alignments...\n")
     #filter alignments
@@ -169,15 +169,15 @@ def merge_fasta(out, faidx, contig2skip, overlapping, minLength, verbose):
     k = skipped = ssize = 0
     for i, c in enumerate(faidx, 1): 
         # don't report skipped & merged
-        if contig2skip[c] or len(faidx[c])<minLength:
+        if contig2skip[c] or faidx.id2stats[c][0]<minLength:
             skipped += 1
             ssize   += len(faidx[c])
             continue
         elif c in merged:
             continue
-        out.write(faidx[c].format('fasta'))
+        out.write(faidx[c])
         k += 1
-        nsize += len(faidx[c])
+        nsize += faidx.id2stats[c][0] 
         
     #return nsize, k, skipped, ssize, merged
     return nsize, k, skipped, ssize, joins

@@ -1,84 +1,53 @@
 #!/usr/bin/env python
 desc="""Report FASTA statistics. Support gzipped files.
 
-TBD:
-- Code need some polishing...
+Statistics are stored as .fai formatted file (http://www.htslib.org/doc/faidx.html),
+with 4 extended columns, storing counts for A, C, G & T for each sequence. 
 """
 epilog="""Author: l.p.pryszcz@gmail.com
-Mizerow, 26/08/2014
+Mizerow/Bratislava, 26/08/2014
 """
 
-import os, sys
-from Bio import SeqIO
 import gzip, os, sys
+from FastaIndex import FastaIndex
 from datetime import datetime
-from Bio import SeqIO
-
-def fasta_stats(f, header=''):
+    
+def fasta_stats(handle):
     """Report fasta statistics."""
-    fn=f.name
-    statsFn=fn+'.stats'
-    #return content of .stats file if exists and younger than fasta
-    if os.path.isfile(statsFn) and os.stat(fn).st_mtime < os.stat(statsFn).st_mtime:
-        line=filter(lambda x: not x.startswith('#'), \
-                    open(statsFn).readlines())[0]
-        line=line.strip()
-        line='%s\t%s\n' % (fn, '\t'.join( line.split('\t')[1:] ))
-        return line
-    #if not, generate that file
-    lengths=[]; lengths1000=[]
-    contigs=contigs1000=baseErrors=0
-    #count bases frequencies
-    bases={'A':0,'C':0,'G':0,'T':0,'N':0}
-    for r in SeqIO.parse(f,'fasta' ):
-        contigs+=1
-        seq=str(r.seq)
-        seq=seq.upper()
-        lengths.append( len(seq) )
-        if len(seq)>1000: 
-            contigs1000+=1
-            lengths1000.append( len(seq) )
-        for base in seq:
-            try:
-                bases[base]+=1
-            except:
-                baseErrors+=1
-    if not lengths:
-        return fn+'\tError: No sequences!\n'
-    #calculate GC
-    if bases['A']+bases['T']:
-        GC=(bases['G']+bases['C'])*100.0/(bases['A']+bases['C']+bases['G']+bases['T'])
-    else:
-        GC=0
-
-    #N50 & N90
-    size=sum(lengths) #sum(bases.itervalues())
-    lengthSum=0
-    n50=n90=0
+    # load id2stats
+    faidx = FastaIndex(handle)
+    id2stats = faidx.id2stats
+    # report stats
+    contigs = len(id2stats)
+    lengths = [stats[0] for stats in id2stats.itervalues()]
+    size = sum(lengths)
+    lengths1000 = [l for l in lengths if l>=1000]
+    contigs1000 = len(lengths1000)
+    A, C, G, T = map(sum, zip(*[stats[-4:] for stats in id2stats.itervalues()]))
+    GC = 100.0*(G+C)/(A+T+G+C)
+    nonACGT = size - A - C - G - T
+    # N50 & N90
+    n50 = n90 = lengthSum = 0
     lengths.sort( reverse=True )
     for l in lengths:
         lengthSum += l
-        if not n50 and lengthSum>=0.5*size:
-            n50=l
-        if lengthSum>=0.9*size:
-            n90=l 
+        if not n50 and lengthSum >= 0.5*size:
+            n50 = l
+        if lengthSum >= 0.9*size:
+            n90 = l 
             break
             
-    #print output
-    line='%s\t%s\t%s\t%.3f\t%s\t%s\t%s\t%s\t%s\t%s\n' % ( fn,contigs,size,GC,contigs1000,sum(lengths1000),n50,n90,bases['N'],lengths[0] )
-    try:
-        out=open(statsFn,'wb'); out.write(header+line); out.close()
-    except IOError as e:
-        sys.stderr.write("%s\n" % e)
+    _line = '%s\t%s\t%s\t%.3f\t%s\t%s\t%s\t%s\t%s\t%s\n'
+    line = _line % (handle.name, contigs, size, GC, contigs1000, sum(lengths1000), n50, n90, nonACGT, lengths[0])
     return line
-
+    
 def main():
     import argparse
     usage	 = "%(prog)s -i " #usage=usage, 
     parser	= argparse.ArgumentParser(description=desc, epilog=epilog, \
-                                                                            formatter_class=argparse.RawTextHelpFormatter)
+                                          formatter_class=argparse.RawTextHelpFormatter)
 
-    parser.add_argument('--version', action='version', version='1.1')	 
+    parser.add_argument('--version', action='version', version='1.2')	 
     parser.add_argument("-v", "--verbose", default=False, action="store_true",
                         help="verbose")	
     parser.add_argument("-i", "--fasta", nargs="+", type=file, 
@@ -97,8 +66,8 @@ def main():
         if not os.path.isfile(f.name):
             continue
         if f.name.endswith('.gz'):
-            f=gzip.open(f.name)
-        o.out.write(fasta_stats(f, header))
+            f = gzip.open(f.name)
+        o.out.write(fasta_stats(f))#, header))
 	
 if __name__=='__main__': 
     t0 = datetime.now()
