@@ -1,5 +1,11 @@
 #!/usr/bin/env python
-desc="""FastA index (.fai) handler compatible with samtools faidx (http://www.htslib.org/doc/faidx.html)"""
+desc="""FastA index (.fai) handler compatible with samtools faidx (http://www.htslib.org/doc/faidx.html)
+
+TBA:
+- get reverse complement if stop before start
+- don't load entire sequence, just a slice; this is where Biopython is slow (https://www.biostars.org/p/58028/)
+
+"""
 epilog="""Author: l.p.pryszcz@gmail.com
 Bratislava, 15/06/2016
 """
