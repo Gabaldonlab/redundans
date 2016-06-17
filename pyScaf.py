@@ -84,7 +84,7 @@ class Graph(object):
         self.sequences = SeqIO.index_db(genome+".db3", genome, 'fasta')
         self.seq = self.sequences
         # prepare storage
-        self.contigs = {c: len(self.seq[c]) for c in self.seq}
+        self.contigs = {c: len(self.seq[c]) for c in self.seq} # this is very ineffective as it loads the record!
         self.links   = {c: [{}, {}] for c in self.contigs}
         self.ilinks  = 0
         
