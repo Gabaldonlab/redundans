@@ -169,7 +169,7 @@ def main():
                         help="FASTA file(s)")
     parser.add_argument("-o", "--out",	 default=sys.stdout, type=argparse.FileType('w'), 
                         help="output stream	 [stdout]")
-    parser.add_argument("-r", "--regions", nargs='*',
+    parser.add_argument("-r", "--regions", nargs='*', default=[], 
                         help="contig or contig region to output [slices NOT IMPLEMENTED YET!]")
 
     o = parser.parse_args()
