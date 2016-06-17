@@ -96,15 +96,17 @@ class FastaIndex(object):
         # load record
         self.handle.seek(offset)
         seq = self.handle.read(bytesize)
+        seqid = key
         # get sequence slice
         if start and stop:
             # 1-base, inclusive end
             if start<1:
                 start = 1
+            seqid = "%s:%s-%s"%(key, start, stop)
             start -= 1
             seq = seq.replace('\n', '')[start:stop]
             seq = '\n'.join(seq[i:i+linebases] for i in range(0, len(seq), linebases))+'\n'
-        record = ">%s\n%s"%(key, seq)
+        record = ">%s\n%s"%(seqid, seq)
         return record
 
     def get_fasta(self, region="", contig="", start=None, stop=None):
