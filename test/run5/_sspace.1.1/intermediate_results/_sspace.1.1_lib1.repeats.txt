@@ -1,4 +1,0 @@
-Contig f22 (size = 430) has 2 multiple links;
-	with f9 (links = 58)
-	with r20 (links = 37)
-
