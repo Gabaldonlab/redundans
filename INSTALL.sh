@@ -23,18 +23,14 @@ echo "#    version 0.1b                           l.p.pryszcz@gmail.com     #"
 echo "#######################################################################"
 echo ""
 echo "Redundans and its dependencies will be installed in $installdir"
-echo "Python with all dependencies will be installed in ~/.pythonbrew"
 echo "Necessary imports will be added to ~/.bashrc automatically. "
 echo " Original file will be backed up to ~/.bashrc_bak"
-echo ""
-echo "!!! Make sure libsqlite3-dev, libssl-dev & zlib.h are installed !!!"
-echo "  sudo apt-get install zlib1g-dev sqlite3 libsqlite3-dev libssl-dev"
 echo ""
 echo "This is EXPERIMENTAL software! You may want to create new user and "
 echo "run installer there, to avoid data loss:"
 echo "  sudo adduser test && su test"
 echo ""
-echo "Installation may take ~10 minutes. "
+echo "Installation may take 2-3 minutes. "
 echo "To track the installation status execute in the new terminal:"
 echo "  tail -f $log"
 echo ""
@@ -51,7 +47,7 @@ echo -e "\n"`date` "Checking dependencies..."
 
 error=""
 # check if all programs exists
-for cmd in echo wget curl gcc make cd ln date ldconfig sqlite3 unzip perl python; do
+for cmd in echo wget gcc g++ make cd ln date ldconfig unzip perl python; do
     if ! exists $cmd; then
         echo "Install $cmd first!"
         error=1
@@ -59,7 +55,7 @@ for cmd in echo wget curl gcc make cd ln date ldconfig sqlite3 unzip perl python
 done
 
 # check if all libs present
-for lib in libz libsqlite3 libssl; do
+for lib in libz; do
     if [ -z "$(ldconfig -p | grep $lib.so)" ] ; then
         echo "Missing library $lib!"
         error=1
@@ -78,28 +74,12 @@ cp ~/.bashrc ~/.bashrc_bak
 if [ ! -d $installdir ]; then mkdir -p $installdir; fi
 cd $installdir
 
-echo `date` "Installing Python $pyversion & dependencies..."
-# install pythonbrew to ~/.pythonbrew
-curl -kLs http://xrl.us/pythonbrewinstall | bash >> $log 2>&1
- 
-# add to ~/.bashrc to automatically activate pythonbrew
 echo -e "\n###\n# redundans imports" >> ~/.bashrc
-echo "# python brew activation" >> ~/.bashrc
-echo '[[ -s "$HOME/.pythonbrew/etc/bashrc" ]] && source "$HOME/.pythonbrew/etc/bashrc"' >> ~/.bashrc
 echo 'export PATH=$PATH:'$installdir/SSPACE:$installdir/bwa:$installdir/last/src:$installdir/last/scripts:$installdir >> ~/.bashrc
 
 # export PATH 
 # source ~/.bashrc # not working as not interactive shell
-source $HOME/.pythonbrew/etc/bashrc
 export PATH=$PATH:$installdir/SSPACE:$installdir/bwa:$installdir/last/src:$installdir/last/scripts:$installdir
-
-# install python 
-pythonbrew install $pyversion >> $log 2>&1
-# and enable the new version
-pythonbrew switch $pyversion >> $log 2>&1
-# biopython, numpy
-pip install -U biopython numpy pysqlite >> $log 2>&1
-
 
 echo `date` "Installing redundans dependencies..."
 echo `date` " BWA"
@@ -111,13 +91,6 @@ cd bwa
 make >> $log 2>&1
 cd $installdir
 
-
-# BLAT
-echo `date` " BLAT"
-wget -q https://raw.githubusercontent.com/lpryszcz/bin/master/blat
-chmod +x blat
-
-
 # LAST
 echo `date` " LAST"
 wget -q http://last.cbrc.jp/last-714.zip
@@ -127,20 +100,18 @@ cd last
 make >> $log 2>&1
 cd $installdir
 
-
 echo `date` " SSPACE"
 # SSPACE - note tar.gz and dir are different!
 wget -q http://www.baseclear.com/base/download/41SSPACE-STANDARD-3.0_linux-x86_64.tar.gz
 tar xpfz 41SSPACE-STANDARD-3.0_linux-x86_64.tar.gz
 ln -s SSPACE-STANDARD-3.0_linux-x86_64 SSPACE
 # getopts.pl https://github.com/lpryszcz/redundans/#sspace-fails-with-an-error-cant-locate-getoptspl-in-inc
-curl -s http://cpansearch.perl.org/src/GBARR/perl5.005_03/lib/getopts.pl > SSPACE/dotlib/getopts.pl
+wget -q -O- http://cpansearch.perl.org/src/GBARR/perl5.005_03/lib/getopts.pl > SSPACE/dotlib/getopts.pl
 
 # GapCloser
 echo `date` " GapCloser"
 wget -q http://downloads.sourceforge.net/project/soapdenovo2/GapCloser/bin/r6/GapCloser-bin-v1.12-r6.tgz
 tar xpfz GapCloser-bin-v1.12-r6.tgz
-
 
 echo `date` " Redundans"
 #git clone https://github.com/lpryszcz/redundans
@@ -149,10 +120,9 @@ tar xpfz redundans.tgz
 mv redundans-master redundans
 cd redundans
 
-
 # check if installed correctly
 echo `date` "Checking if all dependencies are installed..."
-for cmd in blat lastal bwa GapCloser SSPACE_Standard_v3.0.pl; do
+for cmd in lastal bwa GapCloser SSPACE_Standard_v3.0.pl; do
     if ! exists $cmd; then
         echo "[WARNING] Make sure $cmd installed properly!"
     fi
@@ -163,7 +133,7 @@ echo "###" >> ~/.bashrc
 echo `date` "Installation finished!"
 echo ""
 echo "To uninstall execute:"
-echo " rm -rI ~/.pythonbrew ~/src/{*SSPACE,bwa,blat,last,GapCloser,redundans}*"
+echo " rm -rI ~/src/{*SSPACE,bwa,blat,last,GapCloser,redundans}*"
 echo " cp ~/.bashrc_bak ~/.bashrc"
 echo ""
 echo "To try Redundans, open new terminal and execute:"

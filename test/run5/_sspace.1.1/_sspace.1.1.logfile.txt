@@ -1,0 +1,45 @@
+Your inserted inputs on [SSPACE_Standard_v3.0_linux] at Thu Jun 16 12:53:44 2016:
+Required inputs: 
+	-l = _sspace.1.1.libs.txt
+		Number of paired files = 1
+	-s = contigs.reduced.fa
+	-b = _sspace.1.1
+
+Optional inputs:
+	-x = 0
+	-z = 0
+	-k = 5
+	-g = 0
+	-a = 0.7
+	-n = 15
+	-T = 1
+	-p = 0
+
+
+=>Thu Jun 16 12:53:44 2016: Reading, filtering and converting input sequences of library file initiated
+
+------------------------------------------------------------
+
+=>Thu Jun 16 12:53:44 2016: Storing contigs to format for scaffolding
+
+LIBRARY lib1
+------------------------------------------------------------
+
+=>Thu Jun 16 12:53:44 2016: Updating contig file
+
+=>Thu Jun 16 12:53:44 2016: Reading contig file
+
+=>Thu Jun 16 12:53:44 2016: Parsing Tab file
+
+=>Thu Jun 16 12:53:44 2016: Building scaffolds file
+
+=>Thu Jun 16 12:53:44 2016: Merging contigs and creating fasta file of scaffolds
+
+------------------------------------------------------------
+
+=>Thu Jun 16 12:53:44 2016: Creating summary file
+**************************************************
+
+Process run succesfully on Thu Jun 16 12:53:44 2016 in 0 minutes and 0 seconds
+
+
