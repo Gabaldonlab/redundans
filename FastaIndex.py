@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 desc="""FastA index (.fai) handler compatible with samtools faidx (http://www.htslib.org/doc/faidx.html)
 
-TBA:
-- get reverse complement if stop before start
-- don't load entire sequence, just a slice; this is where Biopython is slow (https://www.biostars.org/p/58028/)
-
+CHANGELOG:
+v0.11
+- speed-up: load sequence slice if requested
+- return reverse complement if start > stop ie. `-r contig1:100-10`
 """
 epilog="""Author: l.p.pryszcz@gmail.com
 Bratislava, 15/06/2016
@@ -40,6 +40,10 @@ class FastaIndex(object):
             self._load_fai()
         # links
         self.get = self.get_fasta
+        # init storage
+        self.base2rc= {"A": "T", "T": "A", "C": "G", "G": "C",
+                       "a": "t", "t": "a", "c": "g", "g": "c",
+                       "N": "N", "n": "n"}
             
     def _generate_index(self): 
         """Return fasta records"""
@@ -98,30 +102,60 @@ class FastaIndex(object):
         size, offset, linebases, linebytes = self.id2stats[key][:4]
         # compute bytes to fetch
         linediff = linebytes - linebases
-        bytesize = size / linebases * linebytes + size % linebases + linediff
-        # load record
-        self.handle.seek(offset)
-        seq = self.handle.read(bytesize)
         seqid = key
         # get sequence slice
         if start and stop:
-            # 1-base, inclusive end
+            reverse_complement = 0
             if start<1:
                 start = 1
             seqid = "%s:%s-%s"%(key, start, stop)
+            if start>stop:
+                reverse_complement = 1
+                start, stop = stop, start
+            # 1-base, inclusive end
             start -= 1
-            seq = seq.replace('\n', '')[start:stop]
+            # get bytesize and update offset
+            offset += start / linebases * linebytes + start % linebases
+            bytesize = (stop-start) / linebases * linebytes + (stop-start) % linebases
+            # read sequence slice
+            self.handle.seek(offset)
+            seq = self.handle.read(bytesize).replace('\n', '')
+            if reverse_complement:
+                seq = self.get_reverse_complement(seq)
+            # format lines
             seq = '\n'.join(seq[i:i+linebases] for i in range(0, len(seq), linebases))+'\n'
+        # load whole sequence record
+        else:
+            # get bytesize
+            bytesize = size / linebases * linebytes + size % linebases + linediff
+            # read entire sequence
+            self.handle.seek(offset)
+            seq = self.handle.read(bytesize)
+            
         record = ">%s\n%s"%(seqid, seq)
         return record
+
+    def get_reverse_complement(self, seq):
+        """Return reverse complement"""
+        rc = []
+        for seqsegment in seq.split():
+            for b in seqsegment:
+                if b in self.base2rc:
+                    rc.append(self.base2rc[b])
+                else:
+                    rc.append(b)
+        return "".join(reversed(rc))
 
     def get_fasta(self, region="", contig="", start=None, stop=None):
         """Return FastA slice"""
         if region:
             if ':' in region:
-                if '-' in region:
+                #if '-' in region:
+                try:
                     contig, startstop = region.split(':')
                     start, stop = map(int, startstop.split('-'))
+                except Exception:
+                    raise Exception("Malformed region definition: %s, while expected contig:start-stop"%region)
             else:
                 contig = region
         elif not contig:
@@ -170,7 +204,7 @@ def main():
     parser	= argparse.ArgumentParser(description=desc, epilog=epilog, \
                                           formatter_class=argparse.RawTextHelpFormatter)
 
-    parser.add_argument('--version', action='version', version='0.10a')	 
+    parser.add_argument('--version', action='version', version='0.11a')	 
     parser.add_argument("-v", "--verbose", default=False, action="store_true",
                         help="verbose")	
     parser.add_argument("-i", "--fasta", type=file, 
@@ -178,7 +212,7 @@ def main():
     parser.add_argument("-o", "--out",	 default=sys.stdout, type=argparse.FileType('w'), 
                         help="output stream	 [stdout]")
     parser.add_argument("-r", "--regions", nargs='*', default=[], 
-                        help="contig or contig region to output [slices NOT IMPLEMENTED YET!]")
+                        help="contig or contig region to output (returns reverse complement if end larger than start)")
 
     o = parser.parse_args()
     if o.verbose:
