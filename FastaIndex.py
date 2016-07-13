@@ -2,7 +2,9 @@
 desc="""FastA index (.fai) handler compatible with samtools faidx (http://www.htslib.org/doc/faidx.html)
 
 CHANGELOG:
-v0.11
+v0.11b
+- warn about empty sequences & duplicated sequence IDs
+v0.11a
 - speed-up: load sequence slice if requested
 - return reverse complement if start > stop ie. `-r contig1:100-10`
 """
@@ -215,7 +217,7 @@ def main():
     parser	= argparse.ArgumentParser(description=desc, epilog=epilog, \
                                           formatter_class=argparse.RawTextHelpFormatter)
 
-    parser.add_argument('--version', action='version', version='0.11a')	 
+    parser.add_argument('--version', action='version', version='0.11b')	 
     parser.add_argument("-v", "--verbose", default=False, action="store_true",
                         help="verbose")	
     parser.add_argument("-i", "--fasta", type=file, 
