@@ -182,8 +182,11 @@ class FastaIndex(object):
             if len(linebases)>1:
                 sys.stderr.write("[WARNING] Uneven line lengths in %s: %s\n"%(header, ",".join(map(str, linebases))))        
             linebases, linebytes = max(linebases), max(linebytes)
-        else:
+        elif len(seq)==1:
             linebases, linebytes = len(seq[0].strip()), len(seq[0])
+        # handle empty sequences https://github.com/lpryszcz/redundans/issues/13
+        else:
+            linebases, linebytes = 60, 61 #len(seq[0].strip()), len(seq[0])
         seq = "".join(s.strip() for s in seq)
         seqlen = len(seq)
         self.genomeSize += seqlen
