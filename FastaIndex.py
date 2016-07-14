@@ -4,6 +4,7 @@ desc="""FastA index (.fai) handler compatible with samtools faidx (http://www.ht
 CHANGELOG:
 v0.11b
 - warn about empty headers, sequences & duplicated sequence IDs
+- retrieve sequences single-line FASTA correctly
 v0.11a
 - speed-up: load sequence slice if requested
 - return reverse complement if start > stop ie. `-r contig1:100-10`
