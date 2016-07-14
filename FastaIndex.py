@@ -53,11 +53,11 @@ class FastaIndex(object):
         if header:
             # get seqid and sequence stats
             seqid = self.get_id(header)
-            stats = self.get_stats(header, seq, offset)
             # catch empty headers
             if not seqid:
-                self.log("[WARNING] No header at line: %s\n"%pi)
+                self.log("[WARNING] No header at line: %s\n"%", ".join(map(str, (pi,seqid,header))))
                 return
+            stats = self.get_stats(header, seq, offset)
             # warn about empty sequences
             if not stats[0]:
                 self.log("[WARNING] No sequence for: %s at line: %s\n"%(seqid, pi))
@@ -84,6 +84,7 @@ class FastaIndex(object):
                     pi = i
                 else:
                     seq.append(l)
+            # process last entry
             self.__process_seqentry(out, header, seq, offset, pi)
 
     def _load_fai(self):
@@ -126,6 +127,8 @@ class FastaIndex(object):
             if start>stop:
                 reverse_complement = 1
                 start, stop = stop, start
+            if stop > size:
+                stop = size
             # 1-base, inclusive end
             start -= 1
             # get bytesize and update offset
@@ -141,7 +144,10 @@ class FastaIndex(object):
         # load whole sequence record
         else:
             # get bytesize
-            bytesize = size / linebases * linebytes + size % linebases + linediff
+            bytesize = size / linebases * linebytes + size % linebases
+            ## add line diff only multiline fasta
+            if size / linebytes:
+                bytesize += linediff 
             # read entire sequence
             self.handle.seek(offset)
             seq = self.handle.read(bytesize)
