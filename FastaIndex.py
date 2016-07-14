@@ -3,7 +3,7 @@ desc="""FastA index (.fai) handler compatible with samtools faidx (http://www.ht
 
 CHANGELOG:
 v0.11b
-- warn about empty sequences & duplicated sequence IDs
+- warn about empty headers, sequences & duplicated sequence IDs
 v0.11a
 - speed-up: load sequence slice if requested
 - return reverse complement if start > stop ie. `-r contig1:100-10`
@@ -47,37 +47,44 @@ class FastaIndex(object):
         self.base2rc= {"A": "T", "T": "A", "C": "G", "G": "C",
                        "a": "t", "t": "a", "c": "g", "g": "c",
                        "N": "N", "n": "n"}
+
+    def __process_seqentry(self, out, header, seq, offset, pi):
+        """Write stats to file and report any issues"""
+        if header:
+            # get seqid and sequence stats
+            seqid = self.get_id(header)
+            stats = self.get_stats(header, seq, offset)
+            # catch empty headers
+            if not seqid:
+                self.log("[WARNING] No header at line: %s\n"%pi)
+                return
+            # warn about empty sequences
+            if not stats[0]:
+                self.log("[WARNING] No sequence for: %s at line: %s\n"%(seqid, pi))
+            # catch duplicates
+            if seqid in self.id2stats:
+                self.log("[WARNING] Duplicated sequence ID: %sat line: %s\n"%(seqid, pi))
+            self.id2stats[seqid] = stats
+            out.write("%s\t%s\n"%(seqid, "\t".join(map(str, stats))))
             
     def _generate_index(self): 
         """Return fasta records"""
         if self.verbose:
             self.log("Generating FastA index...\n")
-        header = ""
-        seq = []
+        header, seq = "", []
+        offset = pi = 0
         self.id2stats = {}
         with open(self.faidx, 'w') as out:
-            for l in iter(self.handle.readline, ''): 
+            for i, l in enumerate(iter(self.handle.readline, ''), 1): 
                 if l.startswith(">"):
-                    if header:
-                        stats = self.get_stats(header, seq, offset)
-                        seqid = self.get_id(header)
-                        if seqid in self.id2stats:
-                            self.log("[WARNING] Duplicated sequence ID: %s\n"%seqid)
-                        self.id2stats[seqid] = stats
-                        out.write("%s\t%s\n"%(seqid, "\t".join(map(str, stats))))
+                    self.__process_seqentry(out, header, seq, offset, pi)
                     header = l
                     offset = self.handle.tell() 
                     seq = []
+                    pi = i
                 else:
                     seq.append(l)
-
-            if header: 
-                stats = self.get_stats(header, seq, offset)
-                seqid = self.get_id(header)
-                if seqid in self.id2stats:
-                    self.log("[WARNING] Duplicated sequence ID: %s\n"%seqid)
-                self.id2stats[seqid] = stats
-                out.write("%s\t%s\n"%(seqid, "\t".join(map(str, stats))))
+            self.__process_seqentry(out, header, seq, offset, pi)
 
     def _load_fai(self):
         """Load stats from faidx file"""
@@ -174,6 +181,9 @@ class FastaIndex(object):
 
     def get_id(self, header):
         """Return seqid from header"""
+        # catch empty headers
+        if len(header.strip())<2:
+            return
         return header[1:].split()[0]
 
     def get_stats(self, header, seq, offset):
@@ -197,9 +207,6 @@ class FastaIndex(object):
         seq = "".join(s.strip() for s in seq)
         seqlen = len(seq)
         self.genomeSize += seqlen
-        # warn about empty sequences
-        if not seqlen:
-            self.log("[WARNING] No sequence for: %s\n"%header[1:-1])            
         # count ACGT
         bases = {'A': 0, 'C': 0, 'G': 0, 'T': 0, 'N': 0}
         for b in seq.upper():
