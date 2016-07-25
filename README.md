@@ -37,8 +37,8 @@ For more information have a look at the [documentation](/docs), [poster](/docs/p
 
 ### UNIX installer
 UNIX installer will automatically fetch, compile and configure Redundans together with all dependencies. It should work on most UNIX systems, but was only tested on some platforms.
-It will install all dependencies from the scratch, ignoring versions already installed. 
-**This is EXPERIMENTAL version, so you may want to create new user for installation process, to avoid data loss!**   
+It will install all dependencies from the scratch, ignoring versions already installed. **Note, [manual installation](#manual-installation) is recommended for more advanced users.** 
+**This is EXPERIMENTAL version, so you may want to create new user for installation process, to avoid data loss!**
 ```bash
 # sudo adduser test && su test
 bash <(curl -Ls http://bit.ly/redundans_installer)
@@ -63,7 +63,7 @@ In addition, the volume needs to be mounted every time, leading to a bit complex
 Alternatively, you can download and configure all dependencies manually: 
 - Python 2.7
 - [LAST](http://last.cbrc.jp/) v700+
-- [BWA](http://bio-bwa.sourceforge.net/)
+- [BWA](http://bio-bwa.sourceforge.net/) v0.7.12+
 - [SSPACE3](http://www.baseclear.com/genomics/bioinformatics/basetools/SSPACE)
  - SSPACE require Perl; for perl5+ you will need to copy [getopts.pl](http://cpansearch.perl.org/src/GBARR/perl5.005_03/lib/getopts.pl) into SSPACE/dotlib
  - by default Redundans looks for SSPACE in ~/src/SSPACE directory (`--sspacebin` parameter)
