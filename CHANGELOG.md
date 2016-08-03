@@ -1,6 +1,10 @@
 
 ####0.12c
 - added `--resume` option
+- added warning if unable to fetch dependencies versions
+- reduction step `fasta2homozygous.py`
+ - produce more accurate identity between recognised heterozygous contigs
+ - polished code
 
 ####0.12-beta
 - LASTal version checked on runtime

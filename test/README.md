@@ -123,13 +123,13 @@ At the end of this step, the user will be notified about:
 
 file name | genome size | contigs | heterozygous size | [%] | heterozygous contigs | [%] | identity [%] | possible joins | homozygous size | [%] | homozygous contigs | [%]
 ----- | -----: | -----: | -----: | ----- | -----: | ----- | -----: | ----- | -----: | ----- | -----: | ----- 
-test/run1/contigs.fa | 163897 | 245 | 75736 | 46.21 | 220 | 89.80 | 81.401 | 0 | 97858 | 59.71 | 25 | 10.20
+test/run6/contigs.fa | 163897 | 245 | 76363 | 46.59 | 222 | 90.61 | 94.837 | 0 | 97319 | 59.38 | 23 | 9.39
 
 Above, you can see that:
 - initial SPAdes assembly was fragmented (245 contigs) and larger (163.8 Kb) than reference sequence (100 Kb)
 - Redundans:
  - removed 220 heterozygous contigs, resulting in reduced assembly of 97.8 Kb (very similar to reference) in 28 contigs
- - estimated 95.2% identity between heterozygous regions, which is very similar to the divergence that was used for simulations (5%)
+ - estimated 94.837% identity between heterozygous regions, which is very similar to the divergence that was used for simulations (5%)
 
 ##### Scaffolding
 Redundans repeat scaffolding on each library several times (`--iters`). For each scaffolding iteration, the program reports number of:
@@ -174,20 +174,20 @@ At the end, the program reports details of each step:
 
 fname | contigs | bases | GC [%] | contigs >1kb | bases in contigs >1kb | N50 | N90 | Ns | longest
 :----- | -----: | -----: | :-----: | -----: | -----: | -----: | -----: | -----: | -----: 
-test/run1/contigs.fa | 245 | 163897 | 40.298 | 24 | 117391 | 3975 | 233 | 0 | 29603
-test/run1/contigs.reduced.fa | 25 | 97858 | 39.408 | 17 | 94157 | 7321 | 1858 | 0 | 29603
-test/run1/_sspace.1.1.fa | 5 | 97843 | 39.391 | 4 | 97413 | 87727 | 4583 | 535 | 87727
-test/run1/_sspace.1.2.fa | 3 | 98075 | 39.391 | 3 | 98075 | 87727 | 9272 | 767 | 87727
-test/run1/_sspace.2.1.fa | 1 | 100275 | 39.391 | 1 | 100275 | 100275 | 100275 | 2967 | 100275
-test/run1/_sspace.2.1.filled.fa | 1 | 99729 | 39.476 | 1 | 99729 | 99729 | 99729 | 1194 | 99729
-test/run1/_sspace.2.2.fa | 1 | 99729 | 39.476 | 1 | 99729 | 99729 | 99729 | 1194 | 99729
-test/run1/_sspace.2.2.filled.fa | 1 | 99661 | 39.508 | 1 | 99661 | 99661 | 99661 | 921 | 99661
-test/run1/scaffolds.fa | 1 | 99661 | 39.508 | 1 | 99661 | 99661 | 99661 | 921 | 99661
-test/run1/_gapcloser.1.1.fa | 1 | 99894 | 39.577 | 1 | 99894 | 99894 | 99894 | 684 | 99894
-test/run1/_gapcloser.1.2.fa | 1 | 100149 | 39.739 | 1 | 100149 | 100149 | 100149 | 4 | 100149
-test/run1/_gapcloser.2.1.fa | 1 | 100153 | 39.740 | 1 | 100153 | 100153 | 100153 | 4 | 100153
-test/run1/_gapcloser.2.2.fa | 1 | 100157 | 39.739 | 1 | 100157 | 100157 | 100157 | 4 | 100157
-test/run1/scaffolds.filled.fa | 1 | 100157 | 39.739 | 1 | 100157 | 100157 | 100157 | 4 | 100157
+test/run6/contigs.fa | 245 | 163897 | 40.298 | 24 | 117391 | 3975 | 233 | 0 | 29603
+test/run6/contigs.reduced.fa | 23 | 97319 | 39.333 | 17 | 94157 | 7321 | 2195 | 0 | 29603
+test/run6/_sspace.1.1.fa | 4 | 97242 | 39.315 | 3 | 96924 | 87727 | 87727 | 473 | 87727
+test/run6/_sspace.1.2.fa | 3 | 97321 | 39.315 | 2 | 97003 | 87727 | 87727 | 552 | 87727
+test/run6/_sspace.2.1.fa | 1 | 100280 | 39.315 | 1 | 100280 | 100280 | 100280 | 3511 | 100280
+test/run6/_sspace.2.1.filled.fa | 1 | 100251 | 39.363 | 1 | 100251 | 100251 | 100251 | 2782 | 100251
+test/run6/_sspace.2.2.fa | 1 | 100251 | 39.363 | 1 | 100251 | 100251 | 100251 | 2782 | 100251
+test/run6/_sspace.2.2.filled.fa | 1 | 100123 | 39.360 | 1 | 100123 | 100123 | 100123 | 2677 | 100123
+test/run6/scaffolds.fa | 1 | 100123 | 39.360 | 1 | 100123 | 100123 | 100123 | 2677 | 100123
+test/run6/_gapcloser.1.1.fa | 1 | 100495 | 39.542 | 1 | 100495 | 100495 | 100495 | 1265 | 100495
+test/run6/_gapcloser.1.2.fa | 1 | 100498 | 39.579 | 1 | 100498 | 100498 | 100498 | 975 | 100498
+test/run6/_gapcloser.2.1.fa | 1 | 100502 | 39.679 | 1 | 100502 | 100502 | 100502 | 4 | 100502
+test/run6/_gapcloser.2.2.fa | 1 | 100506 | 39.679 | 1 | 100506 | 100506 | 100506 | 4 | 100506
+test/run6/scaffolds.filled.fa | 1 | 100506 | 39.679 | 1 | 100506 | 100506 | 100506 | 4 | 100506
 
 
 ## Accuracy estimation
