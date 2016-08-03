@@ -81,7 +81,7 @@ Nevertheless, most of the pipeline parameters can be adjusted manually (default 
 - Genral options:
 ```
   -h, --help            show this help message and exit
-  -v                    verbose
+  -v, --verbose         verbose
   --version             show program's version number and exit
   -i FASTQ [FASTQ ...], --fastq FASTQ [FASTQ ...]
                         FASTQ PE/MP files
@@ -91,6 +91,7 @@ Nevertheless, most of the pipeline parameters can be adjusted manually (default 
                         output directory [redundans]
   -t THREADS, --threads THREADS
                         max threads to run [4]
+  -r, --resume          resume previous run
   --log LOG             output log to [stderr]
 ```
 - Reduction options:
@@ -104,6 +105,8 @@ Nevertheless, most of the pipeline parameters can be adjusted manually (default 
 ```
   -j JOINS, --joins JOINS
                         min k pairs to join contigs [5]
+  -a LINKRATIO, --linkratio LINKRATIO
+                        max link ratio between two best contig pairs [0.7]
   -l LIMIT, --limit LIMIT
                         align subset of reads [0.2]; this means 0.2*genome size reads will be aligned; so for 100Mb genome, redundans will process 20M reads per library
   -q MAPQ, --mapq MAPQ  min mapping quality [10]
