@@ -1,4 +1,7 @@
 
+####0.12c
+- added `--resume` option
+
 ####0.12-beta
 - LASTal version checked on runtime
 - added FastaIndex.py

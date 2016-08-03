@@ -167,7 +167,7 @@ def merge_fasta(out, faidx, contig2skip, overlapping, minLength, verbose):
     
     #report not skipper, nor joined
     k = skipped = ssize = 0
-    for i, c in enumerate(faidx, 1): 
+    for i, c in enumerate(faidx, 1):
         # don't report skipped & merged
         if contig2skip[c] or faidx.id2stats[c][0]<minLength:
             skipped += 1

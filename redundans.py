@@ -105,7 +105,7 @@ def get_read_limit(fasta, readLimit, verbose, log=sys.stderr):
     
 def run_scaffolding(outdir, scaffoldsFname, fastq, libraries, reducedFname, mapq, threads, \
                     joins, linkratio, limit, iters, sspacebin, gapclosing, verbose, log, \
-                    identity, overlap, minLength, lib=""):
+                    identity, overlap, minLength, resume, lib=""):
     """Execute scaffolding step using libraries with increasing insert size
     in multiple iterations.
     """
@@ -115,37 +115,49 @@ def run_scaffolding(outdir, scaffoldsFname, fastq, libraries, reducedFname, mapq
         libnames, libFs, libRs, orients, libIS, libISStDev = libraries[i]
         i += 1
         for j in range(1, iters+1):
-            if verbose:
-                log.write(" iteration %s.%s ...\n"%(i,j))
             out = os.path.join(outdir, "_sspace.%s.%s"%(i, j))
-            lib = ""
-            # run fastq scaffolding
-            fastq2sspace(out, open(pout), lib, libnames, libFs, libRs, orients, \
-                         libIS, libISStDev, threads, mapq, limit, linkratio, joins, \
-                         sspacebin, verbose=0, log=log)
+            # resume if files don't exist
+            if resume>1 or _corrupted_file(out+".fa"):
+                resume += 1
+                if verbose:
+                    log.write(" iteration %s.%s ...\n"%(i,j))
+                lib = ""
+                # run fastq scaffolding
+                fastq2sspace(out, open(pout), lib, libnames, libFs, libRs, orients, \
+                             libIS, libISStDev, threads, mapq, limit, linkratio, joins, \
+                             sspacebin, verbose=0, log=log)
             # store out info
             pout = out+".fa"
             # link output ie out/_sspace.1.1/_sspace.1.1.scaffolds.fasta --> out/_sspace.1.1.scaffolds.fasta
             targetout = os.path.join(os.path.basename(out), os.path.basename(out+".final.scaffolds.fasta"))
             symlink(targetout, pout)
+            # index
+            with open(pout) as index:
+                fasta_stats(index)
             # if number of gaps larger than 1%, run gap closer & reduction
             stats     = fasta_stats(open(pout))
             fastaSize = int(stats.split('\t')[2])
             gapSize   = int(stats.split('\t')[-2])
             if gapclosing and 1.0 * gapSize / fastaSize > 0.01:
-                # close gaps
-                if verbose:
-                    log.write("  closing gaps ...\n")
                 nogapsFname = ".".join(pout.split(".")[:-1]) + ".filled.fa"
-                basename    = "_sspace.%s.%s._gapcloser"%(i, j)
-                run_gapclosing(outdir, mapq, [libraries[i-1],], nogapsFname, pout, \
-                               threads, limit, iters=1, verbose=0, log=log, basename=basename)
+                if resume>1 or _corrupted_file(nogapsFname):
+                    resume += 1
+                    # close gaps
+                    if verbose:
+                        log.write("  closing gaps ...\n")
+                    basename    = "_sspace.%s.%s._gapcloser"%(i, j)
+                    run_gapclosing(outdir, mapq, [libraries[i-1],], nogapsFname, pout, \
+                                   threads, limit, iters=1, resume=resume, verbose=0, log=log, basename=basename)
                 pout = nogapsFname
+                # index
+                with open(pout) as index:
+                    fasta_stats(index)
         # update library insert size estimation, especially for mate-pairs
         libraries = get_libraries(fastq, pout, mapq, threads, verbose=0, log=log)
     # create symlink to final scaffolds or pout
     symlink(os.path.basename(pout), scaffoldsFname)
-    return libraries
+    symlink(os.path.basename(pout+".fai"), scaffoldsFname+".fai")
+    return libraries, resume
 
 def filter_reads(outdir, fq1, fq2, minlen, maxlen, limit, minqual):
     """Filter FastQ files and return output fnames."""
@@ -196,7 +208,7 @@ def prepare_gapcloser(outdir, mapq, configFn, libFs, libRs, orientations,
         return True
     
 def run_gapclosing(outdir, mapq, libraries, nogapsFname, scaffoldsFname, \
-                   threads, limit, iters, verbose, log, basename="_gapcloser", \
+                   threads, limit, iters, resume, verbose, log, basename="_gapcloser", \
                    overlap=25, maxReadLen=150, minReadLen=40):
     """Execute gapclosing step."""
     pout = scaffoldsFname
@@ -211,28 +223,48 @@ def run_gapclosing(outdir, mapq, libraries, nogapsFname, scaffoldsFname, \
         # run iterations
         for j in range(1, iters+1):
             out = os.path.join(outdir, "%s.%s.%s.fa"%(basename, i, j))
-            # run GapCloser
-            cmd = ["GapCloser", "-t %s"%threads, "-p %s"%overlap, "-l %s"%maxReadLen, \
-                   "-a", pout, "-b", configFn, "-o", out]
-            if verbose:
-                log.write(" iteration %s.%s ...\n"%(i,j))
-            # run GapCloser and save stdout/err to log file
-            with open(out+".log", "w") as gapcloselog:
-                GapCloser = subprocess.Popen(cmd, stdout=gapcloselog, stderr=gapcloselog)
-                GapCloser.wait()
+            # skip if file exists
+            if resume>1 or _corrupted_file(out):
+                resume += 1
+                # run GapCloser
+                cmd = ["GapCloser", "-t %s"%threads, "-p %s"%overlap, "-l %s"%maxReadLen, \
+                       "-a", pout, "-b", configFn, "-o", out]
+                if verbose:
+                    log.write(" iteration %s.%s ...\n"%(i,j))
+                # run GapCloser and save stdout/err to log file
+                with open(out+".log", "w") as gapcloselog:
+                    GapCloser = subprocess.Popen(cmd, stdout=gapcloselog, stderr=gapcloselog)
+                    GapCloser.wait()
             # store out info
             pout = out
+            # index
+            with open(pout) as index:
+                fasta_stats(index)
     # create symlink to final scaffolds or pout
     symlink(os.path.basename(pout), nogapsFname)
-        
-def redundans(fastq, fasta, outdir, mapq, threads,
+    symlink(os.path.basename(pout+".fai"), nogapsFname+".fai")
+    return resume
+
+def _corrupted_file(fname):
+    """Return True if output file doesn't exists or is corrupted."""
+    if not os.path.isfile(fname)        or not os.path.getsize(fname) or \
+       not os.path.isfile(fname+".fai") or not os.path.getsize(fname+".fai"):
+        return True
+    
+def redundans(fastq, fasta, outdir, mapq, threads, resume, 
               identity, overlap, minLength, \
               joins, linkratio, readLimit, iters, sspacebin, \
               reduction=1, scaffolding=1, gapclosing=1, cleaning=1, \
               verbose=1, log=sys.stderr):
     """Launch redundans pipeline."""
+    orgresume = resume
+    if resume:
+        log.write("%sResuming previous run from %s...\n"%(timestamp(), outdir))
+        if not os.path.isdir(outdir):
+            log.write("No such directory: %s!\n"%outdir)
+            sys.exit(1)
     # prepare outdir or quit if exists
-    if os.path.isdir(outdir):
+    elif os.path.isdir(outdir):
         log.write("Directory %s exists!\n"%outdir)
         sys.exit(1)
     else:
@@ -242,47 +274,54 @@ def redundans(fastq, fasta, outdir, mapq, threads,
     contigsFname = os.path.join(outdir, "contigs.fa")
     reducedFname = os.path.join(outdir, "contigs.reduced.fa")
     # link contigs & genome
-    symlink(fasta, contigsFname)    
+    symlink(fasta, contigsFname)
     # get read limit & libraries
+    if verbose:
+        log.write("%sEstimating parameters...\n"%timestamp())
     limit     = get_read_limit(contigsFname, readLimit, verbose, log)
     libraries = get_libraries(fastq, contigsFname, mapq, threads, verbose, log)
-    if reduction:
+    if reduction and _corrupted_file(reducedFname):
+        resume += 1
         if verbose:
             log.write("%sReduction...\n"%timestamp())
             log.write("#file name\tgenome size\tcontigs\theterozygous size\t[%]\theterozygous contigs\t[%]\tidentity [%]\tpossible joins\thomozygous size\t[%]\thomozygous contigs\t[%]\n")
+        # reduce
         with open(reducedFname, "w") as out:
             info = fasta2homozygous(out, open(contigsFname), identity, overlap, \
                                     minLength, libraries, limit, threads, \
                                     verbose=0, log=log)
+        # index
+        with open(reducedFname) as index:
+            fasta_stats(index)
     else:
         symlink(os.path.basename(contigsFname), reducedFname)
     # update fasta list
     fastas  = [contigsFname, reducedFname]
-
+    
     # update read limit using reduced assembly as reference
     limit     = get_read_limit(reducedFname, readLimit, verbose, log)
     # SCAFFOLDING
     scaffoldsFname = os.path.join(outdir, "scaffolds.fa")
-    if scaffolding:
+    if scaffolding: # and _corrupted_file(scaffoldsFname):
         if verbose:
             log.write("%sScaffolding...\n"%timestamp())
         # estimate read limit
-        libraries = run_scaffolding(outdir, scaffoldsFname, fastq, libraries, reducedFname, mapq, \
-                                    threads, joins, linkratio, limit, iters, sspacebin, gapclosing, verbose, log, \
-                                    identity, overlap, minLength)
+        libraries, resume = run_scaffolding(outdir, scaffoldsFname, fastq, libraries, reducedFname, mapq, \
+                                            threads, joins, linkratio, limit, iters, sspacebin, gapclosing, verbose, log, \
+                                            identity, overlap, minLength, resume)
     else:
         symlink(os.path.basename(reducedFname), scaffoldsFname)
     # update fasta list
-    fastas += sorted(glob.glob(os.path.join(outdir, "_sspace.*.fa")))
+    fastas += filter(lambda x: "_gapcloser" not in x, sorted(glob.glob(os.path.join(outdir, "_sspace.*.fa"))))
     fastas.append(scaffoldsFname)
-        
+    
     # GAP CLOSING
     nogapsFname = os.path.join(outdir, "scaffolds.filled.fa")
-    if gapclosing and libraries:
+    if gapclosing: # and libraries and _corrupted_file(nogapsFname):
         if verbose:
             log.write("%sGap closing...\n"%timestamp())
-        run_gapclosing(outdir, mapq, libraries, nogapsFname, scaffoldsFname, threads, \
-                       limit, iters, verbose, log)
+        resume = run_gapclosing(outdir, mapq, libraries, nogapsFname, scaffoldsFname, threads, \
+                                limit, iters, resume, verbose, log)
     else:
         symlink(os.path.basename(scaffoldsFname), nogapsFname)
     # update fasta list
@@ -296,7 +335,7 @@ def redundans(fastq, fasta, outdir, mapq, threads,
     log.write('#fname\tcontigs\tbases\tGC [%]\tcontigs >1kb\tbases in contigs >1kb\tN50\tN90\tNs\tlongest\n')
     for fn in fastas:
         log.write(fasta_stats(open(fn)))
-
+    
     # Clean-up
     if cleaning:
         if verbose:
@@ -305,6 +344,9 @@ def redundans(fastq, fasta, outdir, mapq, threads,
             for fn in filter(lambda x: not x.endswith(('.fa', '.fasta', '.fai')), fnames):
                 os.unlink(os.path.join(root, fn))
 
+    if orgresume:
+        log.write("%sResume report: %s step(s) have been recalculated.\n"%(timestamp(), resume-1))
+    
 def _check_executable(cmd):
     """Check if executable exists."""
     p = subprocess.Popen("type " + cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -337,8 +379,8 @@ def main():
     parser  = argparse.ArgumentParser(description=desc, epilog=epilog, \
                                       formatter_class=argparse.RawTextHelpFormatter)
   
-    parser.add_argument("-v", dest="verbose",  default=False, action="store_true", help="verbose")    
-    parser.add_argument('--version', action='version', version='0.12b')   
+    parser.add_argument("-v", "--verbose",  default=False, action="store_true", help="verbose")    
+    parser.add_argument('--version', action='version', version='0.12c')   
     parser.add_argument("-i", "--fastq", nargs="+", required=1, 
                         help="FASTQ PE/MP files")
     parser.add_argument("-f", "--fasta", required=1, 
@@ -347,6 +389,8 @@ def main():
                         help="output directory [%(default)s]")
     parser.add_argument("-t", "--threads", default=4, type=int, 
                         help="max threads to run [%(default)s]")
+    parser.add_argument("-r", "--resume",  default=False, action="store_true",
+                        help="resume previous run")
     parser.add_argument("--log",           default=sys.stderr, type=argparse.FileType('w'), 
                         help="output log to [stderr]")
     redu = parser.add_argument_group('Reduction options')
@@ -391,7 +435,7 @@ def main():
     _check_dependencies(dependencies)
 
     # initialise pipeline
-    redundans(o.fastq, o.fasta, o.outdir, o.mapq, o.threads, \
+    redundans(o.fastq, o.fasta, o.outdir, o.mapq, o.threads, o.resume, \
               o.identity, o.overlap, o.minLength,  \
               o.joins, o.linkratio, o.limit, o.iters, o.sspacebin, \
               o.noreduction, o.noscaffolding, o.nogapclosing, o.nocleaning, \
