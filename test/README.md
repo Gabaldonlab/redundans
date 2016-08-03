@@ -123,12 +123,12 @@ At the end of this step, the user will be notified about:
 
 file name | genome size | contigs | heterozygous size | [%] | heterozygous contigs | [%] | identity [%] | possible joins | homozygous size | [%] | homozygous contigs | [%]
 ----- | -----: | -----: | -----: | ----- | -----: | ----- | -----: | ----- | -----: | ----- | -----: | ----- 
-run1/contigs.fa | 163,897 | 245 | 65,287 | 39.83 | 217 | 88.57 | 95.243 | 0 | 98,610 | 60.17 | 28 | 11.43
+test/run1/contigs.fa | 163897 | 245 | 75736 | 46.21 | 220 | 89.80 | 81.401 | 0 | 97858 | 59.71 | 25 | 10.20
 
 Above, you can see that:
-- initial SPAdes assembly was fragmented (245 contigs) and larger (163 Kb) than reference sequence (100 Kb)
+- initial SPAdes assembly was fragmented (245 contigs) and larger (163.8 Kb) than reference sequence (100 Kb)
 - Redundans:
- - removed 217 heterozygous contigs, resulting in reduced assembly of 98 Kb (very similar to reference) in 28 contigs
+ - removed 220 heterozygous contigs, resulting in reduced assembly of 97.8 Kb (very similar to reference) in 28 contigs
  - estimated 95.2% identity between heterozygous regions, which is very similar to the divergence that was used for simulations (5%)
 
 ##### Scaffolding
@@ -139,13 +139,15 @@ Redundans repeat scaffolding on each library several times (`--iters`). For each
 
 ```bash
  iteration 1.1 ...
-   32780 pairs. 31126 passed filtering [94.95%]. 3484 in different contigs [10.63%].
+   19572 pairs. 18505 passed filtering [94.55%]. 1993 in different contigs [10.18%].
  iteration 1.2 ...
-   32780 pairs. 31249 passed filtering [95.33%]. 626 in different contigs [1.91%].
+   19572 pairs. 18569 passed filtering [94.88%]. 340 in different contigs [1.74%].
  iteration 2.1 ...
-   20000 pairs. 18581 passed filtering [92.91%]. 1523 in different contigs [7.62%].
+   19572 pairs. 17009 passed filtering [86.90%]. 755 in different contigs [3.86%].
+  closing gaps ...
  iteration 2.2 ...
-   20000 pairs. 18862 passed filtering [94.31%]. 0 in different contigs [0.00%].
+   19572 pairs. 17261 passed filtering [88.19%]. 0 in different contigs [0.00%].
+  closing gaps ...
 ```
 
 Above, you can see that in iteration 1.1 above 10% of reads aligned in different contigs, while in subsequent iteration, less than 2% reads. This informs that in general it's enough to use 1-2 iterations of scaffolding per library. 
@@ -154,8 +156,10 @@ Above, you can see that in iteration 1.1 above 10% of reads aligned in different
 For the time-being, only the iteration number is reported.
 
 ```bash
- iteration 1 ...
- iteration 2 ...
+ iteration 1.1 ...
+ iteration 1.2 ...
+ iteration 2.1 ...
+ iteration 2.2 ...
 ```
 
 ##### Summary statistics
@@ -170,16 +174,21 @@ At the end, the program reports details of each step:
 
 fname | contigs | bases | GC [%] | contigs >1kb | bases in contigs >1kb | N50 | N90 | Ns | longest
 :----- | -----: | -----: | :-----: | -----: | -----: | -----: | -----: | -----: | -----: 
-run1/contigs.fa | 245 | 163,897 | 40.298 | 24 | 117,391 | 3975 | 233 | 0 | 29,603
-run1/contigs.reduced.fa | 28 | 98,610 | 39.516 | 17 | 94,157 | 7321 | 1858 | 0 | 29603
-run1/_sspace.1.1.fa | 6 | 98,479 | 39.507 | 4 | 97,405 | 87,549 | 4745 | 584 | 87,549
-run1/_sspace.1.2.fa | 4 | 98,937 | 39.507 | 4 | 98,937 | 88,627 | 4745 | 1042 | 88,627
-run1/_sspace.2.1.fa | 1 | 100,747 | 39.507 | 1 | 100,747 | 100,747 | 100,747 | 2,852 | 100,747
-run1/_sspace.2.2.fa | 1 | 100,747 | 39.507 | 1 | 100,747 | 100,747 | 100,747 | 2,852 | 100,747
-run1/scaffolds.fa | 1 | 100,747 | 39.507 | 1 | 100,747 | 100,747 | 100,747 | 2,852 | 100,747
-run1/_gap2seq.1.1.fa | 1 | 100,818 | 39.762 | 1 | 100,818 | 100,818 | 100,818 | 38 | 100,818
-run1/_gap2seq.2.1.fa | 1 | 100,818 | 39.762 | 1 | 100,818 | 100,818 | 100,818 | 38 | 100,818
-run1/scaffolds.filled.fa | 1 | 100,818 | 39.762 | 1 | 100,818 | 100,818 | 100,818 | 38 | 100,818
+test/run1/contigs.fa | 245 | 163897 | 40.298 | 24 | 117391 | 3975 | 233 | 0 | 29603
+test/run1/contigs.reduced.fa | 25 | 97858 | 39.408 | 17 | 94157 | 7321 | 1858 | 0 | 29603
+test/run1/_sspace.1.1.fa | 5 | 97843 | 39.391 | 4 | 97413 | 87727 | 4583 | 535 | 87727
+test/run1/_sspace.1.2.fa | 3 | 98075 | 39.391 | 3 | 98075 | 87727 | 9272 | 767 | 87727
+test/run1/_sspace.2.1.fa | 1 | 100275 | 39.391 | 1 | 100275 | 100275 | 100275 | 2967 | 100275
+test/run1/_sspace.2.1.filled.fa | 1 | 99729 | 39.476 | 1 | 99729 | 99729 | 99729 | 1194 | 99729
+test/run1/_sspace.2.2.fa | 1 | 99729 | 39.476 | 1 | 99729 | 99729 | 99729 | 1194 | 99729
+test/run1/_sspace.2.2.filled.fa | 1 | 99661 | 39.508 | 1 | 99661 | 99661 | 99661 | 921 | 99661
+test/run1/scaffolds.fa | 1 | 99661 | 39.508 | 1 | 99661 | 99661 | 99661 | 921 | 99661
+test/run1/_gapcloser.1.1.fa | 1 | 99894 | 39.577 | 1 | 99894 | 99894 | 99894 | 684 | 99894
+test/run1/_gapcloser.1.2.fa | 1 | 100149 | 39.739 | 1 | 100149 | 100149 | 100149 | 4 | 100149
+test/run1/_gapcloser.2.1.fa | 1 | 100153 | 39.740 | 1 | 100153 | 100153 | 100153 | 4 | 100153
+test/run1/_gapcloser.2.2.fa | 1 | 100157 | 39.739 | 1 | 100157 | 100157 | 100157 | 4 | 100157
+test/run1/scaffolds.filled.fa | 1 | 100157 | 39.739 | 1 | 100157 | 100157 | 100157 | 4 | 100157
+
 
 ## Accuracy estimation
 Accuracy of recovered contigs can be assessed by alignment of final scaffolds (`run1/scaffolds.filled.fa`) back onto reference (`ref.fa`).

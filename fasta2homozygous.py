@@ -19,7 +19,7 @@ from FastaIndex import FastaIndex
 def run_last(fasta, identity, threads, verbose):
     """Start LAST with multi-threads. """
     if verbose:
-        log.write(" Running LAST...\n")
+        sys.stderr.write(" Running LAST...\n")
     # build db
     if not os.path.isfile(fasta+".suf"):
         os.system("lastdb %s %s" % (fasta, fasta))
@@ -43,8 +43,8 @@ def fasta2hits(fasta, threads, identityTh, overlapTh, joinOverlap, endTrimming, 
         if q==t or tsize<qsize or (t,q) in added: 
             continue
         added.add((q,t))
-        #get score, identity & overlap
-        identity = 1.0 * score / qalg
+        #get score, identity & overlap # LASTal is using +1/-1 for match/mismatch, while I need +1/0
+        identity = 1.0 * (score+(qalg-score)/2) / qalg
         overlap  = 1.0 * qalg / qsize
         #filter by identity and overlap
         if identity < identityTh or overlap < overlapTh:
@@ -52,7 +52,7 @@ def fasta2hits(fasta, threads, identityTh, overlapTh, joinOverlap, endTrimming, 
         # store
         strand = tstrand
         qend, tend = qstart + qalg, tstart + talg
-        data = (t, tsize, tstart, tend, q, qsize, qstart, qend, strand, identity, overlap)
+        data = (t, tsize, tstart, tend, q, qsize, qstart, qend, strand, identity, overlap, score)
         hits.append(data)
         
     return hits, overlapping
@@ -63,19 +63,23 @@ def hits2skip(hits, faidx, verbose):
     contig2skip = {}
     for c in faidx: #.keys():
         contig2skip[c] = 0
-    for i, data in enumerate(hits, 1):
-        (q, qsize, qstart, qend, t, tsize, tstart, tend, strand, identity, overlap) = data
-        if q not in contig2skip:
-            sys.stderr.write(' [ERROR] `%s` (%s) not in contigs!\n'%(q, str(hits[i-1])))
+    # this may be slow! sorting by score
+    for i, data in enumerate(sorted(hits, key=lambda x: x[-1], reverse=1), 1):
+    #for i, data in enumerate(hits, 1):
+        (t, tsize, tstart, tend, q, qsize, qstart, qend, strand, identity, overlap, score) = data
+        if t not in contig2skip:
+            sys.stderr.write(' [ERROR] `%s` (%s) not in contigs!\n'%(t, str(hits[i-1])))
             continue
         #inform about matching already removed contig
         if verbose and contig2skip[q]:
             info = " [WARNING]: Match to already removed conting: %s %s\n"
             sys.stderr.write(info%(q, str(hits[i-1])))
         #store
-        contig2skip[t] += 1
+        contig2skip[q] += 1
+        if contig2skip[q]>1:
+            continue
         #update identities and lengths
-        algLen = tend-tstart
+        algLen = qend-qstart
         identities.append(identity*algLen)
         algLengths.append(algLen)
     #calculated divergence

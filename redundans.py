@@ -363,7 +363,11 @@ def _check_dependencies(dependencies):
             sys.stderr.write("[ERROR] %s\n"%out)
         elif version:
             out = commands.getoutput("%s --version"%cmd)
-            curver = int(out.split()[-1])
+            curver = out.split()[-1]
+            if not curver.isdigit():
+                warning = 1
+                sys.stderr.write("[WARNING] Problem checking %s version: %s\n"%(cmd, out))
+            curver = int(curver)
             if curver<version:
                 warning = 1
                 sys.stderr.write(info%(cmd, curver, version))
