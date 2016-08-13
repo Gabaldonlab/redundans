@@ -61,7 +61,7 @@ def hits2skip(hits, faidx, verbose):
     """Return contigs to skip."""
     identities, algLengths = [], []
     contig2skip = {}
-    for c in faidx: #.keys():
+    for c in faidx: 
         contig2skip[c] = 0
     # this may be slow! sorting by score
     for i, data in enumerate(sorted(hits, key=lambda x: x[-1], reverse=1), 1):
@@ -70,23 +70,23 @@ def hits2skip(hits, faidx, verbose):
         if t not in contig2skip:
             sys.stderr.write(' [ERROR] `%s` (%s) not in contigs!\n'%(t, str(hits[i-1])))
             continue
-        #inform about matching already removed contig
-        if verbose and contig2skip[q]:
-            info = " [WARNING]: Match to already removed conting: %s %s\n"
-            sys.stderr.write(info%(q, str(hits[i-1])))
-        #store
-        contig2skip[q] += 1
-        if contig2skip[q]>1:
+        # skip alignments of contigs already removed
+        if contig2skip[q]:
+            # inform about matching already removed contig
+            if verbose:
+                info = " [WARNING]: Match to already removed conting: %s %s\n"
+                sys.stderr.write(info%(q, str(hits[i-1])))
             continue
-        #update identities and lengths
+        # store
+        contig2skip[q] += 1
+        # update identities and lengths
         algLen = qend-qstart
         identities.append(identity*algLen)
         algLengths.append(algLen)
-    #calculated divergence
+    # calculated identity
+    identity = 0
     if sum(algLengths):
         identity = 100.0*sum(identities)/sum(algLengths)
-    else:
-        identity = 0
     return contig2skip, identity
 
 '''def get_coverage(faidx, fasta, libraries, limit, verbose):

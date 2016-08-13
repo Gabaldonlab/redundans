@@ -367,8 +367,7 @@ def _check_dependencies(dependencies):
             if not curver.isdigit():
                 warning = 1
                 sys.stderr.write("[WARNING] Problem checking %s version: %s\n"%(cmd, out))
-            curver = int(curver)
-            if curver<version:
+            if int(curver)<version:
                 warning = 1
                 sys.stderr.write(info%(cmd, curver, version))
                 

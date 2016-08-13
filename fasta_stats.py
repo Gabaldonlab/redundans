@@ -50,7 +50,7 @@ def main():
     parser.add_argument('--version', action='version', version='1.2')	 
     parser.add_argument("-v", "--verbose", default=False, action="store_true",
                         help="verbose")	
-    parser.add_argument("-i", "--fasta", nargs="+", type=file, 
+    parser.add_argument("-i", "--fasta", nargs="+", 
                         help="FASTA file(s)")
     parser.add_argument("-o", "--out",	 default=sys.stdout, type=argparse.FileType('w'), 
                         help="output stream	 [stdout]")
@@ -62,11 +62,13 @@ def main():
     #header
     header = '#fname\tcontigs\tbases\tGC [%]\tcontigs >1kb\tbases in contigs >1kb\tN50\tN90\tNs\tlongest\n'
     o.out.write(header)
-    for f in o.fasta:
-        if not os.path.isfile(f.name):
+    for fname in o.fasta:
+        if not os.path.isfile(fname):
+            sys.stderr.write("[WARNING] No such file: %s\n"%f.name)
             continue
-        if f.name.endswith('.gz'):
-            f = gzip.open(f.name)
+        f = open(fname)
+        if fname.endswith('.gz'):
+            f = gzip.open(fname)
         o.out.write(fasta_stats(f))#, header))
 	
 if __name__=='__main__': 
@@ -75,9 +77,6 @@ if __name__=='__main__':
         main()
     except KeyboardInterrupt:
         sys.stderr.write("\nCtrl-C pressed!		\n")
-    except IOError as e:
-        sys.stderr.write("I/O error({0}): {1}\n".format(e.errno, e.strerror))
-    #[Errno 95] Operation not supported
     except OSError:
         sys.stderr.write("OS error({0}): {1}\n".format(e.errno, e.strerror))        
     dt = datetime.now()-t0
