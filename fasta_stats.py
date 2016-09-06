@@ -64,7 +64,7 @@ def main():
     o.out.write(header)
     for fname in o.fasta:
         if not os.path.isfile(fname):
-            sys.stderr.write("[WARNING] No such file: %s\n"%f.name)
+            sys.stderr.write("[WARNING] No such file: %s\n"%fname)
             continue
         f = open(fname)
         if fname.endswith('.gz'):
