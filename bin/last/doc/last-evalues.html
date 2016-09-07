@@ -1,0 +1,443 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.6: http://docutils.sourceforge.net/" />
+<title>LAST E-values</title>
+<style type="text/css">
+
+/*
+:Author: David Goodger (goodger@python.org)
+:Id: $Id: html4css1.css 5951 2009-05-18 18:03:10Z milde $
+:Copyright: This stylesheet has been placed in the public domain.
+
+Default cascading style sheet for the HTML output of Docutils.
+
+See http://docutils.sf.net/docs/howto/html-stylesheets.html for how to
+customize this style sheet.
+*/
+
+/* used to remove borders from tables and images */
+.borderless, table.borderless td, table.borderless th {
+  border: 0 }
+
+table.borderless td, table.borderless th {
+  /* Override padding for "table.docutils td" with "! important".
+     The right padding separates the table cells. */
+  padding: 0 0.5em 0 0 ! important }
+
+.first {
+  /* Override more specific margin styles with "! important". */
+  margin-top: 0 ! important }
+
+.last, .with-subtitle {
+  margin-bottom: 0 ! important }
+
+.hidden {
+  display: none }
+
+a.toc-backref {
+  text-decoration: none ;
+  color: black }
+
+blockquote.epigraph {
+  margin: 2em 5em ; }
+
+dl.docutils dd {
+  margin-bottom: 0.5em }
+
+/* Uncomment (and remove this text!) to get bold-faced definition list terms
+dl.docutils dt {
+  font-weight: bold }
+*/
+
+div.abstract {
+  margin: 2em 5em }
+
+div.abstract p.topic-title {
+  font-weight: bold ;
+  text-align: center }
+
+div.admonition, div.attention, div.caution, div.danger, div.error,
+div.hint, div.important, div.note, div.tip, div.warning {
+  margin: 2em ;
+  border: medium outset ;
+  padding: 1em }
+
+div.admonition p.admonition-title, div.hint p.admonition-title,
+div.important p.admonition-title, div.note p.admonition-title,
+div.tip p.admonition-title {
+  font-weight: bold ;
+  font-family: sans-serif }
+
+div.attention p.admonition-title, div.caution p.admonition-title,
+div.danger p.admonition-title, div.error p.admonition-title,
+div.warning p.admonition-title {
+  color: red ;
+  font-weight: bold ;
+  font-family: sans-serif }
+
+/* Uncomment (and remove this text!) to get reduced vertical space in
+   compound paragraphs.
+div.compound .compound-first, div.compound .compound-middle {
+  margin-bottom: 0.5em }
+
+div.compound .compound-last, div.compound .compound-middle {
+  margin-top: 0.5em }
+*/
+
+div.dedication {
+  margin: 2em 5em ;
+  text-align: center ;
+  font-style: italic }
+
+div.dedication p.topic-title {
+  font-weight: bold ;
+  font-style: normal }
+
+div.figure {
+  margin-left: 2em ;
+  margin-right: 2em }
+
+div.footer, div.header {
+  clear: both;
+  font-size: smaller }
+
+div.line-block {
+  display: block ;
+  margin-top: 1em ;
+  margin-bottom: 1em }
+
+div.line-block div.line-block {
+  margin-top: 0 ;
+  margin-bottom: 0 ;
+  margin-left: 1.5em }
+
+div.sidebar {
+  margin: 0 0 0.5em 1em ;
+  border: medium outset ;
+  padding: 1em ;
+  background-color: #ffffee ;
+  width: 40% ;
+  float: right ;
+  clear: right }
+
+div.sidebar p.rubric {
+  font-family: sans-serif ;
+  font-size: medium }
+
+div.system-messages {
+  margin: 5em }
+
+div.system-messages h1 {
+  color: red }
+
+div.system-message {
+  border: medium outset ;
+  padding: 1em }
+
+div.system-message p.system-message-title {
+  color: red ;
+  font-weight: bold }
+
+div.topic {
+  margin: 2em }
+
+h1.section-subtitle, h2.section-subtitle, h3.section-subtitle,
+h4.section-subtitle, h5.section-subtitle, h6.section-subtitle {
+  margin-top: 0.4em }
+
+h1.title {
+  text-align: center }
+
+h2.subtitle {
+  text-align: center }
+
+hr.docutils {
+  width: 75% }
+
+img.align-left, .figure.align-left{
+  clear: left ;
+  float: left ;
+  margin-right: 1em }
+
+img.align-right, .figure.align-right {
+  clear: right ;
+  float: right ;
+  margin-left: 1em }
+
+.align-left {
+  text-align: left }
+
+.align-center {
+  clear: both ;
+  text-align: center }
+
+.align-right {
+  text-align: right }
+
+/* reset inner alignment in figures */
+div.align-right {
+  text-align: left }
+
+/* div.align-center * { */
+/*   text-align: left } */
+
+ol.simple, ul.simple {
+  margin-bottom: 1em }
+
+ol.arabic {
+  list-style: decimal }
+
+ol.loweralpha {
+  list-style: lower-alpha }
+
+ol.upperalpha {
+  list-style: upper-alpha }
+
+ol.lowerroman {
+  list-style: lower-roman }
+
+ol.upperroman {
+  list-style: upper-roman }
+
+p.attribution {
+  text-align: right ;
+  margin-left: 50% }
+
+p.caption {
+  font-style: italic }
+
+p.credits {
+  font-style: italic ;
+  font-size: smaller }
+
+p.label {
+  white-space: nowrap }
+
+p.rubric {
+  font-weight: bold ;
+  font-size: larger ;
+  color: maroon ;
+  text-align: center }
+
+p.sidebar-title {
+  font-family: sans-serif ;
+  font-weight: bold ;
+  font-size: larger }
+
+p.sidebar-subtitle {
+  font-family: sans-serif ;
+  font-weight: bold }
+
+p.topic-title {
+  font-weight: bold }
+
+pre.address {
+  margin-bottom: 0 ;
+  margin-top: 0 ;
+  font: inherit }
+
+pre.literal-block, pre.doctest-block {
+  margin-left: 2em ;
+  margin-right: 2em }
+
+span.classifier {
+  font-family: sans-serif ;
+  font-style: oblique }
+
+span.classifier-delimiter {
+  font-family: sans-serif ;
+  font-weight: bold }
+
+span.interpreted {
+  font-family: sans-serif }
+
+span.option {
+  white-space: nowrap }
+
+span.pre {
+  white-space: pre }
+
+span.problematic {
+  color: red }
+
+span.section-subtitle {
+  /* font-size relative to parent (h1..h6 element) */
+  font-size: 80% }
+
+table.citation {
+  border-left: solid 1px gray;
+  margin-left: 1px }
+
+table.docinfo {
+  margin: 2em 4em }
+
+table.docutils {
+  margin-top: 0.5em ;
+  margin-bottom: 0.5em }
+
+table.footnote {
+  border-left: solid 1px black;
+  margin-left: 1px }
+
+table.docutils td, table.docutils th,
+table.docinfo td, table.docinfo th {
+  padding-left: 0.5em ;
+  padding-right: 0.5em ;
+  vertical-align: top }
+
+table.docutils th.field-name, table.docinfo th.docinfo-name {
+  font-weight: bold ;
+  text-align: left ;
+  white-space: nowrap ;
+  padding-left: 0 }
+
+h1 tt.docutils, h2 tt.docutils, h3 tt.docutils,
+h4 tt.docutils, h5 tt.docutils, h6 tt.docutils {
+  font-size: 100% }
+
+ul.auto-toc {
+  list-style-type: none }
+
+</style>
+<style type="text/css">
+
+/* Style sheet for LAST HTML documents */
+h1 { color: navy }
+h2 { color: teal }
+div.document { margin-left: auto; margin-right: auto; max-width: 45em }
+strong { color: red }
+.option-list td { padding-bottom: 1em }
+table.field-list { border: thin solid green }
+
+</style>
+</head>
+<body>
+<div class="document" id="last-e-values">
+<h1 class="title">LAST E-values</h1>
+
+<p>It is useful to know whether alignments are significant, i.e. unlikely
+to exist just by chance.  LAST indicates this by EG2 and E:</p>
+<pre class="literal-block">
+a score=40 EG2=0.031 E=0.025
+s mouse.chrY  2905908 130 +  91744698 CAGTCAC---AAATTTCTATCAAATATAA--CAGCT...
+s human.chrX 57162275 127 + 156040895 CACTCACTGCAAATCCTTATCAAACGTAATTCAGCT...
+
+a score=40 EG2=0.031 E=0.0093
+s mouse.chrY  2905908 130 + 91744698 CAGTCAC---AAATTTCTATCAAATATAA--CAGCT...
+s human.chrY 24460641 127 + 57227415 CACTCACTGCAAATCCTTATCAAACGTAATTCAGCT...
+</pre>
+<p><strong>EG2</strong> is &quot;expected alignments per square giga&quot;.  This is the
+expected number of alignments with greater or equal score, between two
+randomly-shuffled sequences of length 1 billion each.</p>
+<p><strong>E</strong> is the expected number of alignments with greater or equal
+score, between: a random sequence with the same length as the query
+sequence, and a random sequence with the same length as the database.</p>
+<p>In this example, the two alignments are identical, but their &quot;E&quot;
+values are not.  That is because the query sequences have different
+lengths: human.chrX is longer than human.chrY.</p>
+<div class="section" id="default-threshold">
+<h2>Default threshold</h2>
+<p>By default, LAST reports alignments that are expected by chance at
+most once per million query letters (for a given database).</p>
+</div>
+<div class="section" id="setting-a-threshold">
+<h2>Setting a threshold</h2>
+<p>You can make lastal report alignments that are expected by chance at
+most once per (say) thousand query letters, with option -D:</p>
+<pre class="literal-block">
+lastal -D1000 humdb fuguMito.fa &gt; myalns.maf
+</pre>
+<p>You can make lastal report alignments with EG2 ≤ (say) 10, with option
+-E:</p>
+<pre class="literal-block">
+lastal -E10 humdb fuguMito.fa &gt; myalns.maf
+</pre>
+</div>
+<div class="section" id="advanced-issues">
+<h2>Advanced issues</h2>
+<div class="section" id="letter-frequencies">
+<h3>Letter frequencies</h3>
+<p>LAST's E-values refer to randomly-shuffled sequences <em>with specific
+letter frequencies</em>.  Those frequencies are determined by the
+substitution score matrix.  You can see them by running lastal with
+option -v (verbose).</p>
+<p>If your sequences have very different letter frequencies (e.g. very
+AT-rich DNA), the E-values will be misleading.  The best solution is
+to use a suitable score matrix, such as AT77 or ATMAP.</p>
+<p>For DNA-versus-protein alignment, however, only the protein
+frequencies are determined by the score matrix.  The DNA frequencies
+are fixed at 0.25.</p>
+</div>
+<div class="section" id="calculation-of-eg2">
+<h3>Calculation of EG2</h3>
+<p>EG2 is calculated from the score like this:</p>
+<pre class="literal-block">
+EG2 = K * (1 billion) * (1 billion) * exp(-lambda * score)
+</pre>
+<p>The parameters lambda and K are printed in the header of lastal's
+output.</p>
+</div>
+<div class="section" id="calculation-of-e">
+<h3>Calculation of E</h3>
+<p>E is calculated by this formula:</p>
+<pre class="literal-block">
+E = K * area * exp(-lambda * score) * (number of strands)
+</pre>
+<p>This depends on the number of strands that are searched, either 1 or
+2.</p>
+<p>The area is approximately (database length) * (query length). However,
+if the query (or database) is very short, this formula over-estimates
+E.  LAST uses a &quot;finite-size correction&quot; to calculate E more
+accurately.</p>
+</div>
+<div class="section" id="effect-of-option-d">
+<h3>Effect of option -D</h3>
+<p>Option -D indirectly sets the EG2 threshold, via this formula:</p>
+<pre class="literal-block">
+1 = EG2 * (database length)/1e9 * (option -D)/1e9 * (number of strands)
+</pre>
+</div>
+<div class="section" id="bit-score">
+<h3>Bit score</h3>
+<p>Some people like to use &quot;bit scores&quot;.  If you are one of them, the bit
+score can be calculated like this:</p>
+<pre class="literal-block">
+Bit score = (lambda * score - ln[K]) / ln[2]
+          = log2( 1e18 / EG2 )
+</pre>
+</div>
+<div class="section" id="limitations">
+<h3>Limitations</h3>
+<ul>
+<li><p class="first">E-values cannot be calculated for scoring schemes with weak mismatch
+or gap costs (e.g. match score = 99, mismatch cost = 1).  In such
+cases, lastal requires you to set a score threshold with option -e.</p>
+</li>
+<li><p class="first">There may be a long startup time to calculate the E-value parameters
+(lambda, K, and finite-size correction parameters), especially for
+alignment with frameshifts.  This is avoided, for particular scoring
+schemes, by storing the parameters in LAST's source code.
+Parameters for other scoring schemes can be added on request.  (Or
+you can do it yourself: run lastal with option -v, so it prints the
+E-value parameters, then copy them into LastEvaluer.cc.)</p>
+</li>
+<li><p class="first">The E-values do not account for lastal option -c.  If you use this
+option, the E-values will be under-estimates.</p>
+</li>
+<li><p class="first">The E-values are for local alignment.  So if you use lastal option
+-T1 (overlap alignment), the E-values will be over-estimates.</p>
+</li>
+</ul>
+</div>
+<div class="section" id="other-resources">
+<h3>Other resources</h3>
+<p>For more flexible E-value calculation, try ALP and FALP:
+<a class="reference external" href="http://www.ncbi.nlm.nih.gov/CBBresearch/Spouge/html_ncbi/html/index/software.html">http://www.ncbi.nlm.nih.gov/CBBresearch/Spouge/html_ncbi/html/index/software.html</a></p>
+</div>
+</div>
+</div>
+</body>
+</html>

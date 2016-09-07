@@ -1,0 +1,11 @@
+# This seeding scheme is for aligning bisulfite-converted DNA
+# *reverse* strands to a closely-related genome (MC Frith, R Mori, K
+# Asai, NAR 2012 40:e100).
+
+#lastdb -w2
+#lastal -pBISR
+
+1  AG C T
+0  ACGT
+
+1111110101100

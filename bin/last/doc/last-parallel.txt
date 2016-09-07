@@ -1,0 +1,78 @@
+Running LAST in parallel
+========================
+
+You can make LAST faster by running it on multiple CPUs / cores.  The
+easiest way is with lastal's -P option::
+
+  lastal -P4 my-index queries.fasta > out.maf
+
+This will use 4 parallel threads.  If you specify -P0, it will use as
+many threads as your computer claims it can handle simultaneously.
+
+This works by aligning different query sequences in different threads
+- so if you only have one query you won't get any parallelization!
+
+Dealing with very long query sequences
+--------------------------------------
+
+lastal aligns one "batch" of queries at a time, so if the batch has
+only one query you won't get any parallelization.  This can be fixed
+by increasing the batch size, with option -i::
+
+  lastal -P4 -i3G my-index queries.fasta > out.maf
+
+This specifies a batch size of 3 gibi-bytes.  The downside is that
+more memory is needed to hold the batch and its alignments.
+
+Dealing with pipelines
+----------------------
+
+If you have a multi-command "pipeline", such as::
+
+  lastal -P4 my-index queries.fasta | last-split > out.maf
+
+then the -P option may help, because lastal is often the slowest step,
+but it would be nice to parallelize the whole thing.  Unfortunately,
+last-split doesn't have a -P option, and even if it did, the pipe
+between the commands would become a bottleneck.
+
+You can use parallel-fasta and parallel-fastq (which accompany LAST,
+but require `GNU parallel <http://www.gnu.org/software/parallel/>`_ to
+be installed).  These commands read sequence data, split it into
+blocks (with a whole number of sequences per block), and run the
+blocks in parallel through any command or pipeline you specify, using
+all your CPU cores.  Here are some examples.
+
+Instead of this::
+
+  lastal mydb queries.fa > myalns.maf
+
+try this::
+
+  parallel-fasta "lastal mydb" < queries.fa > myalns.maf
+
+Instead of this::
+
+  lastal -Q1 -e120 db q.fastq | last-split > out.maf
+
+try this::
+
+  parallel-fastq "lastal -Q1 -e120 db | last-split" < q.fastq > out.maf
+
+Instead of this::
+
+  zcat queries.fa.gz | lastal mydb > myalns.maf
+
+try this::
+
+  zcat queries.fa.gz | parallel-fasta "lastal mydb" > myalns.maf
+
+Notes:
+
+* parallel-fasta and parallel-fastq simply execute GNU parallel with a
+  few options for fasta or fastq: you can specify other GNU parallel
+  options to control the number of simultaneous jobs, use remote
+  computers, get the output in the same order as the input, etc.
+
+* parallel-fastq assumes that each fastq record is 4 lines, so there
+  should be no line wrapping or blank lines.

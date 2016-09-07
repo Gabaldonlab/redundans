@@ -1,0 +1,877 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.6: http://docutils.sourceforge.net/" />
+<title>lastal</title>
+<style type="text/css">
+
+/*
+:Author: David Goodger (goodger@python.org)
+:Id: $Id: html4css1.css 5951 2009-05-18 18:03:10Z milde $
+:Copyright: This stylesheet has been placed in the public domain.
+
+Default cascading style sheet for the HTML output of Docutils.
+
+See http://docutils.sf.net/docs/howto/html-stylesheets.html for how to
+customize this style sheet.
+*/
+
+/* used to remove borders from tables and images */
+.borderless, table.borderless td, table.borderless th {
+  border: 0 }
+
+table.borderless td, table.borderless th {
+  /* Override padding for "table.docutils td" with "! important".
+     The right padding separates the table cells. */
+  padding: 0 0.5em 0 0 ! important }
+
+.first {
+  /* Override more specific margin styles with "! important". */
+  margin-top: 0 ! important }
+
+.last, .with-subtitle {
+  margin-bottom: 0 ! important }
+
+.hidden {
+  display: none }
+
+a.toc-backref {
+  text-decoration: none ;
+  color: black }
+
+blockquote.epigraph {
+  margin: 2em 5em ; }
+
+dl.docutils dd {
+  margin-bottom: 0.5em }
+
+/* Uncomment (and remove this text!) to get bold-faced definition list terms
+dl.docutils dt {
+  font-weight: bold }
+*/
+
+div.abstract {
+  margin: 2em 5em }
+
+div.abstract p.topic-title {
+  font-weight: bold ;
+  text-align: center }
+
+div.admonition, div.attention, div.caution, div.danger, div.error,
+div.hint, div.important, div.note, div.tip, div.warning {
+  margin: 2em ;
+  border: medium outset ;
+  padding: 1em }
+
+div.admonition p.admonition-title, div.hint p.admonition-title,
+div.important p.admonition-title, div.note p.admonition-title,
+div.tip p.admonition-title {
+  font-weight: bold ;
+  font-family: sans-serif }
+
+div.attention p.admonition-title, div.caution p.admonition-title,
+div.danger p.admonition-title, div.error p.admonition-title,
+div.warning p.admonition-title {
+  color: red ;
+  font-weight: bold ;
+  font-family: sans-serif }
+
+/* Uncomment (and remove this text!) to get reduced vertical space in
+   compound paragraphs.
+div.compound .compound-first, div.compound .compound-middle {
+  margin-bottom: 0.5em }
+
+div.compound .compound-last, div.compound .compound-middle {
+  margin-top: 0.5em }
+*/
+
+div.dedication {
+  margin: 2em 5em ;
+  text-align: center ;
+  font-style: italic }
+
+div.dedication p.topic-title {
+  font-weight: bold ;
+  font-style: normal }
+
+div.figure {
+  margin-left: 2em ;
+  margin-right: 2em }
+
+div.footer, div.header {
+  clear: both;
+  font-size: smaller }
+
+div.line-block {
+  display: block ;
+  margin-top: 1em ;
+  margin-bottom: 1em }
+
+div.line-block div.line-block {
+  margin-top: 0 ;
+  margin-bottom: 0 ;
+  margin-left: 1.5em }
+
+div.sidebar {
+  margin: 0 0 0.5em 1em ;
+  border: medium outset ;
+  padding: 1em ;
+  background-color: #ffffee ;
+  width: 40% ;
+  float: right ;
+  clear: right }
+
+div.sidebar p.rubric {
+  font-family: sans-serif ;
+  font-size: medium }
+
+div.system-messages {
+  margin: 5em }
+
+div.system-messages h1 {
+  color: red }
+
+div.system-message {
+  border: medium outset ;
+  padding: 1em }
+
+div.system-message p.system-message-title {
+  color: red ;
+  font-weight: bold }
+
+div.topic {
+  margin: 2em }
+
+h1.section-subtitle, h2.section-subtitle, h3.section-subtitle,
+h4.section-subtitle, h5.section-subtitle, h6.section-subtitle {
+  margin-top: 0.4em }
+
+h1.title {
+  text-align: center }
+
+h2.subtitle {
+  text-align: center }
+
+hr.docutils {
+  width: 75% }
+
+img.align-left, .figure.align-left{
+  clear: left ;
+  float: left ;
+  margin-right: 1em }
+
+img.align-right, .figure.align-right {
+  clear: right ;
+  float: right ;
+  margin-left: 1em }
+
+.align-left {
+  text-align: left }
+
+.align-center {
+  clear: both ;
+  text-align: center }
+
+.align-right {
+  text-align: right }
+
+/* reset inner alignment in figures */
+div.align-right {
+  text-align: left }
+
+/* div.align-center * { */
+/*   text-align: left } */
+
+ol.simple, ul.simple {
+  margin-bottom: 1em }
+
+ol.arabic {
+  list-style: decimal }
+
+ol.loweralpha {
+  list-style: lower-alpha }
+
+ol.upperalpha {
+  list-style: upper-alpha }
+
+ol.lowerroman {
+  list-style: lower-roman }
+
+ol.upperroman {
+  list-style: upper-roman }
+
+p.attribution {
+  text-align: right ;
+  margin-left: 50% }
+
+p.caption {
+  font-style: italic }
+
+p.credits {
+  font-style: italic ;
+  font-size: smaller }
+
+p.label {
+  white-space: nowrap }
+
+p.rubric {
+  font-weight: bold ;
+  font-size: larger ;
+  color: maroon ;
+  text-align: center }
+
+p.sidebar-title {
+  font-family: sans-serif ;
+  font-weight: bold ;
+  font-size: larger }
+
+p.sidebar-subtitle {
+  font-family: sans-serif ;
+  font-weight: bold }
+
+p.topic-title {
+  font-weight: bold }
+
+pre.address {
+  margin-bottom: 0 ;
+  margin-top: 0 ;
+  font: inherit }
+
+pre.literal-block, pre.doctest-block {
+  margin-left: 2em ;
+  margin-right: 2em }
+
+span.classifier {
+  font-family: sans-serif ;
+  font-style: oblique }
+
+span.classifier-delimiter {
+  font-family: sans-serif ;
+  font-weight: bold }
+
+span.interpreted {
+  font-family: sans-serif }
+
+span.option {
+  white-space: nowrap }
+
+span.pre {
+  white-space: pre }
+
+span.problematic {
+  color: red }
+
+span.section-subtitle {
+  /* font-size relative to parent (h1..h6 element) */
+  font-size: 80% }
+
+table.citation {
+  border-left: solid 1px gray;
+  margin-left: 1px }
+
+table.docinfo {
+  margin: 2em 4em }
+
+table.docutils {
+  margin-top: 0.5em ;
+  margin-bottom: 0.5em }
+
+table.footnote {
+  border-left: solid 1px black;
+  margin-left: 1px }
+
+table.docutils td, table.docutils th,
+table.docinfo td, table.docinfo th {
+  padding-left: 0.5em ;
+  padding-right: 0.5em ;
+  vertical-align: top }
+
+table.docutils th.field-name, table.docinfo th.docinfo-name {
+  font-weight: bold ;
+  text-align: left ;
+  white-space: nowrap ;
+  padding-left: 0 }
+
+h1 tt.docutils, h2 tt.docutils, h3 tt.docutils,
+h4 tt.docutils, h5 tt.docutils, h6 tt.docutils {
+  font-size: 100% }
+
+ul.auto-toc {
+  list-style-type: none }
+
+</style>
+<style type="text/css">
+
+/* Style sheet for LAST HTML documents */
+h1 { color: navy }
+h2 { color: teal }
+div.document { margin-left: auto; margin-right: auto; max-width: 45em }
+strong { color: red }
+.option-list td { padding-bottom: 1em }
+table.field-list { border: thin solid green }
+
+</style>
+</head>
+<body>
+<div class="document" id="lastal">
+<h1 class="title">lastal</h1>
+
+<p>This program finds local alignments between query sequences, and
+reference sequences that have been prepared using lastdb.  You can use
+it like this:</p>
+<pre class="literal-block">
+lastdb humanDb humanChromosome*.fasta
+lastal humanDb dna*.fasta &gt; myalns.maf
+</pre>
+<p>The lastdb command reads files called <tt class="docutils literal"><span class="pre">humanChromosome*.fasta</span></tt> and
+writes several files whose names begin with <tt class="docutils literal">humanDb</tt>.  The lastal
+command reads files called <tt class="docutils literal"><span class="pre">dna*.fasta</span></tt>, compares them to
+<tt class="docutils literal">humanDb</tt>, and writes alignments to a file called <tt class="docutils literal">myalns.maf</tt>.</p>
+<p>You can also pipe query sequences into lastal, for example:</p>
+<pre class="literal-block">
+zcat seqs.fasta.gz | lastal humanDb &gt; myalns.maf
+</pre>
+<div class="section" id="steps-in-lastal">
+<h2>Steps in lastal</h2>
+<ol class="arabic">
+<li><p class="first">Find similar regions</p>
+</li>
+</ol>
+<blockquote>
+<ol class="loweralpha">
+<li><p class="first">Find initial matches.  For each possible start position in the
+query: find the shortest match with length ≥ l that <em>either</em>
+occurs ≤ m times in the reference, <em>or</em> has length L.</p>
+</li>
+<li><p class="first">Extend a gapless alignment from each initial match, and keep
+those with score ≥ d.</p>
+</li>
+<li><p class="first">Define cores: find the longest run of identical matches in each
+gapless alignment.</p>
+</li>
+<li><p class="first">Extend a gapped alignment from either side of each core, and keep
+those with score ≥ e.</p>
+</li>
+</ol>
+</blockquote>
+<ol class="arabic" start="2">
+<li><p class="first">Align them</p>
+</li>
+</ol>
+<blockquote>
+<ol class="loweralpha" start="5">
+<li><p class="first">&quot;Final&quot; alignments: extend gapped alignments again, but with
+different masking and/or maximum score drop parameters.  This
+step is performed only if u=2 or if z differs from x.</p>
+</li>
+<li><p class="first">Non-redundantize the alignments: if several alignments share an
+endpoint (same coordinates in both sequences), remove all but one
+highest-scoring one.</p>
+</li>
+<li><p class="first">Estimate the ambiguity of each aligned column (OFF by default).</p>
+</li>
+<li><p class="first">Redo the alignments to minimize column ambiguity, using either
+gamma-centroid or LAMA (OFF by default).</p>
+</li>
+</ol>
+</blockquote>
+</div>
+<div class="section" id="options">
+<h2>Options</h2>
+<div class="section" id="cosmetic-options">
+<h3>Cosmetic options</h3>
+<blockquote>
+<table class="docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
+<tr><td class="option-group">
+<kbd><span class="option">-h</span>, <span class="option">--help</span></kbd></td>
+<td>Show all options and their default settings, and exit.</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-V</span>, <span class="option">--version</span></kbd></td>
+<td>Show version information, and exit.</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-v</span></kbd></td>
+<td>Be verbose: write messages about what lastal is doing.</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-f <var>NAME</var></span></kbd></td>
+<td><p class="first">Choose the output format.  The NAME is not case-sensitive.</p>
+<p><strong>MAF</strong> format looks like this:</p>
+<pre class="literal-block">
+a score=15 EG2=4.7e+04 E=2.6e-05
+s chr3 9 23 + 939557 TTTGGGAGTTGAAGTTTTCGCCC
+s seqA 2 21 +     25 TTTGGGAGTTGAAGGTT--GCCC
+</pre>
+<p>Lines starting with &quot;s&quot; contain: the sequence name, the start
+coordinate of the alignment, the number of sequence letters
+spanned by the alignment, the strand, the sequence length, and
+the aligned letters.  The start coordinates are zero-based.  If
+the strand is &quot;-&quot;, the start coordinate is in the reverse
+strand.</p>
+<p>The same alignment in <strong>TAB</strong> format looks like this:</p>
+<pre class="literal-block">
+15 chr3 9 23 + 939557 seqA 2 21 + 25 17,2:0,4 EG2=4.7e+04 E=2.6e-05
+</pre>
+<p>The &quot;17,2:0,4&quot; shows the sizes and offsets of gapless blocks in
+the alignment.  In this case, we have a block of size 17, then
+an offset of size 2 in the upper sequence and 0 in the lower
+sequence, then a block of size 4.</p>
+<p>The same alignment in <strong>BlastTab</strong> format looks like this:</p>
+<pre class="literal-block">
+seqA chr3 86.96 23 1 1 3 23 10 32 2.6e-05 44.3
+</pre>
+<p>The fields are: query name, reference name, percent identity,
+alignment length, mismatches, gap opens, query start, query end,
+reference start, reference end, E-value, bit score.  The start
+coordinates are one-based.  <em>Warning:</em> this is a lossy format,
+because it does not show gap positions.  <em>Warning:</em> the other
+LAST programs cannot read this format.</p>
+<p><strong>BlastTab+</strong> format is the same as BlastTab, with 2 extra
+columns at the end: length of query sequence and length of
+reference sequence.  More columns might be added in future.</p>
+<p class="last">For backwards compatibility, a NAME of 0 means TAB and 1 means
+MAF.</p>
+</td></tr>
+</tbody>
+</table>
+</blockquote>
+</div>
+<div class="section" id="score-options">
+<h3>Score options</h3>
+<blockquote>
+<table class="docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
+<tr><td class="option-group">
+<kbd><span class="option">-r <var>SCORE</var></span></kbd></td>
+<td>Match score.</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-q <var>COST</var></span></kbd></td>
+<td>Mismatch cost.</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-p <var>NAME</var></span></kbd></td>
+<td><p class="first">Specify a match/mismatch score matrix.  Options -r and -q will
+be ignored.  The built-in matrices are described in
+<a class="reference external" href="last-matrices.html">last-matrices.html</a>.</p>
+<p class="last">Any other NAME is assumed to be a file name.  For an example of
+the format, see the matrix files in the data directory.  Any
+letters that aren't in the matrix will get the lowest score in
+the matrix when aligned to anything.  Asymmetric scores are
+allowed: query letters correspond to columns and reference
+letters correspond to rows.  Other options can be specified on
+lines starting with &quot;#last&quot;, but command line options override
+them.</p>
+</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-a <var>COST</var></span></kbd></td>
+<td>Gap existence cost.</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-b <var>COST</var></span></kbd></td>
+<td>Gap extension cost.  A gap of size k costs: a + (b × k).</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-A <var>COST</var></span></kbd></td>
+<td>Insertion existence cost.  This refers to insertions in the
+query relative to the reference.  If -A is not used, the
+insertion existence cost will equal the deletion existence cost,
+which is set by -a.</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-B <var>COST</var></span></kbd></td>
+<td>Insertion extension cost.</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-c <var>COST</var></span></kbd></td>
+<td>This option allows use of &quot;generalized affine gap costs&quot; (SF
+Altschul 1998, Proteins 32(1):88-96).  Here, a &quot;gap&quot; may consist
+of unaligned regions of both sequences.  If these unaligned
+regions have sizes j and k, where j ≤ k, the cost is: a +
+b⋅(k-j) + c⋅j.  If c ≥ a + 2b (the default), it reduces to
+standard affine gaps.</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-F <var>COST</var></span></kbd></td>
+<td><p class="first">Align DNA queries to protein reference sequences, using the
+specified frameshift cost.  A value of 15 seems to be
+reasonable.  The output looks like this:</p>
+<pre class="literal-block">
+a score=108
+s prot 2  40 + 649 FLLQAVKLQDP-STPHQIVPSP-VSDLIATHTLCPRMKYQDD
+s dna  8 117 + 999 FFLQ-IKLWDP\STPH*IVSSP/PSDLISAHTLCPRMKSQDN
+</pre>
+<p>The <tt class="docutils literal">\</tt> indicates a forward shift by one nucleotide, and the
+<tt class="docutils literal">/</tt> indicates a reverse shift by one nucleotide.  The <tt class="docutils literal">*</tt>
+indicates a stop codon.  The same alignment in tabular format
+looks like this:</p>
+<pre class="literal-block">
+108 prot 2 40 + 649 dna 8 117 + 999 4,1:0,6,0:1,10,0:-1,19
+</pre>
+<p class="last">The &quot;-1&quot; indicates the reverse frameshift.</p>
+</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-x <var>DROP</var></span></kbd></td>
+<td>Maximum score drop for gapped alignments.  Gapped alignments are
+forbidden from having any internal region with score &lt; -DROP.
+This serves two purposes: accuracy (avoid spurious internal
+regions in alignments) and speed (the smaller the faster).</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-y <var>DROP</var></span></kbd></td>
+<td>Maximum score drop for gapless alignments.</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-z <var>DROP</var></span></kbd></td>
+<td>Maximum score drop for final gapped alignments.</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-d <var>SCORE</var></span></kbd></td>
+<td>Minimum score for gapless alignments.</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-e <var>SCORE</var></span></kbd></td>
+<td>Minimum alignment score.  (If you do gapless alignment with
+option -j1, then -d and -e mean the same thing.  If you set
+both, -e will prevail.)</td></tr>
+</tbody>
+</table>
+</blockquote>
+</div>
+<div class="section" id="e-value-options">
+<h3>E-value options</h3>
+<blockquote>
+<table class="docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
+<tr><td class="option-group">
+<kbd><span class="option">-D <var>LENGTH</var></span></kbd></td>
+<td>Report alignments that are expected by chance at most once per
+LENGTH query letters.  This option only affects the default
+value of -E, so if you specify -E then -D has no effect.</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-E <var>THRESHOLD</var></span></kbd></td>
+<td>Maximum EG2 (expected alignments per square giga).  This option
+only affects the default value of -e, so if you specify -e then
+-E has no effect.</td></tr>
+</tbody>
+</table>
+</blockquote>
+</div>
+<div class="section" id="miscellaneous-options">
+<h3>Miscellaneous options</h3>
+<blockquote>
+<table class="docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
+<tr><td class="option-group">
+<kbd><span class="option">-s <var>STRAND</var></span></kbd></td>
+<td>Specify which query strand should be used: 0 means reverse only,
+1 means forward only, and 2 means both.</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-S <var>NUMBER</var></span></kbd></td>
+<td>Specify which DNA strand the score matrix applies to.  This
+matters only for unusual matrices that lack strand symmetry
+(e.g. if the a:g score differs from the t:c score).  0 means
+that the matrix applies to the forward strand of the reference
+aligned to either strand of the query.  1 means that the matrix
+applies to either strand of the reference aligned to the forward
+strand of the query.</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-T <var>NUMBER</var></span></kbd></td>
+<td>Type of alignment: 0 means &quot;local alignment&quot; and 1 means
+&quot;overlap alignment&quot;.  Local alignments can end anywhere in the
+middle or at the ends of the sequences.  Overlap alignments must
+extend to the left until they hit the end of a sequence (either
+query or reference), and to the right until they hit the end of
+a sequence.</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-m <var>MULTIPLICITY</var></span></kbd></td>
+<td><p class="first">Maximum multiplicity for initial matches.  Each initial match is
+lengthened until it occurs at most this many times in the
+reference.</p>
+<p class="last">If the reference was split into volumes by lastdb, then lastal
+uses one volume at a time.  The maximum multiplicity then
+applies to each volume, not the whole reference.  This is why
+voluming changes the results.</p>
+</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-l <var>LENGTH</var></span></kbd></td>
+<td>Minimum length for initial matches.  Length means the number of
+letters spanned by the match.</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-L <var>LENGTH</var></span></kbd></td>
+<td>Maximum length for initial matches.</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-n <var>COUNT</var></span></kbd></td>
+<td>Maximum number of gapless alignments per query position.  When
+lastal extends gapless alignments from initial matches that
+start at one query position, if it gets COUNT successful
+extensions, it skips any remaining initial matches starting at
+that position.</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-C <var>LIMIT</var></span></kbd></td>
+<td>Before extending gapped alignments, discard any gapless
+alignment whose query range lies in LIMIT or more others (for
+the same strand and volume) with higher score-per-length.  This
+can reduce run time and output size (MC Frith &amp; R Kawaguchi
+2015, Genome Biol 16:106).</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-K <var>LIMIT</var></span></kbd></td>
+<td>Omit any alignment whose query range lies in LIMIT or more other
+alignments with higher score (and on the same strand).  This is
+a useful way to get just the top few hits to each part of each
+query (P Berman et al. 2000, J Comput Biol 7:293-302).</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-k <var>STEP</var></span></kbd></td>
+<td>Look for initial matches starting only at every STEP-th position
+in the query.  This makes lastal faster but less sensitive.</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-i <var>BYTES</var></span></kbd></td>
+<td><p class="first">Search queries in batches of at most this many bytes.  If a
+single sequence exceeds this amount, however, it is not split.
+You can use suffixes K, M, and G to specify KibiBytes,
+MebiBytes, and GibiBytes.  This option has no effect on the
+results (apart from their order).</p>
+<p class="last">If the reference was split into volumes by lastdb, then each
+volume will be read into memory once per query batch.</p>
+</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-P <var>THREADS</var></span></kbd></td>
+<td>Divide the work between this number of threads running in
+parallel.  0 means use as many threads as your computer claims
+it can handle simultaneously.  Single query sequences are not
+divided between threads, so you need multiple queries per batch
+for this option to take effect.</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-R <var>DIGITS</var></span></kbd></td>
+<td><p class="first">Specify lowercase-marking of repeats, by two digits (e.g. &quot;-R 01&quot;),
+with the following meanings.</p>
+<p>First digit:</p>
+<ol class="arabic" start="0">
+<li><p class="first">Convert the input sequences to uppercase while reading them.</p>
+</li>
+<li><p class="first">Keep any lowercase in the input sequences.</p>
+</li>
+</ol>
+<p>Second digit:</p>
+<ol class="arabic" start="0">
+<li><p class="first">Do not check for simple repeats.</p>
+</li>
+<li><p class="first">Convert simple repeats (e.g. cacacacacacacacac) to lowercase.</p>
+</li>
+<li><p class="first">Convert simple repeats, within AT-rich DNA, to lowercase.</p>
+</li>
+</ol>
+<p class="last">Details: Tantan is applied separately to forward and reverse
+strands.  For DNA-versus-protein alignment (option -F), it is
+applied to the DNA after translation, at the protein level.</p>
+</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-u <var>NUMBER</var></span></kbd></td>
+<td>Specify treatment of lowercase letters when extending
+alignments.  0 means do not mask them; 1 means mask them for
+gapless extensions; 2 means mask them for gapless and gapped
+extensions but not final extensions; 3 means mask them at all
+stages.  &quot;Mask&quot; means change their match/mismatch scores to
+min(unmasked score, 0).  This option does not affect treatment
+of lowercase for initial matches.</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-w <var>DISTANCE</var></span></kbd></td>
+<td><p class="first">This option is a kludge to avoid catastrophic time and memory
+usage when self-comparing a large sequence.  If the sequence
+contains a tandem repeat, we may get a gapless alignment that is
+slightly offset from the main self-alignment.  In that case, the
+gapped extension might &quot;discover&quot; the main self-alignment and
+extend over the entire length of the sequence.</p>
+<p>To avoid this problem, gapped alignments are not triggered from
+any gapless alignment that:</p>
+<ul>
+<li><p class="first">is contained, in both sequences, in the &quot;core&quot; of another
+alignment</p>
+</li>
+<li><p class="first">has start coordinates offset by DISTANCE or less relative to
+this core</p>
+</li>
+</ul>
+<p class="last">Use -w0 to turn this off.</p>
+</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-G <var>FILE</var></span></kbd></td>
+<td>Use an alternative genetic code in the specified file.  For an
+example of the format, see vertebrateMito.gc in the examples
+directory.  By default, the standard genetic code is used.  This
+option has no effect unless DNA-versus-protein alignment is
+selected with option -F.</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-t <var>TEMPERATURE</var></span></kbd></td>
+<td>Parameter for converting between scores and likelihood ratios.
+This affects the column ambiguity estimates.  A score is
+converted to a likelihood ratio by this formula: exp(score /
+TEMPERATURE).  The default value is 1/lambda, where lambda is
+the scale factor of the scoring matrix, which is calculated by
+the method of Yu and Altschul (YK Yu et al. 2003, PNAS
+100(26):15688-93).</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-g <var>GAMMA</var></span></kbd></td>
+<td><p class="first">This option affects gamma-centroid and LAMA alignment only.</p>
+<p>Gamma-centroid alignments minimize the ambiguity of paired
+letters.  In fact, this method aligns letters whose column error
+probability is less than GAMMA/(GAMMA+1).  When GAMMA is low, it
+aligns confidently-paired letters only, so there tend to be many
+unaligned letters.  When GAMMA is high, it aligns letters more
+liberally.</p>
+<p>LAMA (Local Alignment Metric Accuracy) alignments minimize the
+ambiguity of columns (both paired letters and gap columns).
+When GAMMA is low, this method produces shorter alignments with
+more-confident columns, and when GAMMA is high it produces
+longer alignments including less-confident columns.</p>
+<p>In summary: to get the most accurately paired letters, use
+gamma-centroid.  To get accurately placed gaps, use LAMA.</p>
+<p class="last">Note that the reported alignment score is that of the ordinary
+gapped alignment before realigning with gamma-centroid or LAMA.</p>
+</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-j <var>NUMBER</var></span></kbd></td>
+<td><p class="first">Output type: 0 means counts of initial matches (of all lengths);
+1 means gapless alignments; 2 means gapped alignments before
+non-redundantization; 3 means gapped alignments after
+non-redundantization; 4 means alignments with ambiguity
+estimates; 5 means gamma-centroid alignments; 6 means LAMA
+alignments; 7 means alignments with expected counts.</p>
+<p>If you use -j0, lastal will count the number of initial matches,
+per length, per query sequence.  Options -l and -L will set the
+minimum and maximum lengths, and -m will be ignored.  If you
+compare a large sequence to itself with -j0, it's wise to set
+option -L.</p>
+<p>If you use j&gt;3, each alignment will get a &quot;fullScore&quot; (also
+known as &quot;forward score&quot; or &quot;sum-of-paths score&quot;).  This is like
+the score, but it takes into account alternative alignments.</p>
+<p>If you use -j7, lastal will print an extra MAF line starting
+with &quot;c&quot; for each alignment.  The first 16 numbers on this line
+are the expected counts of matches and mismatches: first the
+count of reference As aligned to query As, then the count of
+reference As aligned to query Cs, and so on.  For proteins there
+will be 400 such numbers.  The final ten numbers are expected
+counts related to gaps.  They are:</p>
+<ul>
+<li><p class="first">The count of matches plus mismatches.  (This may exceed the
+total of the preceding numbers, if the sequences have non-ACGT
+letters.)</p>
+</li>
+<li><p class="first">The count of deleted letters.</p>
+</li>
+<li><p class="first">The count of inserted letters.</p>
+</li>
+<li><p class="first">The count of delete opens (= count of delete closes).</p>
+</li>
+<li><p class="first">The count of insert opens (= count of insert closes).</p>
+</li>
+<li><p class="first">The count of adjacent pairs of insertions and deletions.</p>
+</li>
+</ul>
+<p>The final four numbers are always zero, unless you use
+generalized affine gap costs.  They are:</p>
+<ul class="last">
+<li><p class="first">The count of unaligned letter pairs.</p>
+</li>
+<li><p class="first">The count of unaligned letter pair opens (= count of closes).</p>
+</li>
+<li><p class="first">The count of adjacent pairs of deletions and unaligned letter pairs.</p>
+</li>
+<li><p class="first">The count of adjacent pairs of insertions and unaligned letter pairs.</p>
+</li>
+</ul>
+</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-Q <var>NUMBER</var></span></kbd></td>
+<td><p class="first">This option allows lastal to use sequence quality scores, or
+PSSMs, for the queries.  0 means read queries in fasta format
+(without quality scores); 1 means fastq-sanger format; 2 means
+fastq-solexa format; 3 means fastq-illumina format; 4 means prb
+format; 5 means read PSSMs.  (<em>Warning</em>: Illumina data is not
+necessarily in fastq-illumina format; it is often in
+fastq-sanger format.)</p>
+<p>The fastq formats look like this:</p>
+<pre class="literal-block">
+&#64;mySequenceName
+TTTTTTTTGCCTCGGGCCTGAGTTCTTAGCCGCG
++
+55555555*&amp;5-/55*5//5(55,5#&amp;$)$)*+$
+</pre>
+<p>The &quot;+&quot; may optionally be followed by a name (ignored), and the
+sequence and quality codes are allowed to wrap onto more than
+one line.  For fastq-sanger, the quality scores are obtained by
+subtracting 33 from the ASCII values of the characters below the
+&quot;+&quot;.  For fastq-solexa and fastq-illumina, they are obtained by
+subtracting 64.</p>
+<p>prb format stores four quality scores (A, C, G, T) per position,
+with one sequence per line, like this:</p>
+<pre class="literal-block">
+-40  40 -40 -40      -12   1 -12  -3      -10  10 -40 -40
+</pre>
+<p>Since prb does not store sequence names, lastal uses the line
+number (starting from 1) as the name.</p>
+<p>In fastq-sanger and fastq-illumina format, the quality scores
+are related to error probabilities like this: qScore =
+-10⋅log10[p].  In fastq-solexa and prb, however, qScore =
+-10⋅log10[p/(1-p)].  In lastal's MAF output, the quality scores
+are written on lines starting with &quot;q&quot;.  For fastq, they are
+written with the same encoding as the input.  For prb, they are
+written in the fastq-solexa (ASCII-64) encoding.</p>
+<p>Finally, PSSM means &quot;position-specific scoring matrix&quot;.  The
+format is:</p>
+<pre class="literal-block">
+myLovelyPSSM
+     A  R  N  D  C  Q  E  G  H  I  L  K  M  F  P  S  T  W  Y  V
+1 M -2 -2 -3 -4 -2 -1 -3 -3 -2  1  2 -2  8 -1 -3 -2 -1 -2 -2  0
+2 S  0 -2  0  1  3 -1 -1 -1 -2 -3 -3 -1 -2 -3 -2  5  0 -4 -3 -2
+3 D -1 -2  0  7 -4 -1  1 -2 -2 -4 -4 -2 -4 -4 -2 -1 -2 -5 -4 -4
+</pre>
+<p>The sequence appears in the second column, and columns 3 onwards
+contain the position-specific scores.  Any letters not specified
+by any column will get the lowest score in each row.  This
+format is a simplified version of PSI-BLAST's ASCII format: the
+non-simplified version is allowed too.</p>
+<p class="last"><em>Warning</em>: lastal cannot directly calculate E-values for PSSMs.
+The E-values (and the default value of -y) are determined by the
+otherwise-unused match and mismatch scores (options -r -q and
+-p).  There is evidence these E-values will be accurate if the
+PSSM is &quot;constructed to the same scale&quot; as the match/mismatch
+scores (SF Altschul et al. 1997, NAR 25(17):3389-402).</p>
+</td></tr>
+</tbody>
+</table>
+</blockquote>
+</div>
+</div>
+<div class="section" id="parallel-processes-and-memory-sharing">
+<h2>Parallel processes and memory sharing</h2>
+<p>If you run several lastal commands (i.e. processes) at the same time
+on the same computer, using the same set of reference files prepared
+by lastdb, then they will share memory for the reference files.</p>
+</div>
+<div class="section" id="multiple-volumes">
+<h2>Multiple volumes</h2>
+<p>If lastdb creates multiple volumes:</p>
+<pre class="literal-block">
+lastdb hugeDb huge.fasta
+</pre>
+<p>You can either run lastal on the whole thing:</p>
+<pre class="literal-block">
+lastal hugeDb queries.fasta &gt; myalns.maf
+</pre>
+<p>Or on one volume at a time:</p>
+<pre class="literal-block">
+lastal hugeDb0 queries.fasta &gt; myalns0.maf
+lastal hugeDb1 queries.fasta &gt; myalns1.maf
+lastal hugeDb2 queries.fasta &gt; myalns2.maf
+</pre>
+<p>The former method reads the queries in large batches, and aligns each
+batch to one volume at a time.  If you run several processes in
+parallel, they will not necessarily use the same volume at the same
+time.</p>
+<p>Therefore, with parallel processes, you should either ensure you have
+enough memory to hold several volumes simultaneously, or run lastal on
+one volume at a time.  An efficient scheme is to use a different
+computer for each volume.</p>
+</div>
+</div>
+</body>
+</html>

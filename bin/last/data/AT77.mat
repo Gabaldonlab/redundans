@@ -1,0 +1,9 @@
+# This scoring scheme is for weakly-similar AT-rich DNA (~27%
+# substitutions and ~77% A+T) (MC Frith, NAR 2011 39(4):e23).
+
+#last -a15 -b2
+   A  C  G  T
+A  2 -3 -2 -3
+C -3  5 -3 -2
+G -2 -3  5 -3
+T -3 -2 -3  2

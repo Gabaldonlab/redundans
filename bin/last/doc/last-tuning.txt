@@ -1,0 +1,107 @@
+LAST Performance Tuning
+=======================
+
+This document tells you how to make LAST **faster**, at a cost in
+sensitivity or memory use, or **more sensitive**, at a cost in speed.
+
+Ideally, the default settings would always work well.  Unfortunately,
+there is too great a variety of challenging alignment tasks, and the
+LAST developers lack experience with most of them.
+
+LAST must have *some* defaults, and any choice will displease someone.
+It is wrong to say "LAST is faster but less sensitive than method X",
+or "slower but more sensitive than method Y", without varying the
+defaults.
+
+lastdb -w
+---------
+
+This option **reduces memory and disk usage**.  It makes lastdb and
+probably lastal **faster**.  By default lastdb indexes every position
+in the sequence(s), but -w2 makes it index every 2nd position, -w3
+every 3rd position, etc.  This may **reduce sensitivity**, but not
+necessarily, because LAST uses initial matches that are sufficiently
+rare, and by ignoring some matches the remaining ones become rarer.
+
+Among other aligners, MegaBLAST indexes every 5th position, and BLAT
+indexes every 11th position.
+
+lastdb -i
+---------
+
+This option **makes lastdb faster**, but disables some lastal options.
+If lastdb is too slow, try -i10.
+
+lastdb -C
+---------
+
+This option may make lastal a bit **faster**, but **uses more memory
+and disk**, and makes lastdb slower.  If these downsides are no
+problem, you may as well try it.  -C3 is fastest (at least sometimes)
+but uses most memory, -C2 is almost as fast.
+
+lastal -m
+---------
+
+This option **trades speed for sensitivity**.  It sets the rareness
+limit for initial matches: initial matches are lengthened until they
+occur at most this many times in the lastdb volume.  The default is
+10.  So -m100 makes it more sensitive but slower, by using more
+initial matches.
+
+lastal -l
+---------
+
+This option makes lastal **faster** but **less sensitive**.  It sets
+the minimum length of initial matches, e.g. -l50 means length 50.
+(The default is 1).  This can make it *much* faster, and the
+sensitivity is adequate if the alignments contain long, gapless,
+high-identity matches.
+
+lastal -k
+---------
+
+This option makes lastal **faster** but **less sensitive**.  By
+default lastal looks for initial matches starting at every position in
+the query sequence(s), but -k2 makes it check every 2nd position, -k3
+every 3rd position, etc.  Be careful about combining this with lastdb
+option -w.
+
+lastal -x
+---------
+
+This option can make lastal **faster** but **less sensitive**.  It
+sets the maximum score drop in alignments, in the gapped extension
+phase.  Lower values make it faster, by quitting unpromising
+extensions sooner.  The default aims at best accuracy.
+
+Unfortunately, the default is a complex function of the other
+parameters and the database size.  You can see it in the lastal header
+after "x=", e.g. by running lastal with no queries.  Then try, say,
+halving it.
+
+lastal -C
+---------
+
+This option (gapless alignment culling) can make lastal **faster** but
+**less sensitive**.  It can also **reduce redundant output**.  For
+example, -C2 makes it discard alignments (before gapped extension)
+whose query coordinates lie in those of 2 or more stronger alignments.
+
+lastal -j1
+----------
+
+This option requests **gapless** alignment, which is **faster**.  (You
+could get the same effect by using very high gap costs, but -j1 is
+faster because it skips the gapping phase entirely.)
+
+lastal -f
+---------
+
+Option -fTAB **reduces the output size**, which can improve speed.
+
+Repeat masking
+--------------
+
+This can make LAST **much faster**, produce **less output**, and
+reduce memory and disk usage.  Please see `<last-repeats.html>`_.

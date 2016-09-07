@@ -1,0 +1,12 @@
+# This DNA seeding scheme is like MAM8, but a bit less sensitive, and
+# uses about half as much memory.  [From Frith & Noé 2014 NAR 42:e59
+# Table S11, row 12.]
+
+1  A C G T
+0  ACGT
+T  AG CT
+
+11100TT01T00T10TTTT
+TTTT110TT0T001T0T1T1
+11TT010T01TT0001T
+11TT10T1T101TT

@@ -1,0 +1,80 @@
+last-train
+==========
+
+This script tries to find suitable score parameters (substitution and
+gap scores) for aligning some given sequences.
+
+It (probabilistically) aligns the sequences using some initial score
+parameters, then estimates better score parameters based on the
+alignments, and repeats this procedure until the parameters stop
+changing.
+
+The usage is like this::
+
+  lastdb mydb reference.fasta
+  last-train mydb queries.fasta
+
+last-train prints a summary of each alignment step, followed by the
+final score parameters in a format that can be read by lastal's -p
+option.
+
+Options
+-------
+
+  -h, --help
+         Show a help message, with default option values, and exit.
+
+Training options
+~~~~~~~~~~~~~~~~
+
+  --revsym
+         Force the substitution scores to have reverse-complement
+         symmetry, e.g. score(A→G) = score(T→C).  This is often
+         appropriate, if neither strand is "special".
+  --matsym
+         Force the substitution scores to have directional symmetry,
+         e.g. score(A→G) = score(G→A).
+  --gapsym
+         Force the insertion costs to equal the deletion costs.
+  --pid=PID
+         Ignore alignments with > PID% identity.  This aims to
+         optimize the parameters for low-similarity alignments,
+         similarly to the BLOSUM matrices.
+
+Initial parameter options
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  -r SCORE   Initial match score.
+  -q COST    Initial mismatch cost.
+  -p NAME    Initial match/mismatch score matrix.
+  -a COST    Initial gap existence cost.
+  -b COST    Initial gap extension cost.
+  -A COST    Initial insertion existence cost.
+  -B COST    Initial insertion extension cost.
+
+Alignment options
+~~~~~~~~~~~~~~~~~
+
+  -D LENGTH  Query letters per random alignment.
+  -E EG2     Maximum expected alignments per square giga.
+  -s NUMBER  Which query strand to use: 0=reverse, 1=forward, 2=both.
+  -S NUMBER  Score matrix applies to forward strand of: 0=reference,
+             1=query.  This matters only if the scores lack
+             reverse-complement symmetry.
+  -T NUMBER  Type of alignment: 0=local, 1=overlap.
+  -m COUNT   Maximum number of initial matches per query position.
+  -P COUNT   Number of parallel threads.
+  -Q NUMBER  Query sequence format: 0=fasta, 1=fastq-sanger.
+             **Important:** if you use option -Q, last-train will only
+             train the gap scores, and leave the substitution scores
+             at their initial values.
+
+Bugs
+----
+
+* last-train assumes that gap lengths roughly follow a geometric
+  distribution.  If they do not (which is often the case), the results
+  may be poor.
+
+* last-train can fail for various reasons, e.g. if the sequences are
+  too dissimilar.

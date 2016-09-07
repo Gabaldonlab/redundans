@@ -1,0 +1,519 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.6: http://docutils.sourceforge.net/" />
+<title>lastdb</title>
+<style type="text/css">
+
+/*
+:Author: David Goodger (goodger@python.org)
+:Id: $Id: html4css1.css 5951 2009-05-18 18:03:10Z milde $
+:Copyright: This stylesheet has been placed in the public domain.
+
+Default cascading style sheet for the HTML output of Docutils.
+
+See http://docutils.sf.net/docs/howto/html-stylesheets.html for how to
+customize this style sheet.
+*/
+
+/* used to remove borders from tables and images */
+.borderless, table.borderless td, table.borderless th {
+  border: 0 }
+
+table.borderless td, table.borderless th {
+  /* Override padding for "table.docutils td" with "! important".
+     The right padding separates the table cells. */
+  padding: 0 0.5em 0 0 ! important }
+
+.first {
+  /* Override more specific margin styles with "! important". */
+  margin-top: 0 ! important }
+
+.last, .with-subtitle {
+  margin-bottom: 0 ! important }
+
+.hidden {
+  display: none }
+
+a.toc-backref {
+  text-decoration: none ;
+  color: black }
+
+blockquote.epigraph {
+  margin: 2em 5em ; }
+
+dl.docutils dd {
+  margin-bottom: 0.5em }
+
+/* Uncomment (and remove this text!) to get bold-faced definition list terms
+dl.docutils dt {
+  font-weight: bold }
+*/
+
+div.abstract {
+  margin: 2em 5em }
+
+div.abstract p.topic-title {
+  font-weight: bold ;
+  text-align: center }
+
+div.admonition, div.attention, div.caution, div.danger, div.error,
+div.hint, div.important, div.note, div.tip, div.warning {
+  margin: 2em ;
+  border: medium outset ;
+  padding: 1em }
+
+div.admonition p.admonition-title, div.hint p.admonition-title,
+div.important p.admonition-title, div.note p.admonition-title,
+div.tip p.admonition-title {
+  font-weight: bold ;
+  font-family: sans-serif }
+
+div.attention p.admonition-title, div.caution p.admonition-title,
+div.danger p.admonition-title, div.error p.admonition-title,
+div.warning p.admonition-title {
+  color: red ;
+  font-weight: bold ;
+  font-family: sans-serif }
+
+/* Uncomment (and remove this text!) to get reduced vertical space in
+   compound paragraphs.
+div.compound .compound-first, div.compound .compound-middle {
+  margin-bottom: 0.5em }
+
+div.compound .compound-last, div.compound .compound-middle {
+  margin-top: 0.5em }
+*/
+
+div.dedication {
+  margin: 2em 5em ;
+  text-align: center ;
+  font-style: italic }
+
+div.dedication p.topic-title {
+  font-weight: bold ;
+  font-style: normal }
+
+div.figure {
+  margin-left: 2em ;
+  margin-right: 2em }
+
+div.footer, div.header {
+  clear: both;
+  font-size: smaller }
+
+div.line-block {
+  display: block ;
+  margin-top: 1em ;
+  margin-bottom: 1em }
+
+div.line-block div.line-block {
+  margin-top: 0 ;
+  margin-bottom: 0 ;
+  margin-left: 1.5em }
+
+div.sidebar {
+  margin: 0 0 0.5em 1em ;
+  border: medium outset ;
+  padding: 1em ;
+  background-color: #ffffee ;
+  width: 40% ;
+  float: right ;
+  clear: right }
+
+div.sidebar p.rubric {
+  font-family: sans-serif ;
+  font-size: medium }
+
+div.system-messages {
+  margin: 5em }
+
+div.system-messages h1 {
+  color: red }
+
+div.system-message {
+  border: medium outset ;
+  padding: 1em }
+
+div.system-message p.system-message-title {
+  color: red ;
+  font-weight: bold }
+
+div.topic {
+  margin: 2em }
+
+h1.section-subtitle, h2.section-subtitle, h3.section-subtitle,
+h4.section-subtitle, h5.section-subtitle, h6.section-subtitle {
+  margin-top: 0.4em }
+
+h1.title {
+  text-align: center }
+
+h2.subtitle {
+  text-align: center }
+
+hr.docutils {
+  width: 75% }
+
+img.align-left, .figure.align-left{
+  clear: left ;
+  float: left ;
+  margin-right: 1em }
+
+img.align-right, .figure.align-right {
+  clear: right ;
+  float: right ;
+  margin-left: 1em }
+
+.align-left {
+  text-align: left }
+
+.align-center {
+  clear: both ;
+  text-align: center }
+
+.align-right {
+  text-align: right }
+
+/* reset inner alignment in figures */
+div.align-right {
+  text-align: left }
+
+/* div.align-center * { */
+/*   text-align: left } */
+
+ol.simple, ul.simple {
+  margin-bottom: 1em }
+
+ol.arabic {
+  list-style: decimal }
+
+ol.loweralpha {
+  list-style: lower-alpha }
+
+ol.upperalpha {
+  list-style: upper-alpha }
+
+ol.lowerroman {
+  list-style: lower-roman }
+
+ol.upperroman {
+  list-style: upper-roman }
+
+p.attribution {
+  text-align: right ;
+  margin-left: 50% }
+
+p.caption {
+  font-style: italic }
+
+p.credits {
+  font-style: italic ;
+  font-size: smaller }
+
+p.label {
+  white-space: nowrap }
+
+p.rubric {
+  font-weight: bold ;
+  font-size: larger ;
+  color: maroon ;
+  text-align: center }
+
+p.sidebar-title {
+  font-family: sans-serif ;
+  font-weight: bold ;
+  font-size: larger }
+
+p.sidebar-subtitle {
+  font-family: sans-serif ;
+  font-weight: bold }
+
+p.topic-title {
+  font-weight: bold }
+
+pre.address {
+  margin-bottom: 0 ;
+  margin-top: 0 ;
+  font: inherit }
+
+pre.literal-block, pre.doctest-block {
+  margin-left: 2em ;
+  margin-right: 2em }
+
+span.classifier {
+  font-family: sans-serif ;
+  font-style: oblique }
+
+span.classifier-delimiter {
+  font-family: sans-serif ;
+  font-weight: bold }
+
+span.interpreted {
+  font-family: sans-serif }
+
+span.option {
+  white-space: nowrap }
+
+span.pre {
+  white-space: pre }
+
+span.problematic {
+  color: red }
+
+span.section-subtitle {
+  /* font-size relative to parent (h1..h6 element) */
+  font-size: 80% }
+
+table.citation {
+  border-left: solid 1px gray;
+  margin-left: 1px }
+
+table.docinfo {
+  margin: 2em 4em }
+
+table.docutils {
+  margin-top: 0.5em ;
+  margin-bottom: 0.5em }
+
+table.footnote {
+  border-left: solid 1px black;
+  margin-left: 1px }
+
+table.docutils td, table.docutils th,
+table.docinfo td, table.docinfo th {
+  padding-left: 0.5em ;
+  padding-right: 0.5em ;
+  vertical-align: top }
+
+table.docutils th.field-name, table.docinfo th.docinfo-name {
+  font-weight: bold ;
+  text-align: left ;
+  white-space: nowrap ;
+  padding-left: 0 }
+
+h1 tt.docutils, h2 tt.docutils, h3 tt.docutils,
+h4 tt.docutils, h5 tt.docutils, h6 tt.docutils {
+  font-size: 100% }
+
+ul.auto-toc {
+  list-style-type: none }
+
+</style>
+<style type="text/css">
+
+/* Style sheet for LAST HTML documents */
+h1 { color: navy }
+h2 { color: teal }
+div.document { margin-left: auto; margin-right: auto; max-width: 45em }
+strong { color: red }
+.option-list td { padding-bottom: 1em }
+table.field-list { border: thin solid green }
+
+</style>
+</head>
+<body>
+<div class="document" id="lastdb">
+<h1 class="title">lastdb</h1>
+
+<p>This program prepares sequences for subsequent comparison and
+alignment using lastal.  You can use it like this:</p>
+<pre class="literal-block">
+lastdb humanDb humanChromosome*.fasta
+</pre>
+<p>This will read files called <tt class="docutils literal"><span class="pre">humanChromosome*.fasta</span></tt>, and write
+several files whose names begin with <tt class="docutils literal">humanDb</tt>.</p>
+<div class="section" id="input">
+<h2>Input</h2>
+<p>The input should be one or more files in fasta format, which looks
+like this:</p>
+<pre class="literal-block">
+&gt;MyFirstSequence
+ATCGGGATATATGGAGAGCTTAGAG
+TTTGGATATG
+&gt;My2ndSequence
+TTTAGAGGGTTCTTCGGGATT
+</pre>
+<p>You can also pipe sequences into lastdb, for example:</p>
+<pre class="literal-block">
+zcat humanChromosome*.fasta.gz | lastdb humanDb
+</pre>
+</div>
+<div class="section" id="options">
+<h2>Options</h2>
+<div class="section" id="main-options">
+<h3>Main Options</h3>
+<blockquote>
+<table class="docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
+<tr><td class="option-group">
+<kbd><span class="option">-h</span>, <span class="option">--help</span></kbd></td>
+<td>Show all options and their default settings, and exit.</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-p</span></kbd></td>
+<td>Interpret the sequences as proteins.  The default is to interpret
+them as DNA.</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-R <var>DIGITS</var></span></kbd></td>
+<td><p class="first">Specify lowercase-marking of repeats, by two digits
+(e.g. &quot;-R01&quot;), with the following meanings.</p>
+<p>First digit:</p>
+<ol class="arabic" start="0">
+<li><p class="first">Convert the input sequences to uppercase while reading them.</p>
+</li>
+<li><p class="first">Keep any lowercase in the input sequences.</p>
+</li>
+</ol>
+<p>Second digit:</p>
+<ol class="last arabic" start="0">
+<li><p class="first">Do not check for simple repeats.</p>
+</li>
+<li><p class="first">Convert simple repeats (e.g. cacacacacacacacac) to lowercase.
+This uses tantan (<a class="reference external" href="http://www.cbrc.jp/tantan/">http://www.cbrc.jp/tantan/</a>), which reliably
+prevents non-homologous alignments, unlike other repeat
+finders.</p>
+</li>
+<li><p class="first">Convert simple DNA repeats to lowercase, with tantan tuned
+for ~80% AT-rich genomes.</p>
+</li>
+</ol>
+</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-c</span></kbd></td>
+<td>Soft-mask lowercase letters.  This means that, when we compare
+these sequences to some other sequences using lastal, lowercase
+letters will be excluded from initial matches.  This will apply
+to lowercase letters in both sets of sequences.</td></tr>
+</tbody>
+</table>
+</blockquote>
+</div>
+<div class="section" id="advanced-options">
+<h3>Advanced Options</h3>
+<blockquote>
+<table class="docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
+<tr><td class="option-group">
+<kbd><span class="option">-Q <var>NUMBER</var></span></kbd></td>
+<td>Specify the input format.  0 means fasta, 1 means fastq-sanger,
+2 means fastq-solexa, and 3 means fastq-illumina.  The fastq
+formats provide sequence quality data, which will be stored by
+lastdb and then used by lastal.  These formats are described in
+<a class="reference external" href="lastal.html">lastal.html</a>.</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-w <var>STEP</var></span></kbd></td>
+<td>Allow initial matches to start only at every STEP-th position in
+each of the sequences given to lastdb.  This reduces the memory
+usage of lastdb and lastal, and it makes lastdb faster.  Its
+effect on the speed and sensitivity of lastal is not entirely
+clear.</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-s <var>BYTES</var></span></kbd></td>
+<td><p class="first">Limit memory usage, by splitting the output files into smaller
+&quot;volumes&quot; if necessary.  This will limit the memory usage of
+both lastdb and lastal, but it will make lastal slower.  It is
+also likely to change the exact results found by lastal.</p>
+<p>Each volume will have at most BYTES bytes.  (Roughly.  The more
+masked letters or DNA &quot;N&quot;s, the more it will undershoot.)  You
+can use suffixes K, M, and G to specify KibiBytes, MebiBytes,
+and GibiBytes (e.g. &quot;-s 5G&quot;).</p>
+<p>However, the output for one sequence is never split.  Since the
+output files are several-fold bigger than the input (unless you
+use -w), this means that mammalian chromosomes cannot be
+processed using much less than 2G (unless you use -w).</p>
+<p class="last">There is a hard upper limit of about 4 billion sequence letters
+per volume.  Together with the previous point, this means that
+lastdb will refuse to process any single sequence longer than
+about 4 billion.</p>
+</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-m <var>PATTERN</var></span></kbd></td>
+<td><p class="first">Specify a spaced seed pattern, for example &quot;-m 110101&quot;.  In this
+example, mismatches will be allowed at every third and fifth
+position out of six in initial matches.</p>
+<p>This option does not constrain the length of initial matches.
+The pattern will get cyclically repeated as often as necessary
+to cover any length.</p>
+<p>Although the 0 positions allow mismatches, they exclude
+non-standard letters (e.g. non-ACGT for DNA).  If option -c is
+used, they also exclude lowercase letters.</p>
+<p>You can also specify transition constraints, e.g &quot;-m 100TT1&quot;.
+In this example, transitions (but not transversions) will be
+allowed at every fourth and fifth position out of six.
+Alternatively, you can use Iedera's notation, for example
+&quot;-m '#&#64;#--##--#-#'&quot; ('#' for match, '&#64;' for transition, '-' or
+'_' for mismatch).</p>
+<p class="last">You can specify multiple patterns by separating them with commas
+and/or using &quot;-m&quot; multiple times.</p>
+</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-u <var>NAME</var></span></kbd></td>
+<td><p class="first">Specify a seeding scheme.  The -m option will then be ignored.
+The built-in schemes are described in <a class="reference external" href="last-seeds.html">last-seeds.html</a>.</p>
+<p class="last">Any other NAME is assumed to be a file name.  For an example of
+the format, see the seed files in the data directory.  You can
+set other lastdb options on lines starting with <tt class="docutils literal">#lastdb</tt>, but
+command line options override them.  You can also set lastal
+options on lines starting with <tt class="docutils literal">#lastal</tt>, which are overridden
+by options from a <a class="reference external" href="last-matrices.html">scoring scheme</a> or the
+lastal command line.</p>
+</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-a <var>SYMBOLS</var></span></kbd></td>
+<td>Specify your own alphabet, e.g. &quot;-a 0123&quot;.  The default (DNA)
+alphabet is equivalent to &quot;-a ACGT&quot;.  The protein alphabet (-p)
+is equivalent to &quot;-a ACDEFGHIKLMNPQRSTVWY&quot;.  Non-alphabet
+letters are allowed in sequences, but by default they are
+excluded from initial matches and get the mismatch score when
+aligned to anything.  If -a is specified, -p is ignored.</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-i <var>MATCHES</var></span></kbd></td>
+<td>This option makes lastdb faster, at the expense of limiting your
+options with lastal.  If you use (say) &quot;-i 10&quot;, then you cannot
+use lastal with option m &lt; 10.</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-b <var>DEPTH</var></span></kbd></td>
+<td>Specify the depth of &quot;buckets&quot; used to accelerate initial match
+finding.  Larger values increase the memory usage of lastdb and
+lastal, make lastal faster, and have no effect on lastal's
+results.  The default is to use the maximum depth that consumes
+at most one byte per possible match start position.</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-C <var>NUMBER</var></span></kbd></td>
+<td>Specify the type of &quot;child table&quot; to make: 0 means none, 1 means
+byte-size (uses a little more memory), 2 means short-size (uses
+somewhat more memory), 3 means full (uses a lot more memory).
+Choices &gt; 0 make lastdb slower, and may make lastal successively
+faster.</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-x</span></kbd></td>
+<td>Just count sequences and letters.  This is much faster.  Letter
+counting is never case-sensitive.</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-v</span></kbd></td>
+<td>Be verbose: write messages about what lastdb is doing.</td></tr>
+<tr><td class="option-group">
+<kbd><span class="option">-V</span>, <span class="option">--version</span></kbd></td>
+<td>Show version information, and exit.</td></tr>
+</tbody>
+</table>
+</blockquote>
+</div>
+</div>
+<div class="section" id="limitations">
+<h2>Limitations</h2>
+<p>lastdb can become catastrophically slow for highly redundant
+sequences, e.g. two almost-identical genomes.  It usually processes
+several GB per hour, but if it becomes much slower, try option &quot;-i
+10&quot;, which is likely to solve the problem.  (If even that is too slow,
+try &quot;-i 100&quot; or so.)</p>
+</div>
+</div>
+</body>
+</html>

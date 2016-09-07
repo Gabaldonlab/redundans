@@ -1,0 +1,478 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.6: http://docutils.sourceforge.net/" />
+<title>LAST seeding schemes</title>
+<style type="text/css">
+
+/*
+:Author: David Goodger (goodger@python.org)
+:Id: $Id: html4css1.css 5951 2009-05-18 18:03:10Z milde $
+:Copyright: This stylesheet has been placed in the public domain.
+
+Default cascading style sheet for the HTML output of Docutils.
+
+See http://docutils.sf.net/docs/howto/html-stylesheets.html for how to
+customize this style sheet.
+*/
+
+/* used to remove borders from tables and images */
+.borderless, table.borderless td, table.borderless th {
+  border: 0 }
+
+table.borderless td, table.borderless th {
+  /* Override padding for "table.docutils td" with "! important".
+     The right padding separates the table cells. */
+  padding: 0 0.5em 0 0 ! important }
+
+.first {
+  /* Override more specific margin styles with "! important". */
+  margin-top: 0 ! important }
+
+.last, .with-subtitle {
+  margin-bottom: 0 ! important }
+
+.hidden {
+  display: none }
+
+a.toc-backref {
+  text-decoration: none ;
+  color: black }
+
+blockquote.epigraph {
+  margin: 2em 5em ; }
+
+dl.docutils dd {
+  margin-bottom: 0.5em }
+
+/* Uncomment (and remove this text!) to get bold-faced definition list terms
+dl.docutils dt {
+  font-weight: bold }
+*/
+
+div.abstract {
+  margin: 2em 5em }
+
+div.abstract p.topic-title {
+  font-weight: bold ;
+  text-align: center }
+
+div.admonition, div.attention, div.caution, div.danger, div.error,
+div.hint, div.important, div.note, div.tip, div.warning {
+  margin: 2em ;
+  border: medium outset ;
+  padding: 1em }
+
+div.admonition p.admonition-title, div.hint p.admonition-title,
+div.important p.admonition-title, div.note p.admonition-title,
+div.tip p.admonition-title {
+  font-weight: bold ;
+  font-family: sans-serif }
+
+div.attention p.admonition-title, div.caution p.admonition-title,
+div.danger p.admonition-title, div.error p.admonition-title,
+div.warning p.admonition-title {
+  color: red ;
+  font-weight: bold ;
+  font-family: sans-serif }
+
+/* Uncomment (and remove this text!) to get reduced vertical space in
+   compound paragraphs.
+div.compound .compound-first, div.compound .compound-middle {
+  margin-bottom: 0.5em }
+
+div.compound .compound-last, div.compound .compound-middle {
+  margin-top: 0.5em }
+*/
+
+div.dedication {
+  margin: 2em 5em ;
+  text-align: center ;
+  font-style: italic }
+
+div.dedication p.topic-title {
+  font-weight: bold ;
+  font-style: normal }
+
+div.figure {
+  margin-left: 2em ;
+  margin-right: 2em }
+
+div.footer, div.header {
+  clear: both;
+  font-size: smaller }
+
+div.line-block {
+  display: block ;
+  margin-top: 1em ;
+  margin-bottom: 1em }
+
+div.line-block div.line-block {
+  margin-top: 0 ;
+  margin-bottom: 0 ;
+  margin-left: 1.5em }
+
+div.sidebar {
+  margin: 0 0 0.5em 1em ;
+  border: medium outset ;
+  padding: 1em ;
+  background-color: #ffffee ;
+  width: 40% ;
+  float: right ;
+  clear: right }
+
+div.sidebar p.rubric {
+  font-family: sans-serif ;
+  font-size: medium }
+
+div.system-messages {
+  margin: 5em }
+
+div.system-messages h1 {
+  color: red }
+
+div.system-message {
+  border: medium outset ;
+  padding: 1em }
+
+div.system-message p.system-message-title {
+  color: red ;
+  font-weight: bold }
+
+div.topic {
+  margin: 2em }
+
+h1.section-subtitle, h2.section-subtitle, h3.section-subtitle,
+h4.section-subtitle, h5.section-subtitle, h6.section-subtitle {
+  margin-top: 0.4em }
+
+h1.title {
+  text-align: center }
+
+h2.subtitle {
+  text-align: center }
+
+hr.docutils {
+  width: 75% }
+
+img.align-left, .figure.align-left{
+  clear: left ;
+  float: left ;
+  margin-right: 1em }
+
+img.align-right, .figure.align-right {
+  clear: right ;
+  float: right ;
+  margin-left: 1em }
+
+.align-left {
+  text-align: left }
+
+.align-center {
+  clear: both ;
+  text-align: center }
+
+.align-right {
+  text-align: right }
+
+/* reset inner alignment in figures */
+div.align-right {
+  text-align: left }
+
+/* div.align-center * { */
+/*   text-align: left } */
+
+ol.simple, ul.simple {
+  margin-bottom: 1em }
+
+ol.arabic {
+  list-style: decimal }
+
+ol.loweralpha {
+  list-style: lower-alpha }
+
+ol.upperalpha {
+  list-style: upper-alpha }
+
+ol.lowerroman {
+  list-style: lower-roman }
+
+ol.upperroman {
+  list-style: upper-roman }
+
+p.attribution {
+  text-align: right ;
+  margin-left: 50% }
+
+p.caption {
+  font-style: italic }
+
+p.credits {
+  font-style: italic ;
+  font-size: smaller }
+
+p.label {
+  white-space: nowrap }
+
+p.rubric {
+  font-weight: bold ;
+  font-size: larger ;
+  color: maroon ;
+  text-align: center }
+
+p.sidebar-title {
+  font-family: sans-serif ;
+  font-weight: bold ;
+  font-size: larger }
+
+p.sidebar-subtitle {
+  font-family: sans-serif ;
+  font-weight: bold }
+
+p.topic-title {
+  font-weight: bold }
+
+pre.address {
+  margin-bottom: 0 ;
+  margin-top: 0 ;
+  font: inherit }
+
+pre.literal-block, pre.doctest-block {
+  margin-left: 2em ;
+  margin-right: 2em }
+
+span.classifier {
+  font-family: sans-serif ;
+  font-style: oblique }
+
+span.classifier-delimiter {
+  font-family: sans-serif ;
+  font-weight: bold }
+
+span.interpreted {
+  font-family: sans-serif }
+
+span.option {
+  white-space: nowrap }
+
+span.pre {
+  white-space: pre }
+
+span.problematic {
+  color: red }
+
+span.section-subtitle {
+  /* font-size relative to parent (h1..h6 element) */
+  font-size: 80% }
+
+table.citation {
+  border-left: solid 1px gray;
+  margin-left: 1px }
+
+table.docinfo {
+  margin: 2em 4em }
+
+table.docutils {
+  margin-top: 0.5em ;
+  margin-bottom: 0.5em }
+
+table.footnote {
+  border-left: solid 1px black;
+  margin-left: 1px }
+
+table.docutils td, table.docutils th,
+table.docinfo td, table.docinfo th {
+  padding-left: 0.5em ;
+  padding-right: 0.5em ;
+  vertical-align: top }
+
+table.docutils th.field-name, table.docinfo th.docinfo-name {
+  font-weight: bold ;
+  text-align: left ;
+  white-space: nowrap ;
+  padding-left: 0 }
+
+h1 tt.docutils, h2 tt.docutils, h3 tt.docutils,
+h4 tt.docutils, h5 tt.docutils, h6 tt.docutils {
+  font-size: 100% }
+
+ul.auto-toc {
+  list-style-type: none }
+
+</style>
+<style type="text/css">
+
+/* Style sheet for LAST HTML documents */
+h1 { color: navy }
+h2 { color: teal }
+div.document { margin-left: auto; margin-right: auto; max-width: 45em }
+strong { color: red }
+.option-list td { padding-bottom: 1em }
+table.field-list { border: thin solid green }
+
+</style>
+</head>
+<body>
+<div class="document" id="last-seeding-schemes">
+<h1 class="title">LAST seeding schemes</h1>
+
+<p>LAST's critical first step is to find <em>seeds</em>, i.e. initial matches
+between query and reference sequences.  It can use various seeding
+schemes, which allow different kinds of mismatches at different seed
+positions.</p>
+<div class="note">
+<p class="first admonition-title">Note</p>
+<p>A seeding scheme consists of a seed alphabet, such as:</p>
+<pre class="literal-block">
+1  A C G T
+0  ACGT
+T  AG CT
+</pre>
+<p>and one or more patterns, such as this one:</p>
+<pre class="literal-block">
+1T1T10T1101101
+</pre>
+<p>Each symbol in a pattern represents a grouping of sequence letters:
+in this example, <tt class="docutils literal">T</tt> represents the grouping <tt class="docutils literal">AG CT</tt>.  At each
+position in an initial match, mismatches are allowed between
+letters that are grouped at that position in the pattern.</p>
+<p class="last">Although the patterns have fixed lengths, LAST's initial matches do
+not.  LAST finds shorter matches by using a prefix of the pattern,
+and longer matches by cyclically repeating the pattern.</p>
+</div>
+<div class="section" id="bisf">
+<h2>BISF</h2>
+<p>This seeding scheme is for aligning bisulfite-converted DNA
+<em>forward</em> strands to a closely-related genome (MC Frith, R Mori, K
+Asai, NAR 2012 40:e100).
+It uses this seed alphabet:</p>
+<pre class="literal-block">
+1  CT A G
+0  ACGT
+</pre>
+<p>And this pattern:</p>
+<pre class="literal-block">
+1111110101100
+</pre>
+<p>It sets this lastdb default:
+-w2</p>
+<p>It sets this lastal default:
+-pBISF</p>
+</div>
+<div class="section" id="bisr">
+<h2>BISR</h2>
+<p>This seeding scheme is for aligning bisulfite-converted DNA
+<em>reverse</em> strands to a closely-related genome (MC Frith, R Mori, K
+Asai, NAR 2012 40:e100).
+It uses this seed alphabet:</p>
+<pre class="literal-block">
+1  AG C T
+0  ACGT
+</pre>
+<p>And this pattern:</p>
+<pre class="literal-block">
+1111110101100
+</pre>
+<p>It sets this lastdb default:
+-w2</p>
+<p>It sets this lastal default:
+-pBISR</p>
+</div>
+<div class="section" id="mam4">
+<h2>MAM4</h2>
+<p>This DNA seeding scheme is like MAM8, but a bit less sensitive, and
+uses about half as much memory.  [From Frith &amp; Noé 2014 NAR 42:e59
+Table S11, row 12.]
+It uses this seed alphabet:</p>
+<pre class="literal-block">
+1  A C G T
+0  ACGT
+T  AG CT
+</pre>
+<p>And these patterns:</p>
+<pre class="literal-block">
+11100TT01T00T10TTTT
+TTTT110TT0T001T0T1T1
+11TT010T01TT0001T
+11TT10T1T101TT
+</pre>
+</div>
+<div class="section" id="mam8">
+<h2>MAM8</h2>
+<p>This DNA seeding scheme finds weak similarities with high
+sensitivity, but low speed and high memory usage (e.g. ~50 GB for
+mammal genomes).  [From Frith &amp; Noé 2014 NAR 42:e59 Table S12, row
+15.]
+It uses this seed alphabet:</p>
+<pre class="literal-block">
+1  A C G T
+0  ACGT
+T  AG CT
+</pre>
+<p>And these patterns:</p>
+<pre class="literal-block">
+1101T1T0T1T00TT1TT
+1TTTTT010TT0TT01011TTT
+1TTTT10010T011T0TTTT1
+111T011T0T01T100
+1T10T100TT01000TT01TT11
+111T101TT000T0T10T00T1T
+111100T011TTT00T0TT01T
+1T1T10T1101101
+</pre>
+</div>
+<div class="section" id="murphy10">
+<h2>MURPHY10</h2>
+<p>This protein seeding scheme is popular for finding long-and-weak
+similarities (LR Murphy et al. Protein Eng. 2000 13:149).
+It uses this seed alphabet:</p>
+<pre class="literal-block">
+1  ILMV FWY A C G H P KR ST DENQ
+</pre>
+<p>And this pattern:</p>
+<pre class="literal-block">
+1
+</pre>
+<p>It sets this lastdb default:
+-p</p>
+</div>
+<div class="section" id="near">
+<h2>NEAR</h2>
+<p>This DNA seeding scheme is good for finding short-and-strong
+(near-identical) similarities.  It is also good for similarities
+with many gaps (insertions and deletions), because it can find the
+short matches between the gaps.  (Long-and-weak seeding schemes
+allow for mismatches but not gaps.)
+It uses this seed alphabet:</p>
+<pre class="literal-block">
+1  A C G T
+0  ACGT
+</pre>
+<p>And this pattern:</p>
+<pre class="literal-block">
+1111110
+</pre>
+<p>It sets this lastal default:
+-r6 -q18 -a21 -b9</p>
+</div>
+<div class="section" id="yass">
+<h2>YASS</h2>
+<p>This DNA seeding scheme is good for finding long-and-weak
+similarities.  It is a good compromise for both protein-coding and
+non protein-coding DNA (L Noé &amp; G Kucherov, NAR 2005 33:W540-W543).
+It uses this seed alphabet:</p>
+<pre class="literal-block">
+1  A C G T
+0  ACGT
+T  AG CT
+</pre>
+<p>And this pattern:</p>
+<pre class="literal-block">
+1T1001100101
+</pre>
+</div>
+</div>
+</body>
+</html>

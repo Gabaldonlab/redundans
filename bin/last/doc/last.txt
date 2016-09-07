@@ -1,0 +1,107 @@
+LAST: Genome-Scale Sequence Comparison
+======================================
+
+LAST finds similar regions between sequences, and aligns them.  It is
+designed for comparing large datasets to each other (e.g. vertebrate
+genomes and/or large numbers of DNA reads).  It can:
+
+* Indicate the (un)ambiguity of each column in an alignment.
+* Use sequence quality data in a rigorous fashion.
+* Align DNA to proteins with frameshifts.
+* Compare PSSMs to sequences.
+* Calculate the likelihood of chance similarities between random
+  sequences.
+* Do split and spliced alignment.
+* Train alignment parameters for unusual kinds of sequence (e.g. nanopore).
+
+Requirements
+------------
+
+To handle mammalian genomes, it's best if you have at least 10-20
+gigabytes of real memory, but you can get by with 2 gigabytes.
+
+To install the software, you need a C++ compiler.  On Linux, you might
+need to install a package called "g++".  On Mac, you might need to
+install command-line developer tools.  On Windows, you might need to
+install Cygwin.
+
+Setup
+-----
+
+Using the command line, go into the top-level LAST directory.  To
+compile the programs, type::
+
+  make
+
+If your compiler is really old, you might get an error message like
+this::
+
+  unrecognized command line option "-std=c++11"
+
+In that case, you can compile like this (which will disable
+multi-threading)::
+
+  make CXXFLAGS=-O3
+
+Install (optional)
+------------------
+
+You can copy the programs and scripts to a standard "bin" directory
+(using "sudo" to request administrator permissions)::
+
+  sudo make install
+
+Or copy them to your personal bin directory::
+
+  make install prefix=~
+
+You might have to log out and back in before your computer recognizes
+the new programs.
+
+Usage
+-----
+
+Please see the other files in the doc directory, especially
+`<last-tutorial.html>`_.
+
+Detailed info & citation
+------------------------
+
+Please see: `<last-papers.html>`_
+
+License
+-------
+
+LAST (including the scripts) is distributed under the GNU General
+Public License, either version 3 of the License, or (at your option)
+any later version.
+
+Website
+-------
+
+LAST's website is: http://last.cbrc.jp/
+
+Contact
+-------
+
+Questions and feedback are very welcome.  We like to use a **public**
+mailing list, so everyone can benefit from the discussion:
+
+  last-align (ATmark) googlegroups (dot) com
+
+Please let us know about any problems, rather than giving up in
+disgust.  Feedback is essential for scientific software like this: we
+cannot solve problems that we are unaware of, and we cannot make it
+useful and convenient without learning how various people actually
+(try to) use it.  It is also valuable to hear success stories, so we
+know what we are doing right.  Unlike some other software projects, we
+will never send rude or mocking replies.
+
+Having said that, we cannot promise to always help.  **If you find an
+error, please try to: tell us the LAST version number and exact error
+message, and give us some input data and exact commands that trigger
+the problem.**
+
+If you do a benchmarking test of LAST, we recommend you contact us to
+check you are using it in a suitable way.  The history of
+bioinformatics benchmarks shows it is all too easy to get this wrong.

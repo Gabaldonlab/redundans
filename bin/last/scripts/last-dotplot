@@ -1,0 +1,414 @@
+#! /usr/bin/env python
+
+# Read pair-wise alignments in MAF or LAST tabular format: write an
+# "Oxford grid", a.k.a. dotplot.
+
+# TODO: Currently, pixels with zero aligned nt-pairs are white, and
+# pixels with one or more aligned nt-pairs are black.  This can look
+# too crowded for large genome alignments.  I tried shading each pixel
+# according to the number of aligned nt-pairs within it, but the
+# result is too faint.  How can this be done better?
+
+import fileinput, fnmatch, itertools, optparse, os, re, sys
+
+# Try to make PIL/PILLOW work:
+try: from PIL import Image, ImageDraw, ImageFont, ImageColor
+except ImportError: import Image, ImageDraw, ImageFont, ImageColor
+
+def warn(message):
+    prog = os.path.basename(sys.argv[0])
+    sys.stderr.write(prog + ": " + message + "\n")
+
+def tabBlocks(beg1, beg2, blocks):
+    '''Get the gapless blocks of an alignment, from LAST tabular format.'''
+    for i in blocks.split(","):
+        if ":" in i:
+            x, y = i.split(":")
+            beg1 += int(x)
+            beg2 += int(y)
+        else:
+            size = int(i)
+            yield beg1, beg2, size
+            beg1 += size
+            beg2 += size
+
+def mafBlocks(beg1, beg2, seq1, seq2):
+    '''Get the gapless blocks of an alignment, from MAF format.'''
+    size = 0
+    for x, y in itertools.izip(seq1, seq2):
+        if x == "-":
+            if size:
+                yield beg1, beg2, size
+                beg1 += size
+                beg2 += size
+                size = 0
+            beg2 += 1
+        elif y == "-":
+            if size:
+                yield beg1, beg2, size
+                beg1 += size
+                beg2 += size
+                size = 0
+            beg1 += 1
+        else:
+            size += 1
+    if size: yield beg1, beg2, size
+
+def alignmentInput(lines):
+    '''Get alignments and sequence lengths, from MAF or tabular format.'''
+    mafCount = 0
+    for line in lines:
+        w = line.split()
+        if line[0].isdigit():  # tabular format
+            chr1, beg1, seqlen1 = w[1], int(w[2]), int(w[5])
+            if w[4] == "-": beg1 -= seqlen1
+            chr2, beg2, seqlen2 = w[6], int(w[7]), int(w[10])
+            if w[9] == "-": beg2 -= seqlen2
+            blocks = tabBlocks(beg1, beg2, w[11])
+            yield chr1, seqlen1, chr2, seqlen2, blocks
+        elif line[0] == "s":  # MAF format
+            if mafCount == 0:
+                chr1, beg1, seqlen1, seq1 = w[1], int(w[2]), int(w[5]), w[6]
+                if w[4] == "-": beg1 -= seqlen1
+                mafCount = 1
+            else:
+                chr2, beg2, seqlen2, seq2 = w[1], int(w[2]), int(w[5]), w[6]
+                if w[4] == "-": beg2 -= seqlen2
+                blocks = mafBlocks(beg1, beg2, seq1, seq2)
+                yield chr1, seqlen1, chr2, seqlen2, blocks
+                mafCount = 0
+
+def isWantedSequenceName(name, patterns):
+    if not patterns: return True
+    base = name.split(".")[-1]  # allow for names like hg19.chr7
+    for i in patterns:
+        if fnmatch.fnmatchcase(name, i): return True
+        if fnmatch.fnmatchcase(base, i): return True
+    return False
+
+def readAlignments(fileName, opts):
+    '''Get alignments and sequence lengths, from MAF or tabular format.'''
+    alignments = []
+    seqLengths1 = {}
+    seqLengths2 = {}
+    lines = fileinput.input(fileName)
+    for chr1, seqlen1, chr2, seqlen2, blocks in alignmentInput(lines):
+        if not isWantedSequenceName(chr1, opts.seq1): continue
+        if not isWantedSequenceName(chr2, opts.seq2): continue
+        aln = chr1, chr2, blocks
+        alignments.append(aln)
+        seqLengths1[chr1] = seqlen1
+        seqLengths2[chr2] = seqlen2
+    return alignments, seqLengths1, seqLengths2
+
+def natural_sort_key(my_string):
+    '''Return a sort key for "natural" ordering, e.g. chr9 < chr10.'''
+    parts = re.split(r'(\d+)', my_string)
+    parts[1::2] = map(int, parts[1::2])
+    return parts
+
+def get_text_sizes(my_strings, font, fontsize, image_mode):
+    '''Get widths & heights, in pixels, of some strings.'''
+    if fontsize == 0: return [(0, 0) for i in my_strings]
+    image_size = 1, 1
+    im = Image.new(image_mode, image_size)
+    draw = ImageDraw.Draw(im)
+    return [draw.textsize(i, font=font) for i in my_strings]
+
+def get_seq_info(seq_size_dic, font, fontsize, image_mode):
+    '''Return miscellaneous information about the sequences.'''
+    seq_names = seq_size_dic.keys()
+    seq_names.sort(key=natural_sort_key)
+    seq_sizes = [seq_size_dic[i] for i in seq_names]
+    name_sizes = get_text_sizes(seq_names, font, fontsize, image_mode)
+    margin = max(zip(*name_sizes)[1])  # maximum text height
+    return seq_names, seq_sizes, name_sizes, margin
+
+def div_ceil(x, y):
+    '''Return x / y rounded up.'''
+    q, r = divmod(x, y)
+    return q + (r != 0)
+
+def tot_seq_pix(seq_sizes, bp_per_pix):
+    '''Return the total pixels needed for sequences of the given sizes.'''
+    return sum([div_ceil(i, bp_per_pix) for i in seq_sizes])
+
+def get_bp_per_pix(seq_sizes, pix_tween_seqs, pix_limit):
+    '''Get the minimum bp-per-pixel that fits in the size limit.'''
+    seq_num = len(seq_sizes)
+    seq_pix_limit = pix_limit - pix_tween_seqs * (seq_num - 1)
+    if seq_pix_limit < seq_num:
+        raise Exception("can't fit the image: too many sequences?")
+    lower_bound = div_ceil(sum(seq_sizes), seq_pix_limit)
+    for bp_per_pix in itertools.count(lower_bound):  # slow linear search
+        if tot_seq_pix(seq_sizes, bp_per_pix) <= seq_pix_limit: break
+    return bp_per_pix
+
+def get_seq_starts(seq_pix, pix_tween_seqs, margin):
+    '''Get the start pixel for each sequence.'''
+    seq_starts = []
+    pix_tot = margin - pix_tween_seqs
+    for i in seq_pix:
+        pix_tot += pix_tween_seqs
+        seq_starts.append(pix_tot)
+        pix_tot += i
+    return seq_starts
+
+def get_pix_info(seq_sizes, bp_per_pix, pix_tween_seqs, margin):
+    '''Return pixel information about the sequences.'''
+    seq_pix = [div_ceil(i, bp_per_pix) for i in seq_sizes]
+    seq_starts = get_seq_starts(seq_pix, pix_tween_seqs, margin)
+    tot_pix = seq_starts[-1] + seq_pix[-1]
+    return seq_pix, seq_starts, tot_pix
+
+def drawLineForward(hits, width, bp_per_pix, origin, beg1, beg2, size):
+    while True:
+        q1, r1 = divmod(beg1, bp_per_pix)
+        q2, r2 = divmod(beg2, bp_per_pix)
+        hits[origin + q2 * width + q1] |= 1
+        next_pix = min(bp_per_pix - r1, bp_per_pix - r2)
+        if next_pix >= size: break
+        beg1 += next_pix
+        beg2 += next_pix
+        size -= next_pix
+
+def drawLineReverse(hits, width, bp_per_pix, origin, beg1, beg2, size):
+    beg2 = -1 - beg2
+    while True:
+        q1, r1 = divmod(beg1, bp_per_pix)
+        q2, r2 = divmod(beg2, bp_per_pix)
+        hits[origin + q2 * width + q1] |= 2
+        next_pix = min(bp_per_pix - r1, r2 + 1)
+        if next_pix >= size: break
+        beg1 += next_pix
+        beg2 -= next_pix
+        size -= next_pix
+
+def alignmentPixels(width, height, alignments, bp_per_pix,
+                    seq_start_dic1, seq_start_dic2):
+    hits = [0] * (width * height)  # the image data
+    for seq1, seq2, blocks in alignments:
+        seq_start1 = seq_start_dic1[seq1]
+        seq_start2 = seq_start_dic2[seq2]
+        origin = seq_start2 * width + seq_start1
+        for beg1, beg2, size in blocks:
+            if beg1 < 0:
+                beg1 = -(beg1 + size)
+                beg2 = -(beg2 + size)
+            if beg2 >= 0:
+                drawLineForward(hits, width, bp_per_pix, origin,
+                                beg1, beg2, size)
+            else:
+                drawLineReverse(hits, width, bp_per_pix, origin,
+                                beg1, beg2, size)
+    return hits
+
+def expandedSeqDict(seqDict):
+    '''Allow lookup by short sequence names, e.g. chr7 as well as hg19.chr7.'''
+    newDict = {}
+    for name, x in seqDict.items():
+        base = name.split(".")[-1]
+        newDict[name] = x
+        newDict[base] = x
+    return newDict
+
+def isExtraFirstGapField(fields):
+    return fields[4].isdigit()
+
+def readGaps(fileName):
+    '''Read locations of unsequenced gaps, from an agp or gap file.'''
+    if not fileName: return
+    for line in fileinput.input(fileName):
+        w = line.split()
+        if not w or w[0][0] == "#": continue
+        if isExtraFirstGapField(w): w = w[1:]
+        if w[4] not in "NU": continue
+        seqName = w[0]
+        end = int(w[2])
+        beg = end - int(w[5])  # zero-based coordinate
+        bridgedText = w[7]
+        yield seqName, beg, end, bridgedText
+
+def drawUnsequencedGaps(im, gaps, start_dic, margin, limit, isTop, bridgedText,
+                        bp_per_pix, color):
+    '''Draw rectangles representing unsequenced gaps.'''
+    for seqName, beg, end, b in gaps:
+        if b != bridgedText: continue
+        if seqName not in start_dic: continue
+        origin = start_dic[seqName]
+        b = div_ceil(beg, bp_per_pix)  # use fully-covered pixels only
+        e = end // bp_per_pix
+        if e <= b: continue
+        if isTop: box = origin + b, margin, origin + e, limit
+        else:     box = margin, origin + b, limit, origin + e
+        im.paste(color, box)
+
+def make_label(text, text_size, range_start, range_size):
+    '''Return an axis label with endpoint & sort-order information.'''
+    text_width  = text_size[0]
+    label_start = range_start + (range_size - text_width) // 2
+    label_end   = label_start + text_width
+    sort_key    = text_width - range_size
+    return sort_key, label_start, label_end, text
+
+def get_nonoverlapping_labels(labels, label_space):
+    '''Get a subset of non-overlapping axis labels, greedily.'''
+    nonoverlapping_labels = []
+    for i in labels:
+        if True not in [i[1] < j[2] + label_space and j[1] < i[2] + label_space
+                        for j in nonoverlapping_labels]:
+            nonoverlapping_labels.append(i)
+    return nonoverlapping_labels
+
+def get_axis_image(seq_names, name_sizes, seq_starts, seq_pix,
+                   font, image_mode, opts):
+    '''Make an image of axis labels.'''
+    min_pos = seq_starts[0]
+    max_pos = seq_starts[-1] + seq_pix[-1]
+    height = max(zip(*name_sizes)[1])
+    labels = [make_label(i, j, k, l) for i, j, k, l in
+              zip(seq_names, name_sizes, seq_starts, seq_pix)]
+    labels = [i for i in labels if i[1] >= min_pos and i[2] <= max_pos]
+    labels.sort()
+    labels = get_nonoverlapping_labels(labels, opts.label_space)
+    image_size = max_pos, height
+    im = Image.new(image_mode, image_size, opts.border_shade)
+    draw = ImageDraw.Draw(im)
+    for i in labels:
+        position = i[1], 0
+        draw.text(position, i[3], font=font, fill=opts.text_color)
+    return im
+
+def lastDotplot(opts, args):
+    if opts.fontfile:  font = ImageFont.truetype(opts.fontfile, opts.fontsize)
+    else:              font = ImageFont.load_default()
+
+    image_mode = 'RGB'
+    forward_color = ImageColor.getcolor(opts.forwardcolor, image_mode)
+    reverse_color = ImageColor.getcolor(opts.reversecolor, image_mode)
+    zipped_colors = zip(forward_color, reverse_color)
+    overlap_color = tuple([(i + j) // 2 for i, j in zipped_colors])
+
+    warn("reading alignments...")
+    alignments, seq_size_dic1, seq_size_dic2 = readAlignments(args[0], opts)
+    warn("done")
+
+    if not alignments: raise Exception("there are no alignments")
+
+    seq_info1 = get_seq_info(seq_size_dic1, font, opts.fontsize, image_mode)
+    seq_info2 = get_seq_info(seq_size_dic2, font, opts.fontsize, image_mode)
+    seq_names1, seq_sizes1, name_sizes1, margin1 = seq_info1
+    seq_names2, seq_sizes2, name_sizes2, margin2 = seq_info2
+
+    warn("choosing bp per pixel...")
+    pix_limit1 = opts.width  - margin1
+    pix_limit2 = opts.height - margin2
+    bp_per_pix1 = get_bp_per_pix(seq_sizes1, opts.pix_tween_seqs, pix_limit1)
+    bp_per_pix2 = get_bp_per_pix(seq_sizes2, opts.pix_tween_seqs, pix_limit2)
+    bp_per_pix = max(bp_per_pix1, bp_per_pix2)
+    warn("bp per pixel = " + str(bp_per_pix))
+
+    seq_pix1, seq_starts1, width  = get_pix_info(seq_sizes1, bp_per_pix,
+                                                 opts.pix_tween_seqs, margin1)
+    seq_pix2, seq_starts2, height = get_pix_info(seq_sizes2, bp_per_pix,
+                                                 opts.pix_tween_seqs, margin2)
+    seq_start_dic1 = dict(zip(seq_names1, seq_starts1))
+    seq_start_dic2 = dict(zip(seq_names2, seq_starts2))
+
+    warn("processing alignments...")
+    hits = alignmentPixels(width, height, alignments, bp_per_pix,
+                           seq_start_dic1, seq_start_dic2)
+    warn("done")
+
+    image_size = width, height
+    im = Image.new(image_mode, image_size, opts.background_color)
+
+    start_dic1 = expandedSeqDict(seq_start_dic1)
+    start_dic2 = expandedSeqDict(seq_start_dic2)
+    gaps1 = list(readGaps(opts.gap1))
+    gaps2 = list(readGaps(opts.gap2))
+    # draw bridged gaps first, then unbridged gaps on top:
+    drawUnsequencedGaps(im, gaps1, start_dic1, margin2, height, True, "yes",
+                        bp_per_pix, opts.bridged_color)
+    drawUnsequencedGaps(im, gaps2, start_dic2, margin1, width, False, "yes",
+                        bp_per_pix, opts.bridged_color)
+    drawUnsequencedGaps(im, gaps1, start_dic1, margin2, height, True, "no",
+                        bp_per_pix, opts.unbridged_color)
+    drawUnsequencedGaps(im, gaps2, start_dic2, margin1, width, False, "no",
+                        bp_per_pix, opts.unbridged_color)
+
+    for i in range(height):
+        for j in range(width):
+            store_value = hits[i * width + j]
+            xy = j, i
+            if   store_value == 1: im.putpixel(xy, forward_color)
+            elif store_value == 2: im.putpixel(xy, reverse_color)
+            elif store_value == 3: im.putpixel(xy, overlap_color)
+
+    if opts.fontsize != 0:
+        axis1 = get_axis_image(seq_names1, name_sizes1, seq_starts1, seq_pix1,
+                               font, image_mode, opts)
+        axis2 = get_axis_image(seq_names2, name_sizes2, seq_starts2, seq_pix2,
+                               font, image_mode, opts)
+        axis2 = axis2.rotate(270)
+        im.paste(axis1, (0, 0))
+        im.paste(axis2, (0, 0))
+
+    for i in seq_starts1[1:]:
+        box = i - opts.pix_tween_seqs, margin2, i, height
+        im.paste(opts.border_shade, box)
+
+    for i in seq_starts2[1:]:
+        box = margin1, i - opts.pix_tween_seqs, width, i
+        im.paste(opts.border_shade, box)
+
+    im.save(args[1])
+
+if __name__ == "__main__":
+    usage = """%prog --help
+   or: %prog [options] maf-or-tab-alignments dotplot.png
+   or: %prog [options] maf-or-tab-alignments dotplot.gif
+   or: ..."""
+    description = "Draw a dotplot of pair-wise sequence alignments in MAF or tabular format."
+    op = optparse.OptionParser(usage=usage, description=description)
+    op.add_option("-1", "--seq1", metavar="PATTERN", action="append",
+                  help="which sequences to show from the 1st genome")
+    op.add_option("-2", "--seq2", metavar="PATTERN", action="append",
+                  help="which sequences to show from the 2nd genome")
+    # Replace "width" & "height" with a single "length" option?
+    op.add_option("-x", "--width", type="int", default=1000,
+                  help="maximum width in pixels (default: %default)")
+    op.add_option("-y", "--height", type="int", default=1000,
+                  help="maximum height in pixels (default: %default)")
+    op.add_option("-f", "--fontfile", metavar="FILE",
+                  help="TrueType or OpenType font file")
+    op.add_option("-s", "--fontsize", metavar="SIZE", type="int", default=11,
+                  help="TrueType or OpenType font size (default: %default)")
+    op.add_option("-c", "--forwardcolor", metavar="COLOR", default="red",
+                  help="color for forward alignments (default: %default)")
+    op.add_option("-r", "--reversecolor", metavar="COLOR", default="blue",
+                  help="color for reverse alignments (default: %default)")
+    og = optparse.OptionGroup(op, "Unsequenced gap options")
+    og.add_option("--gap1", metavar="FILE",
+                  help="read genome1 unsequenced gaps from agp or gap file")
+    og.add_option("--gap2", metavar="FILE",
+                  help="read genome2 unsequenced gaps from agp or gap file")
+    og.add_option("--bridged-color", metavar="COLOR", default="yellow",
+                  help="color for bridged gaps (default: %default)")
+    og.add_option("--unbridged-color", metavar="COLOR", default="pink",
+                  help="color for unbridged gaps (default: %default)")
+    op.add_option_group(og)
+    (opts, args) = op.parse_args()
+    if len(args) != 2: op.error("2 arguments needed")
+
+    opts.text_color = "black"
+    opts.background_color = "white"
+    opts.pix_tween_seqs = 2  # number of border pixels between sequences
+    opts.border_shade = 239, 239, 239  # the shade of grey for border pixels
+    opts.label_space = 5     # minimum number of pixels between axis labels
+
+    try: lastDotplot(opts, args)
+    except KeyboardInterrupt: pass  # avoid silly error message
+    except Exception, e:
+        prog = os.path.basename(sys.argv[0])
+        sys.exit(prog + ": error: " + str(e))

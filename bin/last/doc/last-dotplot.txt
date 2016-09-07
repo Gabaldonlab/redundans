@@ -1,0 +1,98 @@
+last-dotplot
+============
+
+This script makes a dotplot, a.k.a. Oxford Grid, of pair-wise sequence
+alignments in MAF or LAST tabular format.  It requires the Python
+Imaging Library to be installed.  It can be used like this::
+
+  last-dotplot my-alignments my-plot.png
+
+The output can be in any format supported by the Imaging Library::
+
+  last-dotplot alns alns.gif
+
+To get a nicer font, try something like::
+
+  last-dotplot -f /usr/share/fonts/truetype/freefont/FreeSans.ttf alns alns.png
+
+If the fonts are located somewhere different on your computer, change
+this as appropriate.
+
+Choosing sequences
+------------------
+
+If there are too many sequences, the dotplot will be very cluttered,
+or the script might give up with an error message.  You can exclude
+sequences with names like "chrUn_random522" like this::
+
+  last-dotplot -1 'chr[!U]*' -2 'chr[!U]*' alns alns.png
+
+Option "-1" selects sequences from the 1st genome, and "-2" selects
+sequences from the 2nd genome.  'chr[!U]*' is a *pattern* that
+specifies names starting with "chr", followed by any character except
+U, followed by anything.
+
+==========  =============================
+Pattern     Meaning
+----------  -----------------------------
+``*``       zero or more of any character
+``?``       any single character
+``[abc]``   any character in abc
+``[!abc]``  any character not in abc
+==========  =============================
+
+If a sequence name has a dot (e.g. "hg19.chr7"), the pattern is
+compared to both the whole name and the part after the dot.
+
+You can specify more than one pattern, e.g. this gets sequences with
+names starting in "chr" followed by one or two characters::
+
+  last-dotplot -1 'chr?' -1 'chr??' alns alns.png
+
+Options
+-------
+
+  -h, --help
+      Show a help message, with default option values, and exit.
+
+  -1 PATTERN, --seq1=PATTERN
+      Which sequences to show from the 1st genome.
+
+  -2 PATTERN, --seq2=PATTERN
+      Which sequences to show from the 2nd genome.
+
+  -x WIDTH, --width=WIDTH
+      Maximum width in pixels.
+
+  -y HEIGHT, --height=HEIGHT
+      Maximum height in pixels.
+
+  -f FILE, --fontfile=FILE
+      TrueType or OpenType font file.
+
+  -s SIZE, --fontsize=SIZE
+      TrueType or OpenType font size.
+
+  -c COLOR, --forwardcolor=COLOR
+      Color for forward alignments.
+
+  -r COLOR, --reversecolor=COLOR
+      Color for reverse alignments.
+
+Unsequenced gap options
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Note: these "gaps" are *not* alignment gaps (indels): they are regions
+of unknown sequence.
+
+  --gap1=FILE
+      Read unsequenced gaps in the 1st genome from an agp or gap file.
+  --gap2=FILE
+      Read unsequenced gaps in the 2nd genome from an agp or gap file.
+  --bridged-color=COLOR
+      Color for bridged gaps.
+  --unbridged-color=COLOR
+      Color for unbridged gaps.
+
+An unsequenced gap will be shown only if it covers at least one whole
+pixel.

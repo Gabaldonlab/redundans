@@ -1,0 +1,7 @@
+/* Style sheet for LAST HTML documents */
+h1 { color: navy }
+h2 { color: teal }
+div.document { margin-left: auto; margin-right: auto; max-width: 45em }
+strong { color: red }
+.option-list td { padding-bottom: 1em }
+table.field-list { border: thin solid green }

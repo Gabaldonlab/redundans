@@ -1,0 +1,17 @@
+# This DNA seeding scheme finds weak similarities with high
+# sensitivity, but low speed and high memory usage (e.g. ~50 GB for
+# mammal genomes).  [From Frith & Noé 2014 NAR 42:e59 Table S12, row
+# 15.]
+
+1  A C G T
+0  ACGT
+T  AG CT
+
+1101T1T0T1T00TT1TT
+1TTTTT010TT0TT01011TTT
+1TTTT10010T011T0TTTT1
+111T011T0T01T100
+1T10T100TT01000TT01TT11
+111T101TT000T0T10T00T1T
+111100T011TTT00T0TT01T
+1T1T10T1101101

@@ -1,0 +1,10 @@
+# This scoring scheme is for aligning bisulfite-converted DNA forward
+# strands to a closely-related genome (MC Frith, R Mori, K Asai, NAR
+# 2012 40(13):e100).
+
+#last -a21 -b9
+    A   C   G   T
+A   6 -18 -18 -18
+C -18   6 -18   3
+G -18 -18   6 -18
+T -18 -18 -18   3
