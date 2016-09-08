@@ -259,7 +259,7 @@ def _corrupted_file(fname):
        not os.path.isfile(fname+".fai") or not os.path.getsize(fname+".fai"):
         return True
 
-def prepare_contigs(fasta, contigsFname, minLength=200, seqlimit=9999999):
+def prepare_contigs(fasta, contigsFname, minLength=200):
     """Sort contigs starting from the longest and remove too short"""
     with open(contigsFname, "w") as out:
         # init fasta index
@@ -272,10 +272,6 @@ def prepare_contigs(fasta, contigsFname, minLength=200, seqlimit=9999999):
             seq = faidx.__getitem__(c, name=str(i))
             out.write(seq)
         sys.stderr.write(' %s sequences stored.\n'%i)
-        # warn about too many contigs
-        if i>seqlimit:
-            sys.stderr.write("[WARNING] Redundans in its current implementation support up to %s contigs!\n"%seqlimit)
-            sys.exit(1)
         
 def redundans(fastq, fasta, outdir, mapq, threads, resume, 
               identity, overlap, minLength, \

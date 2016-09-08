@@ -32,7 +32,6 @@ def fasta2hits(fasta, threads, identityTh, overlapTh, joinOverlap, endTrimming, 
     """Return valid hits. """
     overlapping = []
     hits = []
-    added = set()
     # execute last
     last = run_last(fasta.name, identityTh, threads, verbose)
     for l in last.stdout: 
@@ -42,9 +41,8 @@ def fasta2hits(fasta, threads, identityTh, overlapTh, joinOverlap, endTrimming, 
         (score, q, qstart, qalg, qstrand, qsize, t, tstart, talg, tstrand, tsize, blocks) = l.split()[:12]
         (score, qstart, qalg, qsize, tstart, talg, tsize) = map(int, (score, qstart, qalg, qsize, tstart, talg, tsize))
         # skip reverse matches
-        if q==t or tsize<qsize or float("%s.%s1"%(t,q)) in added: 
+        if q==t or tsize<qsize: 
             continue
-        added.add(float("%s.%s1"%(t,q)))
         #get score, identity & overlap # LASTal is using +1/-1 for match/mismatch, while I need +1/0
         identity = 1.0 * (score+(qalg-score)/2) / qalg
         overlap  = 1.0 * qalg / qsize
@@ -56,7 +54,7 @@ def fasta2hits(fasta, threads, identityTh, overlapTh, joinOverlap, endTrimming, 
         #data =(t, tsize, tstart, tend, q, qsize, qstart, qend, tstrand, identity, overlap, score)
         data = (score, t, q, qend-qstart, identity)
         hits.append("_".join(map(str, data)))
-        
+        # MAKE THIS GENERATOR!!!
     return hits, overlapping
     
 def hits2skip(hits, faidx, verbose):
