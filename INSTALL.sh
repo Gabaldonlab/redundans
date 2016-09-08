@@ -65,13 +65,17 @@ fi
 
 
 echo `date` " Downloading Redundans..."
-#wget -q -O redundans.tgz https://github.com/lpryszcz/redundans/archive/$branch.tar.gz
-#tar xpfz redundans.tgz && mv redundans-$branch redundans && rm redundans.tgz
-git clone -b $branch --recursive https://github.com/lpryszcz/redundans.git
+git clone -b $branch --recursive https://github.com/lpryszcz/redundans.git >> $log 2>&1 
 cd redundans 
 # below is needed if you clone all and want to use
 #git checkout $branch && git submodule update --init --recursive
 
 sh .compile.sh $log
+
+echo ""
+echo "To try redundans, execute:"
+echo "cd `pwd`/redundans"
+echo "./redundans.py -v -i test/*.fq.gz -f test/contigs.fa -o test/run1"
+echo ""
 
 exit 0
