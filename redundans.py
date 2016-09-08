@@ -20,6 +20,13 @@ from fastq2insert_size import fastq2insert_size
 from filterReads import filter_paired
 from fasta_stats import fasta_stats
 
+# update sys.path & environmental PATH
+root = os.path.dirname(os.path.abspath(sys.argv[0]))
+src = ["bin", "bin/bwa", "bin/last/build", "bin/last/scripts", "bin/last/src"]#, "bin/SSPACE"]
+paths = [os.path.join(root, p) for p in src]
+sys.path = paths + sys.path
+os.environ["PATH"] = "%s:%s"%(':'.join(paths), os.environ["PATH"])
+
 def timestamp():
     """Return formatted date-time string"""
     return "\n%s\n[%s] "%("#"*50, datetime.ctime(datetime.now()))
@@ -414,8 +421,8 @@ def main():
                       help="min mapping quality [%(default)s]")
     scaf.add_argument("--iters",         default=2, type=int, 
                       help="scaffolding iterations per library [%(default)s]")
-    scaf.add_argument("--sspacebin",    default="~/src/SSPACE/SSPACE_Standard_v3.0.pl", 
-                       help="SSPACE path  [%(default)s]")
+    #scaf.add_argument("--sspacebin",    default="SSPACE_Standard_v3.0.pl", 
+    #                   help="SSPACE path  [%(default)s]")
     gaps = parser.add_argument_group('Gap closing options')
     skip = parser.add_argument_group('Skip below steps (all performed by default)')
     skip.add_argument('--noreduction',   action='store_false', default=True)   
@@ -433,14 +440,17 @@ def main():
             sys.stderr.write("No such file: %s\n"%fn)
             sys.exit(1)
 
-    # check if all executables exists & in correct versions
-    dependencies = {'lastal': 700, 'lastdb': 700, 'bwa': 0, o.sspacebin: 0, 'GapCloser': 0}
-    _check_dependencies(dependencies)
+    # patch sspacebin
+    sspacebin = os.path.join(root, "bin/SSPACE/SSPACE_Standard_v3.0.pl")
 
+    # check if all executables exists & in correct versions
+    dependencies = {'lastal': 700, 'lastdb': 700, 'bwa': 0, sspacebin: 0, 'GapCloser': 0}
+    _check_dependencies(dependencies)
+    
     # initialise pipeline
     redundans(o.fastq, o.fasta, o.outdir, o.mapq, o.threads, o.resume, \
               o.identity, o.overlap, o.minLength,  \
-              o.joins, o.linkratio, o.limit, o.iters, o.sspacebin, \
+              o.joins, o.linkratio, o.limit, o.iters, sspacebin, \
               o.noreduction, o.noscaffolding, o.nogapclosing, o.nocleaning, \
               o.verbose, o.log)
 
