@@ -91,7 +91,7 @@ def fasta2skip(fasta, faidx, threads, identityTh, overlapTh, verbose):
         avgIdentity = 100.0 * identities / algLengths
     return contig2skip, avgIdentity
 
-def fasta2homozygous(out, fasta, identity, overlap, minLength, libraries, limit, \
+def fasta2homozygous(out, fasta, identity, overlap, minLength, \
                      threads=1, verbose=0, log=sys.stderr):
     """
     Parse alignments and report homozygous contigs.
@@ -162,16 +162,13 @@ def main():
     if o.verbose:
         sys.stderr.write("Options: %s\n"%str(o))
 
-    # allow depth-of-coverage
-    libraries, limit = [], 0
-        
     #process fasta
     sys.stderr.write("Homozygous assembly/ies will be written with input name + '.homozygous.fa.gz'\n")
     sys.stderr.write("#file name\tgenome size\tcontigs\theterozygous size\t[%]\theterozygous contigs\t[%]\tidentity [%]\tpossible joins\thomozygous size\t[%]\thomozygous contigs\t[%]\n")
     for fasta in o.fasta:
         out = gzip.open(fasta.name+".homozygous.fa.gz", "w")
         fasta2homozygous(out, fasta, o.identity, o.overlap, o.minLength, \
-                         libraries, limit, o.threads, o.verbose)
+                         o.threads, o.verbose)
         out.close()
 
 if __name__=='__main__': 

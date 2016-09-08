@@ -2,6 +2,7 @@
 ####0.12d
 - added all dependencies to github
  - INSTALL.sh downloads & compiles everything
+ - all necessary paths are defined by `redundans.py`
 - README.md updated
 - subprocess is closed when finished to lower memory
 - contigs FastA is sorted by descending contig size & contigs below `--minLength` are removed (this speeds up reduction greatly)
@@ -9,10 +10,14 @@
   - speed-optimised: avoided LASTal results sorting by sorting contigs FastA
   - memory-optimised ie. generator instead of list (thanks to sorted contigs FastA)
   - contigs FastA file has to be ordered by descending contig size
-- changed default parameters:
-  - `--identity 0.75`
-  - `--overlap 0.75`
+/- changed default parameters:
+/  - `--identity 0.75`
+/  - `--overlap 0.75`
 - prints how many iterations in total ie. `iteration 1.1 of 2.2 ...`
+- libraries are estimated after reduction (avoiding double estimations for crappy libs)
+TBD
+- check if something need recompilation and try to recompile
+- instead of processing 100M reads for 4 libs with similar IS, split it by 25M each
 
 ####0.12c
 - added `--resume` option

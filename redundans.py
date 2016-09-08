@@ -295,18 +295,11 @@ def redundans(fastq, fasta, outdir, mapq, threads, resume,
     # REDUCTION
     contigsFname = os.path.join(outdir, "contigs.fa")
     reducedFname = os.path.join(outdir, "contigs.reduced.fa")
-    # link contigs & genome
-    #symlink(fasta, contigsFname)
     # prepare contigs
     if verbose:
         log.write("%sPreparing contigs...\n"%timestamp())
     prepare_contigs(fasta, contigsFname, minLength)
-    
-    # get read limit & libraries
-    if verbose:
-        log.write("%sEstimating parameters...\n"%timestamp())
-    limit     = get_read_limit(contigsFname, readLimit, verbose, log)
-    libraries = get_libraries(fastq, contigsFname, mapq, threads, verbose, log)
+    # reduce
     if reduction and _corrupted_file(reducedFname):
         resume += 1
         if verbose:
@@ -315,8 +308,7 @@ def redundans(fastq, fasta, outdir, mapq, threads, resume,
         # reduce
         with open(reducedFname, "w") as out:
             info = fasta2homozygous(out, open(contigsFname), identity, overlap, \
-                                    minLength, libraries, limit, threads, \
-                                    verbose=0, log=log)
+                                    minLength, threads, verbose=0, log=log)
         # index
         with open(reducedFname) as index:
             fasta_stats(index)
@@ -325,14 +317,17 @@ def redundans(fastq, fasta, outdir, mapq, threads, resume,
     # update fasta list
     fastas  = [contigsFname, reducedFname]
 
-    # update read limit using reduced assembly as reference
+    # get read limit & libraries
+    if verbose:
+        log.write("%sEstimating parameters of libraries...\n"%timestamp())
     limit     = get_read_limit(reducedFname, readLimit, verbose, log)
+    libraries = get_libraries(fastq, contigsFname, mapq, threads, verbose, log)
+    
     # SCAFFOLDING
     scaffoldsFname = os.path.join(outdir, "scaffolds.fa")
     if scaffolding: # and _corrupted_file(scaffoldsFname):
         if verbose:
             log.write("%sScaffolding...\n"%timestamp())
-        # estimate read limit
         libraries, resume = run_scaffolding(outdir, scaffoldsFname, fastq, libraries, reducedFname, mapq, \
                                             threads, joins, linkratio, limit, iters, sspacebin, gapclosing, verbose, log, \
                                             identity, overlap, minLength, resume)
@@ -411,6 +406,7 @@ def main():
   
     parser.add_argument("-v", "--verbose",  default=False, action="store_true", help="verbose")    
     parser.add_argument('--version', action='version', version='0.12d')
+    
     parser.add_argument("-i", "--fastq", nargs="+", required=1, 
                         help="FASTQ PE/MP files")
     parser.add_argument("-f", "--fasta", required=1, 
@@ -423,6 +419,7 @@ def main():
                         help="resume previous run")
     parser.add_argument("--log",           default=sys.stderr, type=argparse.FileType('w'), 
                         help="output log to [stderr]")
+    
     redu = parser.add_argument_group('Reduction options')
     redu.add_argument("--identity",        default=0.51, type=float,
                       help="min. identity [%(default)s]")
@@ -430,6 +427,7 @@ def main():
                       help="min. overlap  [%(default)s]")
     redu.add_argument("--minLength",       default=200, type=int, 
                       help="min. contig length [%(default)s]")
+    
     scaf = parser.add_argument_group('Scaffolding options')
     scaf.add_argument("-j", "--joins",  default=5, type=int, 
                       help="min pairs to join contigs [%(default)s]")
@@ -441,9 +439,9 @@ def main():
                       help="min mapping quality [%(default)s]")
     scaf.add_argument("--iters",         default=2, type=int, 
                       help="scaffolding iterations per library [%(default)s]")
-    #scaf.add_argument("--sspacebin",    default="SSPACE_Standard_v3.0.pl", 
-    #                   help="SSPACE path  [%(default)s]")
+    
     gaps = parser.add_argument_group('Gap closing options')
+    
     skip = parser.add_argument_group('Skip below steps (all performed by default)')
     skip.add_argument('--noreduction',   action='store_false', default=True)   
     skip.add_argument('--noscaffolding', action='store_false', default=True)   
