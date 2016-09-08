@@ -12,7 +12,7 @@ echo "##########################################################################
 echo "#                                                                                   #"
 echo "#                               Redundans installer                                 #"
 echo "#                                                                                   #"
-echo "#       version 0.12d                                   l.p.pryszcz@gmail.com       #"
+echo "#       version 0.121d                                   l.p.pryszcz@gmail.com       #"
 echo "#####################################################################################"
 echo ""
 echo "Redundans and its dependencies will be installed in:" `pwd`/redundans
@@ -57,7 +57,7 @@ done
 # check headers #BWA
 for lib in zlib.h; do
     if [ ! -s /usr/include/$lib ] && [ ! -s /usr/lib/$lib ]; then
-        echo " Missing library $lib !"
+        echo " Missing headers $lib !"
         error=1
     fi
 done
