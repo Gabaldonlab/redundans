@@ -42,9 +42,9 @@ def fasta2hits(fasta, threads, identityTh, overlapTh, joinOverlap, endTrimming, 
         (score, q, qstart, qalg, qstrand, qsize, t, tstart, talg, tstrand, tsize, blocks) = l.split()[:12]
         (score, qstart, qalg, qsize, tstart, talg, tsize) = map(int, (score, qstart, qalg, qsize, tstart, talg, tsize))
         # skip reverse matches
-        if q==t or tsize<qsize or (t,q) in added: 
+        if q==t or tsize<qsize or float("%s.%s1"%(t,q)) in added: 
             continue
-        added.add((q,t))
+        added.add(float("%s.%s1"%(t,q)))
         #get score, identity & overlap # LASTal is using +1/-1 for match/mismatch, while I need +1/0
         identity = 1.0 * (score+(qalg-score)/2) / qalg
         overlap  = 1.0 * qalg / qsize
@@ -55,7 +55,7 @@ def fasta2hits(fasta, threads, identityTh, overlapTh, joinOverlap, endTrimming, 
         qend, tend = qstart + qalg, tstart + talg
         #data =(t, tsize, tstart, tend, q, qsize, qstart, qend, tstrand, identity, overlap, score)
         data = (score, t, q, qend-qstart, identity)
-        hits.append(data)
+        hits.append("_".join(map(str, data)))
         
     return hits, overlapping
     
@@ -65,11 +65,11 @@ def hits2skip(hits, faidx, verbose):
     contig2skip = {}
     for c in faidx: 
         contig2skip[c] = 0
-    # this may be slow! sorting by score
-    for i, data in enumerate(sorted(hits, key=lambda x: x[0], reverse=1), 1):
-    #for i, data in enumerate(hits, 1):
+    # no sorting, as contigs sorted already
+    for i, data in enumerate(hits, 1):
         #(t, tsize, tstart, tend, q, qsize, qstart, qend, strand, identity, overlap, score) = data
-        (score, t, q, algLen, identity) = data
+        (score, t, q, algLen, identity) = data.split("_")
+        score, algLen, identity = int(score), int(algLen), float(identity)
         if t not in contig2skip:
             sys.stderr.write(' [ERROR] `%s` (%s) not in contigs!\n'%(t, str(hits[i-1])))
             continue

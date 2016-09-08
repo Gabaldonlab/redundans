@@ -19,6 +19,7 @@ from fastq2sspace import fastq2sspace
 from fastq2insert_size import fastq2insert_size
 from filterReads import filter_paired
 from fasta_stats import fasta_stats
+from FastaIndex import FastaIndex
 
 # update sys.path & environmental PATH
 root = os.path.dirname(os.path.abspath(sys.argv[0]))
@@ -257,7 +258,25 @@ def _corrupted_file(fname):
     if not os.path.isfile(fname)        or not os.path.getsize(fname) or \
        not os.path.isfile(fname+".fai") or not os.path.getsize(fname+".fai"):
         return True
-    
+
+def prepare_contigs(fasta, contigsFname, minLength=200, seqlimit=9999999):
+    """Sort contigs starting from the longest and remove too short"""
+    with open(contigsFname, "w") as out:
+        # init fasta index
+        faidx = FastaIndex(fasta)
+        # filter out sequences shorter than minLength
+        longer = lambda x: len(faidx[x])>=minLength
+        for i, c in enumerate(sorted(filter(longer, faidx), key=lambda x: len(faidx[x]), reverse=1), 1):
+            if i%1e3:
+                sys.stderr.write(' %s   \r'%i)
+            seq = faidx.__getitem__(c, name=str(i))
+            out.write(seq)
+        sys.stderr.write(' %s sequences stored.\n'%i)
+        # warn about too many contigs
+        if i>seqlimit:
+            sys.stderr.write("[WARNING] Redundans in its current implementation support up to %s contigs!\n"%seqlimit)
+            sys.exit(1)
+        
 def redundans(fastq, fasta, outdir, mapq, threads, resume, 
               identity, overlap, minLength, \
               joins, linkratio, readLimit, iters, sspacebin, \
@@ -281,7 +300,12 @@ def redundans(fastq, fasta, outdir, mapq, threads, resume,
     contigsFname = os.path.join(outdir, "contigs.fa")
     reducedFname = os.path.join(outdir, "contigs.reduced.fa")
     # link contigs & genome
-    symlink(fasta, contigsFname)
+    #symlink(fasta, contigsFname)
+    # prepare contigs
+    if verbose:
+        log.write("%sPreparing contigs...\n"%timestamp())
+    prepare_contigs(fasta, contigsFname, minLength)
+    
     # get read limit & libraries
     if verbose:
         log.write("%sEstimating parameters...\n"%timestamp())
