@@ -4,10 +4,15 @@
  - INSTALL.sh downloads & compiles everything
 - README.md updated
 - subprocess is closed when finished to lower memory
-TBD
-- fasta2homozygous.py 
- - try to memory-optimise (150G on B. maritima, 7.2M contigs / 1.5Gb)
- - how to sort efficiently?
+- contigs FastA is sorted by descending contig size & contigs below `--minLength` are removed (this speeds up reduction greatly)
+- reduction step (`fasta2homozygous.py`) was polished & optimised
+  - speed-optimised: avoided LASTal results sorting by sorting contigs FastA
+  - memory-optimised ie. generator instead of list (thanks to sorted contigs FastA)
+  - contigs FastA file has to be ordered by descending contig size
+- changed default parameters:
+  - `--identity 0.75`
+  - `--overlap 0.75`
+- prints how many iterations in total ie. `iteration 1.1 of 2.2 ...`
 
 ####0.12c
 - added `--resume` option

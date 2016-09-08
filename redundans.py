@@ -128,7 +128,7 @@ def run_scaffolding(outdir, scaffoldsFname, fastq, libraries, reducedFname, mapq
             if resume>1 or _corrupted_file(out+".fa"):
                 resume += 1
                 if verbose:
-                    log.write(" iteration %s.%s ...\n"%(i,j))
+                    log.write(" iteration %s.%s of %s.%s ...\n"%(i, j, len(libraries), iters))
                 lib = ""
                 # run fastq scaffolding
                 fastq2sspace(out, open(pout), lib, libnames, libFs, libRs, orients, \

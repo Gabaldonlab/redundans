@@ -2,22 +2,24 @@
 desc="""Align genome onto itself (LAST) and keep only the longest
 from heterozygous (redundant) contigs/scaffolds.
 
+!!! NOTE: contigs FastA file has to be ordered by descending size !!!
+- add exception!
+
 TO ADD:
-- scaffold extension based on overlapping matches (overlapping already recognised)
+- scaffold extension based on overlapping matches
 - reporting of haplotypes
 - recognise heterozygous contigs with translocations
-- replace gzip with bgzip and indexing on the fly
 """
 epilog="""Author: l.p.pryszcz@gmail.com
 Mizerow, 26/08/2014
 """
 
-import gzip, math, os, sys, subprocess
+import gzip, os, sys, subprocess
 from datetime import datetime
 from FastaIndex import FastaIndex
 
 def run_last(fasta, identity, threads, verbose):
-    """Start LAST with multi-threads. """
+    """Start LAST with multi-threads"""
     if verbose:
         sys.stderr.write(" Running LAST...\n")
     # build db
@@ -28,10 +30,8 @@ def run_last(fasta, identity, threads, verbose):
     proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=sys.stderr)        
     return proc
     
-def fasta2hits(fasta, threads, identityTh, overlapTh, joinOverlap, endTrimming, verbose):
-    """Return valid hits. """
-    overlapping = []
-    hits = []
+def fasta2hits(fasta, threads, identityTh, overlapTh, verbose):
+    """Return LASTal hits passing identity and overlap thresholds"""
     # execute last
     last = run_last(fasta.name, identityTh, threads, verbose)
     for l in last.stdout: 
@@ -41,7 +41,7 @@ def fasta2hits(fasta, threads, identityTh, overlapTh, joinOverlap, endTrimming, 
         (score, q, qstart, qalg, qstrand, qsize, t, tstart, talg, tstrand, tsize, blocks) = l.split()[:12]
         (score, qstart, qalg, qsize, tstart, talg, tsize) = map(int, (score, qstart, qalg, qsize, tstart, talg, tsize))
         # skip reverse matches
-        if q==t or tsize<qsize: 
+        if q == t or tsize < qsize: 
             continue
         #get score, identity & overlap # LASTal is using +1/-1 for match/mismatch, while I need +1/0
         identity = 1.0 * (score+(qalg-score)/2) / qalg
@@ -51,23 +51,25 @@ def fasta2hits(fasta, threads, identityTh, overlapTh, joinOverlap, endTrimming, 
             continue
         # store
         qend, tend = qstart + qalg, tstart + talg
-        #data =(t, tsize, tstart, tend, q, qsize, qstart, qend, tstrand, identity, overlap, score)
-        data = (score, t, q, qend-qstart, identity)
-        hits.append("_".join(map(str, data)))
-        # MAKE THIS GENERATOR!!!
-    return hits, overlapping
+        yield score, t, q, qend-qstart, identity
     
-def hits2skip(hits, faidx, verbose):
-    """Return contigs to skip."""
+def fasta2skip(fasta, faidx, threads, identityTh, overlapTh, verbose):
+    """
+    Return redundant dictionary with contigs marked by integers > 1
+    and average identity between redundant contigs.
+
+    NOTE: contigs FastA file has to be ordered by descending size !!!
+    """
+    # get hits generator
+    hits = fasta2hits(fasta, threads, identityTh, overlapTh, verbose)
+    # init
     identities = algLengths = 0
     contig2skip = {}
     for c in faidx: 
         contig2skip[c] = 0
     # no sorting, as contigs sorted already
-    for i, data in enumerate(hits, 1):
-        #(t, tsize, tstart, tend, q, qsize, qstart, qend, strand, identity, overlap, score) = data
-        (score, t, q, algLen, identity) = data.split("_")
-        score, algLen, identity = int(score), int(algLen), float(identity)
+    for i, (score, t, q, algLen, identity) in enumerate(hits, 1):
+        # skip contigs already marked as heterozygous
         if t not in contig2skip:
             sys.stderr.write(' [ERROR] `%s` (%s) not in contigs!\n'%(t, str(hits[i-1])))
             continue
@@ -84,107 +86,57 @@ def hits2skip(hits, faidx, verbose):
         identities += identity*algLen
         algLengths += algLen
     # calculated identity
-    identity = 0
+    avgIdentity = 0
     if algLengths:
-        identity = 100.0*identities/algLengths
-    return contig2skip, identity
+        avgIdentity = 100.0 * identities / algLengths
+    return contig2skip, avgIdentity
 
-'''def get_coverage(faidx, fasta, libraries, limit, verbose):
-    """Align subset of reads and calculate per contig coverage"""
-    # init c2cov make it python 2.6 compatible 
-    c2cov = {} #c: 0 for c in faidx}
-    covTh = 0
-    
-    return c2cov, covTh
-'''
-def fasta2homozygous(out, fasta, identity, overlap, minLength, \
-                     libraries, limit, threads=1, joinOverlap=200, endTrimming=0,
-                     verbose=0, log=sys.stderr):
-    """Parse alignments and report homozygous contigs"""
+def fasta2homozygous(out, fasta, identity, overlap, minLength, libraries, limit, \
+                     threads=1, verbose=0, log=sys.stderr):
+    """
+    Parse alignments and report homozygous contigs.
+    Return genomeSize, no. of contigs, removed contigs size & number
+    and average identity between reduced contigs.
+    """
     #create/load fasta index
     if verbose:
         log.write("Indexing fasta...\n")
     faidx = FastaIndex(fasta)
     genomeSize = faidx.genomeSize
-
-    '''# depth-of-coverage info
-    c2cov, covTh = None, None
-    if libraries:
-        c2cov, covTh = get_coverage(faidx, fasta.name, libraries, limit, verbose)
-    '''
+    
+    # filter alignments & remove redundant
     if verbose:
         log.write("Parsing alignments...\n")
-    #filter alignments
-    hits, overlapping = fasta2hits(fasta, threads, identity, overlap, joinOverlap, endTrimming, verbose)
-
-    #remove redundant
-    ## maybe store info about removed also
-    contig2skip, identity = hits2skip(hits, faidx, verbose)
+    contig2skip, avgIdentity = fasta2skip(fasta, faidx, threads, identity, overlap, verbose)
     
     #report homozygous fasta
-    nsize, k, skipped, ssize, merged = merge_fasta(out, faidx, contig2skip, \
-                                                   overlapping, minLength, verbose)
+    nsize, k, skipped, ssize, merged = save_homozygous(out, faidx, contig2skip, minLength, verbose)
     
     #summary    
     info = "%s\t%s\t%s\t%s\t%.2f\t%s\t%.2f\t%.3f\t%s\t%s\t%.2f\t%s\t%.2f\n"
     log.write(info%(fasta.name, genomeSize, len(faidx), ssize, 100.0*ssize/genomeSize, \
-                    skipped, 100.0*skipped/len(faidx), identity, len(merged), \
+                    skipped, 100.0*skipped/len(faidx), avgIdentity, len(merged), \
                     nsize, 100.0*nsize/genomeSize, k, 100.0*k/len(faidx)))
 
-    return genomeSize, len(faidx), ssize, skipped, identity
+    return genomeSize, len(faidx), ssize, skipped, avgIdentity
 
-def get_name_abbrev(size, s, e):
-    """Return s if s < size/2, otherwise return e."""
-    if s + (e - s)/2.0 < size / 2.0:
-       return "s"
-    return "e"
-    
-def merge_fasta(out, faidx, contig2skip, overlapping, minLength, verbose):
-    """Merged overlapping and report homozygous genome."""
-    #merge
-    joins = {}
-    nsize = 0
-    #ignore extensions with skipped contigs
-    for data in filter(lambda x: not contig2skip[x[0]] and not contig2skip[x[4]], \
-                       overlapping):
-        (q, qsize, qstart, qend, t, tsize, tstart, tend, strand, identity, overlap, bitscore, evalue) = data
-        qname = "%s%s"%(q, get_name_abbrev(qsize, qstart, qend))
-        tname = "%s%s"%(t, get_name_abbrev(tsize, tstart, tend))
-        #check if already present
-        if qname in joins:
-            if bitscore < joins[qname][1][-2]:
-                continue
-        if tname in joins:
-            if bitscore < joins[tname][1][-2]:
-                continue
-        #rm joins
-        if qname in joins:
-            joins.pop(joins[qname][0])
-        if tname in joins:
-            joins.pop(joins[tname][0])
-        #add
-        joins[tname] = (qname, data)
-        joins[qname] = (tname, data)
-        
-    #merging
-    merged = {}
-    
-    #report not skipper, nor joined
-    k = skipped = ssize = 0
+def save_homozygous(out, faidx, contig2skip, minLength, verbose):
+    """Save homozygous contigs to out stream"""
+    k = skipped = ssize = nsize = 0
+    # process contigs starting from the largest
     for i, c in enumerate(faidx, 1):
-        # don't report skipped & merged
-        if contig2skip[c] or faidx.id2stats[c][0]<minLength:
+        # don't report skipped 
+        if contig2skip[c] or faidx.id2stats[c][0] < minLength:
             skipped += 1
             ssize   += len(faidx[c])
             continue
-        elif c in merged:
-            continue
+        # save sequence
         out.write(faidx[c])
+        # update counters
         k += 1
-        nsize += faidx.id2stats[c][0] 
+        nsize += faidx.id2stats[c][0]
         
-    #return nsize, k, skipped, ssize, merged
-    return nsize, k, skipped, ssize, joins
+    return nsize, k, skipped, ssize, []
         
 def main():
     import argparse
@@ -199,16 +151,10 @@ def main():
                         help="FASTA file(s)")
     parser.add_argument("-t", "--threads", default=4, type=int, 
                         help="max threads to run [%(default)s]")
-    #parser.add_argument("-o", "--output",    default=sys.stdout, type=argparse.FileType('w'), 
-    #                    help="output stream   [stdout]")
     parser.add_argument("--identity",    default=0.51, type=float, 
                         help="min. identity   [%(default)s]")
     parser.add_argument("--overlap",     default=0.66, type=float, 
                         help="min. overlap    [%(default)s]")
-    parser.add_argument("--joinOverlap", default=200, type=int, 
-                        help="min. end overlap to join two contigs [%(default)s]")
-    parser.add_argument("--endTrimming", default=33, type=int, 
-                        help="max. end trim on contig join [%(default)s]")
     parser.add_argument("--minLength",   default=200, type=int, 
                         help="min. contig length [%(default)s]")
     
@@ -225,7 +171,7 @@ def main():
     for fasta in o.fasta:
         out = gzip.open(fasta.name+".homozygous.fa.gz", "w")
         fasta2homozygous(out, fasta, o.identity, o.overlap, o.minLength, \
-                         libraries, limit, o.threads, o.joinOverlap, o.endTrimming, o.verbose)
+                         libraries, limit, o.threads, o.verbose)
         out.close()
 
 if __name__=='__main__': 
