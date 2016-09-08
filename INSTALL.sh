@@ -12,7 +12,7 @@ echo "##########################################################################
 echo "#                                                                                   #"
 echo "#                               Redundans installer                                 #"
 echo "#                                                                                   #"
-echo "#       version 0.121d                                   l.p.pryszcz@gmail.com       #"
+echo "#       version 0.12d                                   l.p.pryszcz@gmail.com       #"
 echo "#####################################################################################"
 echo ""
 echo "Redundans and its dependencies will be installed in:" `pwd`/redundans
@@ -23,14 +23,14 @@ echo "  tail -f `pwd`/redundans/$log"
 echo ""
 
 # YES/NO prompt
-echo -n "Do you want to proceed with installation (y/n)? "
+echo -n " Do you want to proceed with installation (y/n)? "
 read answer
 if echo "$answer" | grep -viq "^y" ; then
     echo "Aborted!"
     return 0
 fi
 
-
+echo ""
 echo `date` "Checking dependencies..."
 
 exists()
@@ -78,7 +78,7 @@ if [ $PyVer != "2.7" ]; then
     echo "or use Python virtual environment (https://virtualenv.pypa.io)."
     return 1
 fi
-echo " everything looks good :) Let's proceed.. "
+echo " Everything looks good :) Let's proceed..."
 
 echo `date` "Downloading Redundans..."
 git clone -b $branch --recursive https://github.com/lpryszcz/redundans.git >> /dev/null 2>&1 
