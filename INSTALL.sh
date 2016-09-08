@@ -50,14 +50,14 @@ done
 # check if all libs present #BWA
 for lib in libz; do
     if [ -z "$(ldconfig -p | grep $lib.so)" ] ; then
-        echo "Missing library $lib!"
+        echo " Missing library $lib !"
         error=1
     fi
 done
-# check if all libs present #BWA
+# check headers #BWA
 for lib in zlib.h; do
-    if [ -z "$(locate $lib | grep -w $lib | grep -v linux-headers)" ] ; then
-        echo "Missing library $lib!"
+    if [ ! -s /usr/include/$lib ] && [ ! -s /usr/lib/$lib ]; then
+        echo " Missing library $lib !"
         error=1
     fi
 done
