@@ -40,9 +40,9 @@ exists()
 
 error=""
 # check if all programs exists
-for cmd in echo awk wget tar gcc g++ make cd ln date ldconfig unzip perl python; do
+for cmd in echo awk wget tar git gcc g++ make cd ln date ldconfig unzip perl python; do
     if ! exists $cmd; then
-        echo "Install $cmd first!"
+        echo "Install $cmd first (ie. 'sudo apt-get install $cmd')!"
         error=1
     fi
 done
@@ -71,16 +71,16 @@ if [ $PyVer != "2.7" ]; then
     echo "or use Python virtual environment (https://virtualenv.pypa.io)."
     return 1
 fi
+echo " everything looks good :) Let's proceed.. "
 
 echo `date` "Downloading Redundans..."
-git clone -b $branch --recursive https://github.com/lpryszcz/redundans.git >> $log 2>&1 
+git clone -b $branch --recursive https://github.com/lpryszcz/redundans.git >> /dev/null 2>&1 
 cd redundans 
-# below is needed if you clone all and want to use
-#git checkout $branch && git submodule update --init --recursive
+#git checkout $branch && git submodule update --init --recursive # only needed if you clone all and want to use branch
 
+# compile dependencies
 sh .compile.sh $log
 
-https://github.com/lpryszcz/redundans#prerequisites
 echo `date` "Installation finished!"
 echo ""
 echo "To try redundans, execute:"

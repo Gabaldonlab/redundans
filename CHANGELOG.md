@@ -4,7 +4,7 @@
  - INSTALL.sh downloads & compiles everything
 TBD
 - check Python version (2.7)
-
+- close subprocess when finished! high memory consumption for large genomes!
 
 ####0.12c
 - added `--resume` option
