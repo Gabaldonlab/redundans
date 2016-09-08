@@ -72,6 +72,6 @@ cd redundans
 # below is needed if you clone all and want to use
 #git checkout $branch && git submodule update --init --recursive
 
-sh compile.sh $log
+sh .compile.sh $log
 
 exit 0
