@@ -89,7 +89,7 @@ cd redundans
 sh .compile.sh $log
 retcode=$?; 
 if [ $retcode -gt 0 ]; then
-    echo "  ERROR!"
+    echo "  [$retcode] ERROR!"
     tail -n 20 $log
     return $retcode
 fi
