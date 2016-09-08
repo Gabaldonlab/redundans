@@ -6,6 +6,7 @@
 ###
 
 log="install.log"
+branch="make" # master
 
 echo "#######################################################################"
 echo "#                                                                     #"
@@ -60,14 +61,18 @@ if [ ! -z $error ]; then
     exit 1;
 fi
 
+# check python version
+
+
 cores=`grep -c ^processor /proc/cpuinfo | awk '{if($1>1){print $1-1} else {print 1}}'`
 echo "[INFO] I'll use $cores threads for compiling"
 echo ""
 
 echo `date` " Downloading Redundans..."
-branch="make"
-wget -q -O redundans.tgz https://github.com/lpryszcz/redundans/archive/$branch.tar.gz
-tar xpfz redundans.tgz && mv redundans-$branch redundans && cd redundans
+#wget -q -O redundans.tgz https://github.com/lpryszcz/redundans/archive/$branch.tar.gz
+#tar xpfz redundans.tgz && mv redundans-$branch redundans && rm redundans.tgz
+git clone --recursive https://github.com/lpryszcz/redundans.git
+cd redundans
 
 echo `date` "Compiling dependencies..." 
 echo " === You can find log in: $log === "

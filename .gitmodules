@@ -1,0 +1,7 @@
+[submodule "bin/bwa"]
+    path = bin/bwa
+    url = https://github.com/lh3/bwa
+
+[submodule "bin/last"]
+    path = bin/last
+    url = https://github.com/lpryszcz/last.git
