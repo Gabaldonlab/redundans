@@ -26,14 +26,16 @@ def run_last(fasta, identity, threads, verbose):
     # run LAST
     args = ["lastal", "-T", "1", "-f", "TAB", "-P", str(threads), fasta, fasta]
     proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=sys.stderr)        
-    return proc.stdout
+    return proc
     
 def fasta2hits(fasta, threads, identityTh, overlapTh, joinOverlap, endTrimming, verbose):
     """Return valid hits. """
     overlapping = []
     hits = []
     added = set()
-    for l in run_last(fasta.name, identityTh, threads, verbose):
+    # execute last
+    last = run_last(fasta.name, identityTh, threads, verbose)
+    for l in last.stdout: 
         if l.startswith('#'):
             continue
         # unpack
@@ -50,23 +52,24 @@ def fasta2hits(fasta, threads, identityTh, overlapTh, joinOverlap, endTrimming, 
         if identity < identityTh or overlap < overlapTh:
             continue
         # store
-        strand = tstrand
         qend, tend = qstart + qalg, tstart + talg
-        data = (t, tsize, tstart, tend, q, qsize, qstart, qend, strand, identity, overlap, score)
+        #data =(t, tsize, tstart, tend, q, qsize, qstart, qend, tstrand, identity, overlap, score)
+        data = (score, t, q, qend-qstart, identity)
         hits.append(data)
         
     return hits, overlapping
     
 def hits2skip(hits, faidx, verbose):
     """Return contigs to skip."""
-    identities, algLengths = [], []
+    identities = algLengths = 0
     contig2skip = {}
     for c in faidx: 
         contig2skip[c] = 0
     # this may be slow! sorting by score
-    for i, data in enumerate(sorted(hits, key=lambda x: x[-1], reverse=1), 1):
+    for i, data in enumerate(sorted(hits, key=lambda x: x[0], reverse=1), 1):
     #for i, data in enumerate(hits, 1):
-        (t, tsize, tstart, tend, q, qsize, qstart, qend, strand, identity, overlap, score) = data
+        #(t, tsize, tstart, tend, q, qsize, qstart, qend, strand, identity, overlap, score) = data
+        (score, t, q, algLen, identity) = data
         if t not in contig2skip:
             sys.stderr.write(' [ERROR] `%s` (%s) not in contigs!\n'%(t, str(hits[i-1])))
             continue
@@ -80,13 +83,12 @@ def hits2skip(hits, faidx, verbose):
         # store
         contig2skip[q] += 1
         # update identities and lengths
-        algLen = qend-qstart
-        identities.append(identity*algLen)
-        algLengths.append(algLen)
+        identities += identity*algLen
+        algLengths += algLen
     # calculated identity
     identity = 0
-    if sum(algLengths):
-        identity = 100.0*sum(identities)/sum(algLengths)
+    if algLengths:
+        identity = 100.0*identities/algLengths
     return contig2skip, identity
 
 '''def get_coverage(faidx, fasta, libraries, limit, verbose):

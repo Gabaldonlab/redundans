@@ -304,7 +304,7 @@ def redundans(fastq, fasta, outdir, mapq, threads, resume,
         symlink(os.path.basename(contigsFname), reducedFname)
     # update fasta list
     fastas  = [contigsFname, reducedFname]
-    
+
     # update read limit using reduced assembly as reference
     limit     = get_read_limit(reducedFname, readLimit, verbose, log)
     # SCAFFOLDING
@@ -466,4 +466,4 @@ if __name__=='__main__':
     #except OSError as e:
     #    log.write("%s\n"%str(e))
     dt = datetime.now()-t0
-    sys.stderr.write("#Time elapsed: %s\n"%dt)
+    sys.stderr.write("#Time elsed: %s\n"%dt)

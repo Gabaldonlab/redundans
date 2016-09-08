@@ -159,6 +159,7 @@ def get_tab_files(outdir, reffile, libNames, fReadsFnames, rReadsFnames, inserts
         #close file
         out.close()
         tabFnames.append(outfn)
+        # terminate subprocess
         proc.terminate()
     return tabFnames
     

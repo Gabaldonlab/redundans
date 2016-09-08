@@ -142,6 +142,9 @@ def get_isize_stats(fq1, fq2, fasta, mapqTh=10, threads=1,
         #stop if limit reached
         if len(isizes) >= limit:
             break
+    # terminate subprocess
+    bwa.terminate()
+    # catch cases with very few reads aligned
     if sum(pairs)<100:
         return 0, 0, 0, []
     #get rid of 5 percentile from both sides
