@@ -56,7 +56,7 @@ for lib in libz; do
 done
 # check if all libs present #BWA
 for lib in zlib.h; do
-    if [ -z "$(locate $lib | grep -w $lib | grep -v linux-headers))" ] ; then
+    if [ -z "$(locate $lib | grep -w $lib | grep -v linux-headers)" ] ; then
         echo "Missing library $lib!"
         error=1
     fi
@@ -64,7 +64,7 @@ done
 
 # skip if error
 if [ ! -z $error ]; then
-    echo -e "\nAborted due to missing dependencies (see above)"
+    echo -e "\nAborted due to missing dependencies (see above)!"
     return 1;
 fi
 
