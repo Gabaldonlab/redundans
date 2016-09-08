@@ -1,8 +1,9 @@
 
 ####0.12d
 - added all dependencies to github
- - install.sh compiles everything
- TBA .bashrc, licence info, links, mention all software installed
+ - INSTALL.sh downloads & compiles everything
+TBD
+- check Python version (2.7)
 
 
 ####0.12c

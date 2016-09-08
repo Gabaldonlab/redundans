@@ -41,7 +41,7 @@ It will install all dependencies from the scratch, ignoring versions already ins
 **This is EXPERIMENTAL version, so you may want to create new user for installation process, to avoid data loss!**
 ```bash
 # sudo adduser test && su test
-bash <(curl -Ls http://bit.ly/redundans_installer)
+source <(curl -Ls http://bit.ly/redundans_installer)
 ```
 
 ### Docker image

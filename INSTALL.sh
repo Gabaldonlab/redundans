@@ -27,11 +27,11 @@ echo -n "Do you want to proceed with installation (y/n)? "
 read answer
 if echo "$answer" | grep -viq "^y" ; then
     echo "Aborted!"
-    exit 0
+    return 0
 fi
 
 
-echo `date` " Checking dependencies..."
+echo `date` "Checking dependencies..."
 
 exists()
 {
@@ -58,13 +58,21 @@ done
 # skip if error
 if [ ! -z $error ]; then
     echo -e "\nAborted due to missing dependencies (see above)"
-    exit 1;
+    return 1;
 fi
 
-# check python version
+# check python version 
+PyVer=`python --version 2>&1 | cut -f2 -d" " | cut -f-2 -d"."`
+if [ $PyVer != "2.7" ]; then 
+    echo ""
+    echo "[ERROR] Install Python 2.7!"
+    echo "If you have Python 2.7 already installed, you can either "
+    echo "make an alias before installation and use of Redundans ('alias python=python2.7' should do)"
+    echo "or use Python virtual environment (https://virtualenv.pypa.io)."
+    return 1
+fi
 
-
-echo `date` " Downloading Redundans..."
+echo `date` "Downloading Redundans..."
 git clone -b $branch --recursive https://github.com/lpryszcz/redundans.git >> $log 2>&1 
 cd redundans 
 # below is needed if you clone all and want to use
@@ -72,10 +80,18 @@ cd redundans
 
 sh .compile.sh $log
 
+https://github.com/lpryszcz/redundans#prerequisites
+echo `date` "Installation finished!"
+echo ""
+echo "To uninstall execute:"
+echo "rm -rI `pwd`"
 echo ""
 echo "To try redundans, execute:"
-echo "cd `pwd`/redundans"
+echo "cd `pwd`"
 echo "./redundans.py -v -i test/*.fq.gz -f test/contigs.fa -o test/run1"
 echo ""
-
-exit 0
+echo "###                                                                               ###"
+echo "# Redundans depends on several programs (http://bit.ly/redundans_dependencies)      #"
+echo "# Acknowledge their authors, get familiar with licensing and register if necessary. #"
+echo "###                                                                               ###"
+echo ""
