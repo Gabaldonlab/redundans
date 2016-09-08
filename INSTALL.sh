@@ -91,6 +91,7 @@ retcode=$?;
 if [ $retcode -gt 0 ]; then
     echo "  ERROR!"
     tail -n 20 $log
+    return $retcode
 fi
 
 echo `date` "Installation finished!"
