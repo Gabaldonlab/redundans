@@ -2,9 +2,12 @@
 ####0.12d
 - added all dependencies to github
  - INSTALL.sh downloads & compiles everything
+- README.md updated
+- subprocess is closed when finished to lower memory
 TBD
-- check Python version (2.7)
-- close subprocess when finished! high memory consumption for large genomes!
+- fasta2homozygous.py 
+ - try to memory-optimise (150G on B. maritima, 7.2M contigs / 1.5Gb)
+ - how to sort efficiently?
 
 ####0.12c
 - added `--resume` option

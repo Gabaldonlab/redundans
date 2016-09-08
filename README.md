@@ -3,7 +3,6 @@
   - **[Prerequisites](#prerequisites)**  
     - **[UNIX installer](#unix-installer)**  
     - **[Docker image](#docker-image)** 
-    - **[Manual installation](#manual-installation)**  
   - **[Running the pipeline](#running-the-pipeline)**  
     - **[Parameters](#parameters)**  
     - **[Test run](#test-run)**  
@@ -34,13 +33,30 @@ For more information have a look at the [documentation](/docs), [poster](/docs/p
 ![Flowchart](/docs/redundans_flowchart.png)
 
 ## Prerequisites
+Redundans uses several programmes: 
+- [LAST](http://last.cbrc.jp/) v700+
+- [BWA](http://bio-bwa.sourceforge.net/) v0.7.12+
+- [SSPACE3](http://www.baseclear.com/genomics/bioinformatics/basetools/SSPACE)
+- [GapCloser](http://sourceforge.net/projects/soapdenovo2/files/GapCloser/)
+
+On most Linux, the installation should be as easy as:
+```
+git clone --recursive https://github.com/lpryszcz/redundans.git
+cd redundans
+(cd bin/bwa && make clean && make)
+(cd bin/last && make clean && make)
+```
+
+If it fails, make sure you have below dependencies installed: 
+- Python 2.7 (or 2.6)
+- [zlib including zlib.h headers](http://zlib.net/) needed for compilation ie. `sudo apt-get install zlib1g-dev`
+
+For user convenience, we provide [UNIX installer](#unix-installer) and [Docker image](#docker-image), that can be used instead of manually installation.  
 
 ### UNIX installer
-UNIX installer will automatically fetch, compile and configure Redundans together with all dependencies. It should work on most UNIX systems, but was only tested on some platforms.
-It will install all dependencies from the scratch, ignoring versions already installed. **Note, [manual installation](#manual-installation) is recommended for more advanced users.** 
-**This is EXPERIMENTAL version, so you may want to create new user for installation process, to avoid data loss!**
+UNIX installer will automatically fetch, compile and configure Redundans together with all dependencies.
+It should work on all modern UNIX systems, given Python 2.7, commonly used programmes (ie. wget, curl, git, perl, gcc, g++) and libraries (zlib including zlib.h) are installed. 
 ```bash
-# sudo adduser test && su test
 source <(curl -Ls http://bit.ly/redundans_installer)
 ```
 
@@ -58,16 +74,6 @@ docker run -v `pwd`/test:/test:rw -it lpryszcz/redundans /root/src/redundans/red
 Docker images are very handy, but they have certain limitation. 
 The most annoying for me is the **lack of autocompletion**, unless you specify the path in host and container in the exactly same manner as in the example above.
 In addition, the volume needs to be mounted every time, leading to a bit complex commands. 
-
-### Manual installation
-Alternatively, you can download and configure all dependencies manually: 
-- Python 2.7
-- [LAST](http://last.cbrc.jp/) v700+
-- [BWA](http://bio-bwa.sourceforge.net/) v0.7.12+
-- [SSPACE3](http://www.baseclear.com/genomics/bioinformatics/basetools/SSPACE)
- - SSPACE require Perl; for perl5+ you will need to copy [getopts.pl](http://cpansearch.perl.org/src/GBARR/perl5.005_03/lib/getopts.pl) into SSPACE/dotlib
- - by default Redundans looks for SSPACE in ~/src/SSPACE directory (`--sspacebin` parameter)
-- [GapCloser](http://sourceforge.net/projects/soapdenovo2/files/GapCloser/)
 
 ## Running the pipeline
 Redundans input consists of **assembled contigs** (FastA) and **paired-end and/or mate pairs reads** (FastQ). Gzipped FastQ files are also accepted. 

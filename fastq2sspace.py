@@ -9,7 +9,7 @@ l.p.pryszcz@gmail.com
 19/06/2012 Dublin
 """
 
-import argparse, commands, os, subprocess, sys
+import commands, os, subprocess, sys
 from datetime import datetime
 
 def parse_sam( handle ):
@@ -220,7 +220,7 @@ def fastq2sspace(out, fasta, lib, libnames, libFs, libRs, orientations,  \
     os.chdir(curdir)
     
 def main():
-
+    import argparse
     usage   = "%(prog)s [options]" 
     parser  = argparse.ArgumentParser( usage=usage,description=desc,epilog=epilog )
 
