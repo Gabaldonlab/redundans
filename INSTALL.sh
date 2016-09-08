@@ -47,9 +47,16 @@ for cmd in echo awk wget tar git gcc g++ make cd ln date ldconfig unzip perl pyt
     fi
 done
 
-# check if all libs present
+# check if all libs present #BWA
 for lib in libz; do
     if [ -z "$(ldconfig -p | grep $lib.so)" ] ; then
+        echo "Missing library $lib!"
+        error=1
+    fi
+done
+# check if all libs present #BWA
+for lib in zlib.h; do
+    if [ -z "$(locate $lib | grep -w $lib | grep -v linux-headers))" ] ; then
         echo "Missing library $lib!"
         error=1
     fi
@@ -80,6 +87,11 @@ cd redundans
 
 # compile dependencies
 sh .compile.sh $log
+retcode=$?; 
+if [ $retcode -gt 0 ]; then
+    echo "  ERROR!"
+    tail -n 20 $log
+fi
 
 echo `date` "Installation finished!"
 echo ""
