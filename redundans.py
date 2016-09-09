@@ -26,23 +26,12 @@ from fastq2sspace import fastq2sspace
 from fastq2insert_size import fastq2insert_size
 from filterReads import filter_paired
 from fasta_stats import fasta_stats
-from FastaIndex import FastaIndex
+from FastaIndex import FastaIndex, symlink
 from pyScaf import LongReadGraph, SyntenyGraph
 
 def timestamp():
     """Return formatted date-time string"""
     return "\n%s\n[%s] "%("#"*50, datetime.ctime(datetime.now()))
-
-def symlink(file1, file2):
-    """Create symbolic link taking care of real path."""
-    if not os.path.isfile(file2):
-        # check if need for absolute path
-        file1abs = os.path.join(os.path.realpath(os.path.curdir), file1)
-        if os.path.isfile(file1abs):
-            os.symlink(file1abs, file2)
-        # otherwise create symbolic link without full path
-        else:
-            os.symlink(file1, file2)
 
 def get_orientation(pairs, fq1, fq2, log=sys.stderr):
     """Return orientation of paired reads, either FF, FR, RF or RR.

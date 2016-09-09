@@ -4,6 +4,7 @@ desc="""FastA index (.fai) handler compatible with samtools faidx (http://www.ht
 CHANGELOG:
 v0.11c
 - auto-regenerate .fai if corrupted
+- symlink .fai if fasta itself is symlink
 - warn about empty/corrupted files
 - solved 1-off problem for sequences ending with completely full last line
 v0.11b
@@ -20,12 +21,24 @@ Bratislava, 15/06/2016
 import os, sys
 from datetime import datetime
 
+def symlink(file1, file2):
+    """Create symbolic link taking care of real path."""
+    if not os.path.isfile(file2):
+        # check if need for absolute path
+        file1abs = os.path.join(os.path.realpath(os.path.curdir), file1)
+        if os.path.isfile(file1abs):
+            os.symlink(file1abs, file2)
+        # otherwise create symbolic link without full path
+        else:
+            os.symlink(file1, file2)
+
 class FastaIndex(object):
     """Facilitate Fasta index (.fai) operations compatible
     with samtools faidx (http://www.htslib.org/doc/faidx.html).
     """
     def __init__(self, handle, verbose=0, log=sys.stderr):
         """ """
+        ext = ".fai"
         self.verbose = verbose
         self.log = log.write
         self.genomeSize = 0
@@ -41,7 +54,14 @@ class FastaIndex(object):
             sys.exit(1)
             
         self.fasta  = self.handle.name
-        self.faidx  = self.fasta + ".fai"
+        self.faidx  = self.fasta + ext
+        # check if fasta is symlink
+        if not os.path.isfile(self.faidx) and os.path.islink(self.fasta):
+            _fasta = os.path.realpath(self.fasta)
+            _faidx = _fasta+ext
+            # symlink faidx if faidx exists and linked fasta is older than its faidx
+            if os.path.isfile(_faidx) and os.stat(_fasta).st_mtime < os.stat(_faidx).st_mtime:
+                symlink(_faidx, self.faidx)
         # create new index if no .fai, .fai loading failed or .fai younger than .fasta
         if not os.path.isfile(self.faidx) or not self._load_fai() or \
            os.stat(self.fasta).st_mtime > os.stat(self.faidx).st_mtime:
