@@ -76,6 +76,7 @@ The most annoying for me is the **lack of autocompletion**, unless you specify t
 In addition, the volume needs to be mounted every time, leading to a bit complex commands. 
 
 [![](https://images.microbadger.com/badges/version/lpryszcz/redundans.svg)](https://hub.docker.com/r/lpryszcz/redundans/)
+![](https://images.microbadger.com/badges/image/lpryszcz/redundans.svg)
 
 ## Running the pipeline
 Redundans input consists of **assembled contigs** (FastA) and **paired-end and/or mate pairs reads** (FastQ). Gzipped FastQ files are also accepted. 
