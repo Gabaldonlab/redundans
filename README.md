@@ -12,7 +12,7 @@
 # Redundans
   
 Redundans pipeline assists **an assembly of heterozygous genomes**.  
-Program takes as input [**assembled contigs**, **sequencing libraries** and/or **reference sequence** and returns **scaffolded homozygous genome assembly**](#parameters), that should be **less fragmented** and with total **size smaller** than the input contigs. 
+Program takes [as input](#parameters) **assembled contigs**, **sequencing libraries** and/or **reference sequence** and returns **scaffolded homozygous genome assembly**. Final assembly should be **less fragmented** and with total **size smaller** than the input contigs.   
 In addition, Redundans will automatically **close the gaps** resulting from genome assembly or scaffolding [more details](/test#redundans-pipeline). 
 
 The pipeline consists of three steps/modules: 
