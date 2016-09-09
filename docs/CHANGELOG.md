@@ -1,6 +1,6 @@
 
 ####0.13a
-- long reads (EXPERIMENTAL) & reference-based scaffolding support (through [pyScaf](https://github.com/lpryszcz/pyScaf))
+- added long reads (**EXPERIMENTAL**) & reference-based scaffolding support (through [pyScaf](https://github.com/lpryszcz/pyScaf))
 - added all dependencies to github
  - INSTALL.sh downloads & compiles everything
  - all necessary paths are defined by `redundans.py`
