@@ -1,9 +1,11 @@
 
 ####0.13a
+- EXPERIMENTAL long reads support (through pyScaf)
 - added all dependencies to github
  - INSTALL.sh downloads & compiles everything
  - all necessary paths are defined by `redundans.py`
 - README.md updated
+  - docs/README.md reduce and updated
 - contigs FastA is sorted by descending contig size & contigs below `--minLength` are removed (this speeds up reduction greatly)
 - code was polished & optimised, especially in reduction step (`fasta2homozygous.py`)
   - subprocess is closed when not needed to lower memory footprint
@@ -17,6 +19,7 @@ TBD
 - check if something need recompilation and try to recompile
 - instead of processing 100M reads for 4 libs with similar IS, split it by 25M each
 - estimated libs on subset of largest contigs
+- sort reads by increasing read length
 
 ####0.12c
 - added `--resume` option

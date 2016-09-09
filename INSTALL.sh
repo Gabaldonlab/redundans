@@ -12,7 +12,7 @@ echo "##########################################################################
 echo "#                                                                                   #"
 echo "#                               Redundans installer                                 #"
 echo "#                                                                                   #"
-echo "#       version 0.12d                                   l.p.pryszcz@gmail.com       #"
+echo "#       version 0.13a                                      l.p.pryszcz AT gmail     #"
 echo "#####################################################################################"
 echo ""
 echo "Redundans and its dependencies will be installed in:" `pwd`/redundans

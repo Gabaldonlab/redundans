@@ -37,6 +37,7 @@ Redundans uses several programmes:
 - [LAST](http://last.cbrc.jp/) v700+
 - [BWA](http://bio-bwa.sourceforge.net/) v0.7.12+
 - [SSPACE3](http://www.baseclear.com/genomics/bioinformatics/basetools/SSPACE)
+- [pyScaf](https://github.com/lpryszcz/pyScaf)
 - [GapCloser](http://sourceforge.net/projects/soapdenovo2/files/GapCloser/)
 
 On most Linux, the installation should be as easy as:
@@ -55,7 +56,7 @@ For user convenience, we provide [UNIX installer](#unix-installer) and [Docker i
 
 ### UNIX installer
 UNIX installer will automatically fetch, compile and configure Redundans together with all dependencies.
-It should work on all modern UNIX systems, given Python 2.7, commonly used programmes (ie. wget, curl, git, perl, gcc, g++) and libraries (zlib including zlib.h) are installed. 
+It should work on all modern UNIX systems, given Python 2.7, commonly used programmes (ie. wget, curl, git, perl, gcc, g++, ldconfig) and libraries (zlib including zlib.h) are installed. 
 ```bash
 source <(curl -Ls http://bit.ly/redundans_installer)
 ```
