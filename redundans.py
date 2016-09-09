@@ -14,13 +14,6 @@ import commands, os, resource, sys
 import glob, subprocess, time
 from datetime import datetime
 
-from fasta2homozygous import fasta2homozygous
-from fastq2sspace import fastq2sspace
-from fastq2insert_size import fastq2insert_size
-from filterReads import filter_paired
-from fasta_stats import fasta_stats
-from FastaIndex import FastaIndex
-
 # update sys.path & environmental PATH
 root = os.path.dirname(os.path.abspath(sys.argv[0]))
 src = ["bin", "bin/bwa", "bin/last/build", "bin/last/scripts", "bin/last/src", "bin/pyScaf"]
@@ -28,6 +21,12 @@ paths = [os.path.join(root, p) for p in src]
 sys.path = paths + sys.path
 os.environ["PATH"] = "%s:%s"%(':'.join(paths), os.environ["PATH"])
 
+from fasta2homozygous import fasta2homozygous
+from fastq2sspace import fastq2sspace
+from fastq2insert_size import fastq2insert_size
+from filterReads import filter_paired
+from fasta_stats import fasta_stats
+from FastaIndex import FastaIndex
 from pyScaf import LongReadGraph, SyntenyGraph
 
 def timestamp():
