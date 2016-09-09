@@ -12,12 +12,11 @@
 # Redundans
   
 Redundans pipeline assists **an assembly of heterozygous genomes**.  
-Program takes [as input](#parameters) **assembled contigs**, **sequencing libraries** and/or **reference sequence** and returns **scaffolded homozygous genome assembly**. Final assembly should be **less fragmented** and with total **size smaller** than the input contigs.   
-In addition, Redundans will automatically **close the gaps** resulting from genome assembly or scaffolding (more details about [program input](#parameters) and [process itself](/test#redundans-pipeline)). 
+Program takes [as input](#parameters) **assembled contigs**, **sequencing libraries** and/or **reference sequence** and returns **scaffolded homozygous genome assembly**. Final assembly should be **less fragmented** and with total **size smaller** than the input contigs. In addition, Redundans will automatically **close the gaps** resulting from genome assembly or scaffolding (more details about [program input](#parameters) and [process itself](/test#redundans-pipeline)). 
 
 The pipeline consists of three steps/modules: 
 - **redundancy reduction**: detection and selectively removal of redundant contigs from an initial *de novo* assembly
-- **scaffolding**: joining of genome fragments using paired-end and/or mate-pairs reads
+- **scaffolding**: joining of genome fragments using paired-end, mate-pairs reads, long reads and/or reference chromosomes
 - **gap closing**
 
 Redundans is: 
@@ -25,6 +24,7 @@ Redundans is:
 so it can be run even on the laptop for small-to-medium size genomes
 - **flexible** toward many sequencing technologies (Illumina, 454 or Sanger) and library types (paired-end, mate pairs, fosmids)
 - **modular**: every step can be ommited or replaced by another tools
+- ** reliable**: it has been already used to improve assemblies of many genomes, of any size (several Mb to several Gb) and complexity (fungal, animal & plants)
 
 For more information have a look at the [documentation](/docs), [poster](/docs/poster.pdf) or [manuscript](/docs/manuscript.pdf).
 
