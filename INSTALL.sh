@@ -86,7 +86,7 @@ cd redundans
 #git checkout $branch && git submodule update --init --recursive # only needed if you clone all and want to use branch
 
 # compile dependencies
-sh .compile.sh $log
+sh bin/.compile.sh `pwd`/$log
 retcode=$?; 
 if [ $retcode -gt 0 ]; then
     echo "  [$retcode] ERROR!"
