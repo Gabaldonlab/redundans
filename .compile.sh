@@ -5,9 +5,9 @@ log="/tmp/compiling.log"
 if [ ! -z $1 ]; then log=$1; fi
 
 echo `date` "Updating submodules..."
-git submodule update --init --recursive
-#git submodule update --recursive
-git submodule foreach git pull origin master # compatible with git < v1.6.1
+git submodule update --init --recursive >> $log 2>&1
+#git submodule update --recursive  >> $log 2>&1
+git submodule foreach git pull origin master >> $log 2>&1 # compatible with git < v1.6.1
 
 echo `date` "Compiling dependencies..." 
 echo " === You can find log in: $log === "

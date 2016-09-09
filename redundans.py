@@ -269,7 +269,7 @@ def prepare_contigs(fasta, contigsFname, minLength=200):
         # filter out sequences shorter than minLength
         longer = lambda x: len(faidx[x])>=minLength
         for i, c in enumerate(sorted(filter(longer, faidx), key=lambda x: len(faidx[x]), reverse=1), 1):
-            if i%1e3:
+            if i%1e5 == 1:
                 sys.stderr.write(' %s   \r'%i)
             seq = faidx.__getitem__(c, name=str(i))
             out.write(seq)
