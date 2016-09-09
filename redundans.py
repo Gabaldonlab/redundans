@@ -23,10 +23,12 @@ from FastaIndex import FastaIndex
 
 # update sys.path & environmental PATH
 root = os.path.dirname(os.path.abspath(sys.argv[0]))
-src = ["bin", "bin/bwa", "bin/last/build", "bin/last/scripts", "bin/last/src"]#, "bin/SSPACE"]
+src = ["bin", "bin/bwa", "bin/last/build", "bin/last/scripts", "bin/last/src", "bin/pyScaf"]
 paths = [os.path.join(root, p) for p in src]
 sys.path = paths + sys.path
 os.environ["PATH"] = "%s:%s"%(':'.join(paths), os.environ["PATH"])
+
+from pyScaf import LongReadGraph
 
 def timestamp():
     """Return formatted date-time string"""
@@ -273,7 +275,7 @@ def prepare_contigs(fasta, contigsFname, minLength=200):
             out.write(seq)
         sys.stderr.write(' %s sequences stored.\n'%i)
         
-def redundans(fastq, fasta, outdir, mapq, threads, resume, 
+def redundans(fastq, longreads, fasta, outdir, mapq, threads, resume, 
               identity, overlap, minLength, \
               joins, linkratio, readLimit, iters, sspacebin, \
               reduction=1, scaffolding=1, gapclosing=1, cleaning=1, \
@@ -318,14 +320,15 @@ def redundans(fastq, fasta, outdir, mapq, threads, resume,
     fastas  = [contigsFname, reducedFname]
 
     # get read limit & libraries
-    if verbose:
-        log.write("%sEstimating parameters of libraries...\n"%timestamp())
-    limit     = get_read_limit(reducedFname, readLimit, verbose, log)
-    libraries = get_libraries(fastq, contigsFname, mapq, threads, verbose, log)
+    if fastq:
+        if verbose:
+            log.write("%sEstimating parameters of libraries...\n"%timestamp())
+        limit     = get_read_limit(reducedFname, readLimit, verbose, log)
+        libraries = get_libraries(fastq, contigsFname, mapq, threads, verbose, log)
     
     # SCAFFOLDING
     scaffoldsFname = os.path.join(outdir, "scaffolds.fa")
-    if scaffolding: # and _corrupted_file(scaffoldsFname):
+    if fastq and scaffolding: 
         if verbose:
             log.write("%sScaffolding...\n"%timestamp())
         libraries, resume = run_scaffolding(outdir, scaffoldsFname, fastq, libraries, reducedFname, mapq, \
@@ -336,16 +339,41 @@ def redundans(fastq, fasta, outdir, mapq, threads, resume,
     # update fasta list
     fastas += filter(lambda x: "_gapcloser" not in x, sorted(glob.glob(os.path.join(outdir, "_sspace.*.fa"))))
     fastas.append(scaffoldsFname)
+
+    # SCAFFOLDING WITH LONG READS
+    longreadsFname = os.path.join(outdir, "scaffolds.longreads.fa")
+    if longreads and _corrupted_file(longreadsFname):
+        # here maybe sort reads by increasing median read length
+        resume += 1
+        if verbose:
+            log.write("%sScaffolding with long reads...\n"%timestamp())
+        poutfn = scaffoldsFname
+        for i, fname in enumerate(longreads, 1):
+            if verbose:
+                log.write(" iteration %s out of %s ...\n"%(i, len(longreads)))
+            s = LongReadGraph(poutfn, fname, identity=identity, overlap=overlap, \
+                              maxgap=0, threads=threads, dotplot="", norearrangements=0, log=0)
+            # save output
+            outfn = os.path.join(outdir, "scaffolds.longreads.%s.fa"%i)
+            with open(outfn, "w") as out:
+                s.save(out)
+            # store fname
+            fastas.append(outfn)
+            poutfn = outfn
+        symlink(poutfn, longreadsFname)
+    else:
+        symlink(scaffoldsFname, longreadsFname)
+    fastas.append(longreadsFname)
     
     # GAP CLOSING
     nogapsFname = os.path.join(outdir, "scaffolds.filled.fa")
-    if gapclosing: # and libraries and _corrupted_file(nogapsFname):
+    if fastq and gapclosing: 
         if verbose:
             log.write("%sGap closing...\n"%timestamp())
-        resume = run_gapclosing(outdir, mapq, libraries, nogapsFname, scaffoldsFname, threads, \
+        resume = run_gapclosing(outdir, mapq, libraries, nogapsFname, longreadsFname, threads, \
                                 limit, iters, resume, verbose, log)
     else:
-        symlink(os.path.basename(scaffoldsFname), nogapsFname)
+        symlink(os.path.basename(longreadsFname), nogapsFname)
     # update fasta list
     fastas += sorted(glob.glob(os.path.join(outdir, "_gap*.fa")))
     fastas.append(nogapsFname)
@@ -407,7 +435,7 @@ def main():
     parser.add_argument("-v", "--verbose",  default=False, action="store_true", help="verbose")    
     parser.add_argument('--version', action='version', version='0.13a')
     
-    parser.add_argument("-i", "--fastq", nargs="+", required=1, 
+    parser.add_argument("-i", "--fastq", nargs="*", default=[], 
                         help="FASTQ PE/MP files")
     parser.add_argument("-f", "--fasta", required=1, 
                         help="FASTA file with contigs")
@@ -429,11 +457,13 @@ def main():
                       help="min. contig length [%(default)s]")
     
     scaf = parser.add_argument_group('Scaffolding options')
+    scaf.add_argument("-l", "--longreads", nargs="*", default=[], 
+                      help="FastQ/FastA files with long reads [(default)s]")
     scaf.add_argument("-j", "--joins",  default=5, type=int, 
                       help="min pairs to join contigs [%(default)s]")
     scaf.add_argument("-a", "--linkratio", default=0.7, type=float,
                        help="max link ratio between two best contig pairs [%(default)s]")    
-    scaf.add_argument("-l", "--limit",  default=0.2, type=float, 
+    scaf.add_argument("--limit",  default=0.2, type=float, 
                       help="align subset of reads [%(default)s]")
     scaf.add_argument("-q", "--mapq",    default=10, type=int, 
                       help="min mapping quality [%(default)s]")
@@ -453,7 +483,7 @@ def main():
         o.log.write("Options: %s\n"%str(o))
 
     # check if input files exists
-    for fn in [o.fasta,] + o.fastq: 
+    for fn in [o.fasta,] + o.fastq + o.longreads: 
         if not os.path.isfile(fn):
             sys.stderr.write("No such file: %s\n"%fn)
             sys.exit(1)
@@ -466,7 +496,7 @@ def main():
     _check_dependencies(dependencies)
     
     # initialise pipeline
-    redundans(o.fastq, o.fasta, o.outdir, o.mapq, o.threads, o.resume, \
+    redundans(o.fastq, o.longreads, o.fasta, o.outdir, o.mapq, o.threads, o.resume, \
               o.identity, o.overlap, o.minLength,  \
               o.joins, o.linkratio, o.limit, o.iters, sspacebin, \
               o.noreduction, o.noscaffolding, o.nogapclosing, o.nocleaning, \
