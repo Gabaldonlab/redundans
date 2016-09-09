@@ -28,7 +28,7 @@ paths = [os.path.join(root, p) for p in src]
 sys.path = paths + sys.path
 os.environ["PATH"] = "%s:%s"%(':'.join(paths), os.environ["PATH"])
 
-from pyScaf import LongReadGraph
+from pyScaf import LongReadGraph, SyntenyGraph
 
 def timestamp():
     """Return formatted date-time string"""
@@ -275,12 +275,16 @@ def prepare_contigs(fasta, contigsFname, minLength=200):
             out.write(seq)
         sys.stderr.write(' %s sequences stored.\n'%i)
         
-def redundans(fastq, longreads, fasta, outdir, mapq, threads, resume, 
-              identity, overlap, minLength, \
+def redundans(fastq, longreads, fasta, reference, outdir, mapq, 
+              threads, resume, identity, overlap, minLength, \
               joins, linkratio, readLimit, iters, sspacebin, \
               reduction=1, scaffolding=1, gapclosing=1, cleaning=1, \
-              verbose=1, log=sys.stderr):
+              norearrangements=0, verbose=1, log=sys.stderr):
     """Launch redundans pipeline."""
+    # update fasta list
+    lastOutFn = os.path.join(outdir, "contigs.fa")
+    fastas = [lastOutFn, ]
+    # check resume
     orgresume = resume
     if resume:
         log.write("%sResuming previous run from %s...\n"%(timestamp(), outdir))
@@ -295,88 +299,100 @@ def redundans(fastq, longreads, fasta, outdir, mapq, threads, resume,
         os.makedirs(outdir)
     
     # REDUCTION
-    contigsFname = os.path.join(outdir, "contigs.fa")
-    reducedFname = os.path.join(outdir, "contigs.reduced.fa")
     # prepare contigs
     if verbose:
         log.write("%sPreparing contigs...\n"%timestamp())
-    prepare_contigs(fasta, contigsFname, minLength)
+    prepare_contigs(fasta, lastOutFn, minLength)
     # reduce
-    if reduction and _corrupted_file(reducedFname):
+    outfn = os.path.join(outdir, "contigs.reduced.fa")
+    if reduction and _corrupted_file(outfn):
         resume += 1
         if verbose:
             log.write("%sReduction...\n"%timestamp())
             log.write("#file name\tgenome size\tcontigs\theterozygous size\t[%]\theterozygous contigs\t[%]\tidentity [%]\tpossible joins\thomozygous size\t[%]\thomozygous contigs\t[%]\n")
         # reduce
-        with open(reducedFname, "w") as out:
-            info = fasta2homozygous(out, open(contigsFname), identity, overlap, \
+        with open(outfn, "w") as out:
+            info = fasta2homozygous(out, open(lastOutFn), identity, overlap, \
                                     minLength, threads, verbose=0, log=log)
         # index
-        with open(reducedFname) as index:
+        with open(outfn) as index:
             fasta_stats(index)
-    else:
-        symlink(os.path.basename(contigsFname), reducedFname)
-    # update fasta list
-    fastas  = [contigsFname, reducedFname]
+        # update fasta list
+        lastOutFn = outfn
+        fastas.append(lastOutFn)
 
     # get read limit & libraries
     if fastq:
         if verbose:
             log.write("%sEstimating parameters of libraries...\n"%timestamp())
-        limit     = get_read_limit(reducedFname, readLimit, verbose, log)
-        libraries = get_libraries(fastq, contigsFname, mapq, threads, verbose, log)
+        limit     = get_read_limit(lastOutFn, readLimit, verbose, log)
+        libraries = get_libraries(fastq, lastOutFn, mapq, threads, verbose, log)
     
     # SCAFFOLDING
-    scaffoldsFname = os.path.join(outdir, "scaffolds.fa")
+    outfn = os.path.join(outdir, "scaffolds.fa")
     if fastq and scaffolding: 
         if verbose:
             log.write("%sScaffolding...\n"%timestamp())
-        libraries, resume = run_scaffolding(outdir, scaffoldsFname, fastq, libraries, reducedFname, mapq, \
-                                            threads, joins, linkratio, limit, iters, sspacebin, gapclosing, verbose, log, \
+        libraries, resume = run_scaffolding(outdir, outfn, fastq, libraries, lastOutFn, mapq, threads, joins, \
+                                            linkratio, limit, iters, sspacebin, gapclosing, verbose, log, \
                                             identity, overlap, minLength, resume)
-    else:
-        symlink(os.path.basename(reducedFname), scaffoldsFname)
-    # update fasta list
-    fastas += filter(lambda x: "_gapcloser" not in x, sorted(glob.glob(os.path.join(outdir, "_sspace.*.fa"))))
-    fastas.append(scaffoldsFname)
+        # update fasta list
+        fastas += filter(lambda x: "_gapcloser" not in x, sorted(glob.glob(os.path.join(outdir, "_sspace.*.fa"))))
+        lastOutFn = outfn
+        fastas.append(lastOutFn)
 
     # SCAFFOLDING WITH LONG READS
-    longreadsFname = os.path.join(outdir, "scaffolds.longreads.fa")
-    if longreads and _corrupted_file(longreadsFname):
+    outfn = os.path.join(outdir, "scaffolds.longreads.fa")
+    if longreads and _corrupted_file(outfn):
         # here maybe sort reads by increasing median read length
         resume += 1
         if verbose:
             log.write("%sScaffolding with long reads...\n"%timestamp())
-        poutfn = scaffoldsFname
+        poutfn = lastOutFn
         for i, fname in enumerate(longreads, 1):
             if verbose:
                 log.write(" iteration %s out of %s ...\n"%(i, len(longreads)))
-            s = LongReadGraph(poutfn, fname, identity=identity, overlap=overlap, \
-                              maxgap=0, threads=threads, dotplot="", norearrangements=0, log=0)
+            s = LongReadGraph(lastOutFn, fname, identity, overlap, maxgap=0, threads=threads, \
+                              dotplot="", norearrangements=norearrangements, log=0)
             # save output
-            outfn = os.path.join(outdir, "scaffolds.longreads.%s.fa"%i)
-            with open(outfn, "w") as out:
+            _outfn = os.path.join(outdir, "scaffolds.longreads.%s.fa"%i)
+            with open(_outfn, "w") as out:
                 s.save(out)
             # store fname
-            fastas.append(outfn)
-            poutfn = outfn
-        symlink(poutfn, longreadsFname)
-    else:
-        symlink(scaffoldsFname, longreadsFname)
-    fastas.append(longreadsFname)
-    
-    # GAP CLOSING
-    nogapsFname = os.path.join(outdir, "scaffolds.filled.fa")
-    if fastq and gapclosing: 
+            fastas.append(_outfn)
+            poutfn = _outfn
+        # symlink last iteration
+        symlink(poutfn, outfn)
+        # update fasta list
+        lastOutFn = outfn
+        fastas.append(lastOutFn)
+
+    # REFERENCE-BASED SCAFFOLDING
+    outfn = os.path.join(outdir, "scaffolds.ref.fa")
+    if reference and _corrupted_file(outfn):
+        resume += 1
         if verbose:
+            log.write("%sScaffolding based on reference...\n"%timestamp())        
+        s = SyntenyGraph(lastOutFn, reference, identity, overlap, maxgap=0, threads=threads, \
+                         dotplot="", norearrangements=norearrangements, log=0)
+        # save output
+        with open(outfn, "w") as out:
+            s.save(out)
+        # update fasta list
+        lastOutFn = outfn
+        fastas.append(lastOutFn)
+        
+    # GAP CLOSING
+    outfn = os.path.join(outdir, "scaffolds.filled.fa")
+    if fastq and gapclosing: 
+        if verbose: 
             log.write("%sGap closing...\n"%timestamp())
-        resume = run_gapclosing(outdir, mapq, libraries, nogapsFname, longreadsFname, threads, \
+        resume = run_gapclosing(outdir, mapq, libraries, outfn, lastOutFn, threads, \
                                 limit, iters, resume, verbose, log)
-    else:
-        symlink(os.path.basename(longreadsFname), nogapsFname)
-    # update fasta list
-    fastas += sorted(glob.glob(os.path.join(outdir, "_gap*.fa")))
-    fastas.append(nogapsFname)
+        # update fasta list
+        fastas += sorted(glob.glob(os.path.join(outdir, "_gap*.fa")))
+        lastOutFn = outfn
+        fastas.append(lastOutFn)
     
     # FASTA STATS
     if verbose:
@@ -443,7 +459,7 @@ def main():
                         help="output directory [%(default)s]")
     parser.add_argument("-t", "--threads", default=4, type=int, 
                         help="max threads to run [%(default)s]")
-    parser.add_argument("-r", "--resume",  default=False, action="store_true",
+    parser.add_argument("--resume",  default=False, action="store_true",
                         help="resume previous run")
     parser.add_argument("--log",           default=sys.stderr, type=argparse.FileType('w'), 
                         help="output log to [stderr]")
@@ -457,8 +473,6 @@ def main():
                       help="min. contig length [%(default)s]")
     
     scaf = parser.add_argument_group('Scaffolding options')
-    scaf.add_argument("-l", "--longreads", nargs="*", default=[], 
-                      help="FastQ/FastA files with long reads [(default)s]")
     scaf.add_argument("-j", "--joins",  default=5, type=int, 
                       help="min pairs to join contigs [%(default)s]")
     scaf.add_argument("-a", "--linkratio", default=0.7, type=float,
@@ -469,6 +483,12 @@ def main():
                       help="min mapping quality [%(default)s]")
     scaf.add_argument("--iters",         default=2, type=int, 
                       help="scaffolding iterations per library [%(default)s]")
+    scaf.add_argument("-l", "--longreads", nargs="*", default=[], 
+                      help="FastQ/FastA files with long reads")
+    scaf.add_argument("-r", "--reference", default='', 
+                      help="reference FastA file")
+    scaf.add_argument("--norearrangements", default=False, action='store_true', 
+                      help="high identity mode (rearrangements not allowed)")
     
     gaps = parser.add_argument_group('Gap closing options')
     
@@ -496,11 +516,11 @@ def main():
     _check_dependencies(dependencies)
     
     # initialise pipeline
-    redundans(o.fastq, o.longreads, o.fasta, o.outdir, o.mapq, o.threads, o.resume, \
-              o.identity, o.overlap, o.minLength,  \
+    redundans(o.fastq, o.longreads, o.fasta, o.reference, o.outdir, o.mapq, \
+              o.threads, o.resume, o.identity, o.overlap, o.minLength,  \
               o.joins, o.linkratio, o.limit, o.iters, sspacebin, \
               o.noreduction, o.noscaffolding, o.nogapclosing, o.nocleaning, \
-              o.verbose, o.log)
+              o.norearrangements, o.verbose, o.log)
 
 if __name__=='__main__': 
     t0 = datetime.now()
