@@ -405,7 +405,7 @@ def main():
                                       formatter_class=argparse.RawTextHelpFormatter)
   
     parser.add_argument("-v", "--verbose",  default=False, action="store_true", help="verbose")    
-    parser.add_argument('--version', action='version', version='0.12d')
+    parser.add_argument('--version', action='version', version='0.13a')
     
     parser.add_argument("-i", "--fastq", nargs="+", required=1, 
                         help="FASTQ PE/MP files")

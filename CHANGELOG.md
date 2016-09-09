@@ -1,23 +1,22 @@
 
-####0.12d
+####0.13a
 - added all dependencies to github
  - INSTALL.sh downloads & compiles everything
  - all necessary paths are defined by `redundans.py`
 - README.md updated
-- subprocess is closed when finished to lower memory
 - contigs FastA is sorted by descending contig size & contigs below `--minLength` are removed (this speeds up reduction greatly)
-- reduction step (`fasta2homozygous.py`) was polished & optimised
-  - speed-optimised: avoided LASTal results sorting by sorting contigs FastA
-  - memory-optimised ie. generator instead of list (thanks to sorted contigs FastA)
-  - contigs FastA file has to be ordered by descending contig size
-/- changed default parameters:
-/  - `--identity 0.75`
-/  - `--overlap 0.75`
+- code was polished & optimised, especially in reduction step (`fasta2homozygous.py`)
+  - subprocess is closed when not needed to lower memory footprint
+  - speed-optimised: avoided LASTal results sorting by sorting input (contigs FastA)
+  - memory-optimised ie. generator instead of list (thanks to sorted contigs FastA) (RAM usage: 150G -> 1G)
+  - contigs FastA file has to be ordered by descending contig size!
 - prints how many iterations in total ie. `iteration 1.1 of 2.2 ...`
 - libraries are estimated after reduction (avoiding double estimations for crappy libs)
+
 TBD
 - check if something need recompilation and try to recompile
 - instead of processing 100M reads for 4 libs with similar IS, split it by 25M each
+- estimated libs on subset of largest contigs
 
 ####0.12c
 - added `--resume` option

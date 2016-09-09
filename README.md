@@ -75,6 +75,8 @@ Docker images are very handy, but they have certain limitation.
 The most annoying for me is the **lack of autocompletion**, unless you specify the path in host and container in the exactly same manner as in the example above.
 In addition, the volume needs to be mounted every time, leading to a bit complex commands. 
 
+[![](https://images.microbadger.com/badges/version/lpryszcz/redundans.svg)](http://microbadger.com/images/lpryszcz/redundans "Get your own version badge on microbadger.com")
+
 ## Running the pipeline
 Redundans input consists of **assembled contigs** (FastA) and **paired-end and/or mate pairs reads** (FastQ). Gzipped FastQ files are also accepted. 
 Redundans will return **homozygous genome assembly** in `scaffolds.filled.fa` (FastA).  
