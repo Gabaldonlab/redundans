@@ -2,6 +2,10 @@
 desc="""FastA index (.fai) handler compatible with samtools faidx (http://www.htslib.org/doc/faidx.html)
 
 CHANGELOG:
+v0.11c
+- auto-regenerate .fai if corrupted
+- warn about empty/corrupted files
+- solved 1-off problem for sequences ending with completely full last line
 v0.11b
 - warn about empty headers, sequences & duplicated sequence IDs
 - retrieve sequences single-line FASTA correctly
@@ -38,13 +42,10 @@ class FastaIndex(object):
             
         self.fasta  = self.handle.name
         self.faidx  = self.fasta + ".fai"
-        # create new index if no .fai or .fai younger than .fasta
-        if not os.path.isfile(self.faidx) or \
-           os.stat(self.fasta).st_mtime > os.stat(self.faidx).st_mtime: 
+        # create new index if no .fai, .fai loading failed or .fai younger than .fasta
+        if not os.path.isfile(self.faidx) or not self._load_fai() or \
+           os.stat(self.fasta).st_mtime > os.stat(self.faidx).st_mtime:
             self._generate_index()
-        # otherwise load
-        else:
-            self._load_fai()
         # links
         self.get = self.get_fasta
         # init storage
@@ -92,17 +93,20 @@ class FastaIndex(object):
             self.__process_seqentry(out, header, seq, offset, pi)
 
     def _load_fai(self):
-        """Load stats from faidx file"""
+        """Load stats from faidx file.
+        Return False if .fai is wrongly formatted.
+        """
         self.id2stats = {}
         for l in open(self.faidx):
             ldata = l[:-1].split('\t')
             if len(ldata)<9:
-                return {}
+                return 
             rid = ldata[0]
             stats = map(int, ldata[1:])
             self.id2stats[rid] = stats
             # update genomeSize
             self.genomeSize += stats[0]
+        return True
 
     def __len__(self):
         """How many records are there?"""
@@ -110,7 +114,7 @@ class FastaIndex(object):
             
     def __iter__(self):
         """Iterate over the keys."""
-        for seqid in self.id2stats: #sorted(self.id2stats.keys(), key=lambda x: self.id2stats[x][1]):
+        for seqid in self.id2stats: 
             yield seqid
 
     def __getitem__(self, key, start=None, stop=None, name=None):
@@ -237,7 +241,7 @@ def main():
     parser	= argparse.ArgumentParser(description=desc, epilog=epilog, \
                                           formatter_class=argparse.RawTextHelpFormatter)
 
-    parser.add_argument('--version', action='version', version='0.11b')	 
+    parser.add_argument('--version', action='version', version='0.11c')	 
     parser.add_argument("-v", "--verbose", default=False, action="store_true",
                         help="verbose")	
     parser.add_argument("-i", "--fasta", type=file, 
