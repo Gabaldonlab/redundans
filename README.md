@@ -49,7 +49,7 @@ cd redundans
 ```
 
 If it fails, make sure you have below dependencies installed: 
-- Python 2.7 (or 2.6)
+- Python 2.7 or 2.6
 - [zlib including zlib.h headers](http://zlib.net/) needed for compilation ie. `sudo apt-get install zlib1g-dev`
 
 For user convenience, we provide [UNIX installer](#unix-installer) and [Docker image](#docker-image), that can be used instead of manually installation.  

@@ -4,6 +4,11 @@
 log="/tmp/compiling.log"
 if [ ! -z $1 ]; then log=$1; fi
 
+echo `date` "Updating submodules..."
+git submodule update --init --recursive
+#git submodule update --recursive
+git submodule foreach git pull origin master # compatible with git < v1.6.1
+
 echo `date` "Compiling dependencies..." 
 echo " === You can find log in: $log === "
 cores=`grep -c ^processor /proc/cpuinfo | awk '{if($1>1){print $1-1} else {print 1}}'`
