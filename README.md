@@ -13,12 +13,12 @@
   
 Redundans pipeline assists **an assembly of heterozygous genomes**. Program takes [as input](#parameters) **assembled contigs**, **sequencing libraries** and/or **reference sequence** and returns **scaffolded homozygous genome assembly**. Final assembly should be **less fragmented** and with total **size smaller** than the input contigs. In addition, Redundans will automatically **close the gaps** resulting from genome assembly or scaffolding. 
 
+<img align="right" src="/docs/redundans_flowchart.png">
+
 The pipeline consists of three steps/modules: 
 - **redundancy reduction**: detection and selective removal of redundant contigs from an initial *de novo* assembly
 - **scaffolding**: joining of genome fragments using paired-end reads, mate-pairs, long reads and/or reference chromosomes
 - **gap closing**: filling the gaps after scaffolding using paired-end and/or mate-pair reads
-
-<img align="right" src="/docs/redundans_flowchart.png">
 
 Redundans is: 
 - **fast** & **lightweight**, multi-core support and memory-optimised, 
