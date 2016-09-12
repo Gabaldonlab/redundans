@@ -13,7 +13,8 @@
   - memory-optimised ie. generator instead of list (thanks to sorted contigs FastA) (RAM usage: 150G -> 1G)
   - contigs FastA file has to be ordered by descending contig size!
 - prints how many iterations in total ie. `iteration 1.1 of 2.2 ...`
-- libraries are estimated after reduction (avoiding double estimations for crappy libs)
+- libraries stats are estimated after reduction (avoiding double estimations for crappy libs)
+  - insert size estimated only on the major read orientation
 
 TBD
 - check if something need recompilation and try to recompile
