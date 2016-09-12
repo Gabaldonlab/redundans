@@ -253,7 +253,31 @@ class FastaIndex(object):
                 except:
                     errors += 1
         return (seqlen, offset, linebases, linebytes, \
-                bases['A'], bases['C'], bases['G'], bases['T'])    
+                bases['A'], bases['C'], bases['G'], bases['T'])
+
+    def sort(self, reverse=1, minLength=0, genomeFrac=0):
+        """Return list of contigs sorted by descending size (reverse=1).
+
+        The list of returned contigs can be limited by: 
+        - minLength  - return contigs longer than bases [0]
+        - genomeFrac - return the longest contigs until genomeFrac is reached [all]
+        """
+        # get all contigs
+        contigs = self.id2stats.keys()
+        contigi = len(contigs)
+        # filter by contig length
+        if minLength:
+            contigs = filter(lambda x: self.id2stats[x][0]>=minLength, self.id2stats)
+        # sort by descending size
+        sorted_contigs = sorted(contigs, key=lambda x: self.id2stats[x][0], reverse=reverse)
+        # filter longest contigs by genome fraction
+        if genomeFrac:
+            totsize = 0
+            for contigi, c in enumerate(sorted_contigs, 1):
+                totsize += self.id2stats[c][0]
+                if totsize >= genomeFrac*self.genomeSize:
+                    break
+        return sorted_contigs[:contigi]
 
 def main():
     import argparse

@@ -33,7 +33,7 @@ def timestamp():
     """Return formatted date-time string"""
     return "\n%s\n[%s] "%("#"*50, datetime.ctime(datetime.now()))
 
-def get_orientation(pairs, fq1, fq2, log=sys.stderr):
+def get_orientation(pairs, fq1, fq2, log=sys.stderr, maxcfracTh=0.9):
     """Return orientation of paired reads, either FF, FR, RF or RR.
     Warn if major orientation is represented by less than 90% of reads.
     """
@@ -43,21 +43,27 @@ def get_orientation(pairs, fq1, fq2, log=sys.stderr):
     maxci = pairs.index(maxc)
     orientation = orientations[maxci]
     # get frac of total reads
-    maxcfrac = 100.0 * maxc / sum(pairs)
-    if maxcfrac < 90:
+    maxcfrac = 1.0 * maxc / sum(pairs)
+    if maxcfrac < maxcfracTh:
         info = "[WARNING] Poor quality: Major orientation (%s) represent %s%s of pairs in %s - %s: %s\n"
-        log.write(info%(orientation, maxcfrac, '%', fq1, fq2, str(pairs)))
+        log.write(info%(orientation, 100*maxcfrac, '%', fq1, fq2, str(pairs)))
     return orientation 
 
-def get_libraries(fastq, fasta, mapq, threads, verbose, log=sys.stderr, limit=0):
+def get_libraries(fastq, fasta, mapq, threads, verbose, log=sys.stderr, limit=0,
+                  libraries=[], stdfracTh=0.66, maxcfracTh=0.9, genomeFrac=0.05):
     """Return libraries"""
+    # skip if all libs OKish
+    ## max stdfrac cannot be larger than stdfracTh in any of the libraries
+    if libraries and not filter(lambda x: x>stdfracTh, (max(lib[5]) for lib in libraries)):
+        return libraries
+    
     # otherwise process all reads
     if not limit or limit<10e5:
         limit = 10e5
     
     # get libraries statistics using 1% of mapped read limit
-    libdata = fastq2insert_size(log, fastq, fasta, mapq, threads, \
-                                limit/100, verbose, log)
+    libdata = fastq2insert_size(log, fastq, fasta, mapq, threads, limit/100, verbose, log, \
+                                genomeFrac, stdfracTh, maxcfracTh)
     # separate paired-end & mate pairs
     ## also separate 300 and 600 paired-ends
     libraries = []
@@ -73,13 +79,13 @@ def get_libraries(fastq, fasta, mapq, threads, verbose, log=sys.stderr, limit=0)
         libraries[-1][1].append(open(fq1))
         libraries[-1][2].append(open(fq2))
         # orientation
-        orientation = get_orientation(pairs, fq1, fq2, log)
+        orientation = get_orientation(pairs, fq1, fq2, log, maxcfracTh)
         libraries[-1][3].append(orientation)
         # insert size information
         libraries[-1][4].append(int(ismean))
         stdfrac = isstd / ismean
         # capture large stdev
-        if stdfrac > 0.66:
+        if stdfrac > stdfracTh:
             log.write("[WARNING] Highly variable insert size (%.f +- %.2f) in %s - %s!\n"%(ismean, isstd, fq1, fq2))
         # SSSPACE accepts stdfrac 0-1.0
         if stdfrac > 1:
@@ -151,7 +157,8 @@ def run_scaffolding(outdir, scaffoldsFname, fastq, libraries, reducedFname, mapq
                 with open(pout) as index:
                     fasta_stats(index)
         # update library insert size estimation, especially for mate-pairs
-        libraries = get_libraries(fastq, pout, mapq, threads, verbose=0, log=log)
+        libraries = get_libraries(fastq, pout, mapq, threads, verbose=0,log=log,
+                                  libraries=libraries)
     # create symlink to final scaffolds or pout
     symlink(os.path.basename(pout), scaffoldsFname)
     symlink(os.path.basename(pout+".fai"), scaffoldsFname+".fai")
@@ -255,8 +262,7 @@ def prepare_contigs(fasta, contigsFname, minLength=200):
         # init fasta index
         faidx = FastaIndex(fasta)
         # filter out sequences shorter than minLength
-        longer = lambda x: len(faidx[x])>=minLength
-        for i, c in enumerate(sorted(filter(longer, faidx), key=lambda x: len(faidx[x]), reverse=1), 1):
+        for i, c in enumerate(faidx.sort(minLength=minLength), 1):
             if i%1e5 == 1:
                 sys.stderr.write(' %s   \r'%i)
             seq = faidx.__getitem__(c, name=str(i))
@@ -269,9 +275,10 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
               reduction=1, scaffolding=1, gapclosing=1, cleaning=1, \
               norearrangements=0, verbose=1, log=sys.stderr):
     """Launch redundans pipeline."""
+    fastas = [fasta, ]
     # update fasta list
     lastOutFn = os.path.join(outdir, "contigs.fa")
-    fastas = [lastOutFn, ]
+    fastas.append(lastOutFn)
     # check resume
     orgresume = resume
     if resume:
@@ -522,4 +529,4 @@ if __name__=='__main__':
     #except OSError as e:
     #    log.write("%s\n"%str(e))
     dt = datetime.now()-t0
-    sys.stderr.write("#Time elsed: %s\n"%dt)
+    sys.stderr.write("#Time elapsed: %s\n"%dt)

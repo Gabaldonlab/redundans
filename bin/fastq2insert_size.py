@@ -12,40 +12,41 @@ Mizerow, 10/04/2015
 
 import math, os, sys, commands, subprocess
 from datetime import datetime
+from FastaIndex import FastaIndex
 
 def flag2orientation(flag):
-    """Return pair orientation: FF: 0; FR: 1; RF: 2; RR: 4."""
-    ##FR/RF
-    #if alg.is_reverse != alg.mate_is_reverse:
+    """Return orientation of read pair: 
+    - FF: 0
+    - FR: 1
+    - RF: 2
+    - RR: 4
+    """
+    # FR/RF # one F and one R
     if flag&16 != flag&32:
-        #FR
-        #if alg.is_read1 and not alg.is_reverse or \
-        #   alg.is_read2 and not alg.is_reverse:
+        # FR # first and not R OR second and R
         if flag&64 and not flag&16 or flag&128 and not flag&16:
             return 1
-        #RF
+        # RF
         else:
             return 2
-    #RR - double check that!
-    #elif alg.is_read1 and alg.is_reverse or \
-    #     alg.is_read2 and not alg.is_reverse:
+    # RR # first and R OR second and R
     if flag&64 and flag&16 or flag&128 and not flag&16:
         return 3
-    #FF
+    # FF
     else:
         return 0
+        
 def get_bwa_subprocess(fq1, fq2, fasta, threads, verbose):
     """Return bwa subprocess"""
     # generate index if missing
     if not os.path.isfile(fasta+".bwt"):
         cmd = "bwa index %s"%fasta
-        #if verbose:
-        #    sys.stderr.write(" %s\n"%cmd)
+        #if verbose: sys.stderr.write(" %s\n"%cmd)
         bwtmessage = commands.getoutput(cmd)
     # start BWA alignment stream
+    ## -S skips mate rescue (faster)
     cmd = ["bwa", "mem", "-S", "-t %s"%threads, fasta, fq1, fq2]
-    #if verbose:
-    #    sys.stderr.write(" %s\n"%" ".join(cmd))
+    #if verbose: sys.stderr.write(" %s\n"%" ".join(cmd))
     bwa = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     return bwa
 
@@ -99,8 +100,8 @@ def pstdev(data):
     pvar = ss/n # the population variance
     return pvar**0.5    
     
-def get_isize_stats(fq1, fq2, fasta, mapqTh=10, threads=1,
-                    limit=1e5, verbose=0, percent=5): 
+def get_isize_stats(fq1, fq2, fasta, mapqTh=10, threads=1, limit=1e5, verbose=0, 
+                    percent=5, stdfracTh=0.66, maxcfracTh=0.9): 
     """Return estimated insert size median, mean, stdev and
     pairing orientation counts (FF, FR, RF, RR). 
     Ignore bottom and up percentile for insert size statistics. 
@@ -112,14 +113,11 @@ def get_isize_stats(fq1, fq2, fasta, mapqTh=10, threads=1,
             ismedian, ismean, isstd = map(float, ldata[:3])
             pairs = map(int, ldata[3:])
             # skip insert size estimation only if satisfactory previous estimate 
-            if sum(pairs)*2 >= limit and isstd / ismean < 0.66:
+            if isstd / ismean < stdfracTh: # sum(pairs)*maxcfracTh >= limit and 
                 return ismedian, ismean, isstd, pairs
-    #if verbose:
-    #    sys.stderr.write("Starting alignment...\n")
+    # run bwa
     bwa = get_bwa_subprocess(fq1, fq2, fasta, threads, verbose)
     # parse alignments
-    #if verbose:
-    #    sys.stderr.write("Estimating insert size stats...\n")
     isizes = []
     pairs = [0, 0, 0, 0]
     #read from stdin
@@ -162,8 +160,23 @@ def get_isize_stats(fq1, fq2, fasta, mapqTh=10, threads=1,
         sys.stderr.write("[WARNING] Couldn't write library statistics to %s\n"%(fq2+".is.txt",))
     return ismedian, ismean, isstd, pairs
 
-def fastq2insert_size(out, fastq, fasta, mapq, threads, limit, verbose, log=sys.stderr):
+def prepare_genome(fasta, genomeFrac=0.05):
+    """Prepare new fasta file that will contain
+    genomefrac of the original reference in largest contigs.
+    """
+    faidx = FastaIndex(fasta)
+    newfasta = "%s.%s"%(fasta, genomeFrac)
+    with open(newfasta, "w") as out:
+        for c in faidx.sort(genomeFrac=genomeFrac):
+            out.write(faidx[c])
+    return newfasta
+    
+def fastq2insert_size(out, fastq, fasta, mapq, threads, limit, verbose, log=sys.stderr, 
+                      genomeFrac=0.05, stdfracTh=0.66, maxcfracTh=0.9):
     """Report insert size statistics and return all information."""
+    # prepare genome
+    fasta = prepare_genome(fasta, genomeFrac)
+    # 
     header  = "Insert size statistics\t\t\t\tMates orientation stats\n"
     header += "FastQ files\tmedian\tmean\tstdev\tFF\tFR\tRF\tRR\n"
     if verbose:
@@ -172,7 +185,8 @@ def fastq2insert_size(out, fastq, fasta, mapq, threads, limit, verbose, log=sys.
     data = []
     for fq1, fq2 in zip(fastq[0::2], fastq[1::2]):
         # get IS stats
-        ismedian, ismean, isstd, pairs = get_isize_stats(fq1, fq2, fasta, mapq, threads, limit, verbose)
+        ismedian, ismean, isstd, pairs = get_isize_stats(fq1, fq2, fasta, mapq, threads, limit, verbose, 
+                                                         stdfracTh, maxcfracTh)
         if not sum(pairs):
             log.write("[WARNING] No alignments for %s - %s!\n"%(fq1, fq2))
             continue
@@ -202,13 +216,15 @@ def main():
                         help="min mapping quality for variants [%(default)s]")
     parser.add_argument("-t", "--threads", default=1, type=int, 
                         help="max threads to run [%(default)s]")
+    parser.add_argument("-g", "--genomefrac",  default=0.05, type=float, 
+                        help="use only this fraction of genome to speed up estimation [%(default)s]")
 
     o = parser.parse_args()
     if o.verbose:
         sys.stderr.write("Options: %s\n"%str(o))
         
     fastq2insert_size(o.output, o.fastq, o.fasta, o.mapq, o.threads, \
-                      o.limit, o.verbose)
+                      o.limit, o.verbose, o.genomefrac)
 
 if __name__=='__main__': 
     t0 = datetime.now()
