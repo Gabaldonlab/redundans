@@ -108,15 +108,15 @@ def get_isize_stats(fq1, fq2, fasta, mapqTh=10, threads=1, limit=1e5, verbose=0,
     """
     orientations = ('FF', 'FR', 'RF', 'RR')
     # read dumped info
-    if os.path.isfile(fq2+".is.txt"):
+    if os.path.isfile(fq2+".is.txt") and os.path.getmtime(fq2) < os.path.getmtime(fq2+".is.txt"):
         ldata = open(fq2+".is.txt").readline().split("\t")
         if len(ldata) == 7:
             ismedian, ismean, isstd = map(float, ldata[:3])
             pairs = map(int, ldata[3:])
             # select major orientation
             reads, orientation = sorted(zip(pairs, orientations), reverse=1)[0]
-            # skip insert size estimation only if satisfactory previous estimate 
-            if isstd / ismean < stdfracTh: # sum(pairs)*maxcfracTh >= limit and 
+            # skip insert size estimation only if satisfactory previous estimate
+            if isstd / ismean < stdfracTh and reads > maxcfracTh * sum(pairs): 
                 return ismedian, ismean, isstd, pairs, orientation
     # run bwa
     bwa = get_bwa_subprocess(fq1, fq2, fasta, threads, verbose)
@@ -150,7 +150,7 @@ def get_isize_stats(fq1, fq2, fasta, mapqTh=10, threads=1, limit=1e5, verbose=0,
     isizes, orientation = sorted(zip(isizes, orientations), key=lambda x: len(x[0]), reverse=1)[0]    
     # get frac of total reads
     maxcfrac = 1.0 * len(isizes) / sum(pairs)
-    if verbose and maxcfrac < maxcfracTh:
+    if maxcfrac < maxcfracTh:
         info = "[WARNING] Poor quality: Major orientation (%s) represent %s%s of pairs in %s - %s: %s\n"
         sys.stderr.write(info%(orientation, 100*maxcfrac, '%', fq1, fq2, str(pairs)))
     #get rid of 5 percentile from both sides
