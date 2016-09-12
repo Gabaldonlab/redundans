@@ -11,24 +11,23 @@
 
 # Redundans
   
-Redundans pipeline assists **an assembly of heterozygous genomes**.  
-Program takes [as input](#parameters) **assembled contigs**, **sequencing libraries** and/or **reference sequence** and returns **scaffolded homozygous genome assembly**. Final assembly should be **less fragmented** and with total **size smaller** than the input contigs. In addition, Redundans will automatically **close the gaps** resulting from genome assembly or scaffolding (more details about [program input](#parameters) and [process itself](/test#redundans-pipeline)). 
+Redundans pipeline assists **an assembly of heterozygous genomes**. Program takes [as input](#parameters) **assembled contigs**, **sequencing libraries** and/or **reference sequence** and returns **scaffolded homozygous genome assembly**. Final assembly should be **less fragmented** and with total **size smaller** than the input contigs. In addition, Redundans will automatically **close the gaps** resulting from genome assembly or scaffolding. 
 
 The pipeline consists of three steps/modules: 
-- **redundancy reduction**: detection and selectively removal of redundant contigs from an initial *de novo* assembly
-- **scaffolding**: joining of genome fragments using paired-end, mate-pairs reads, long reads and/or reference chromosomes
-- **gap closing**
+- **redundancy reduction**: detection and selective removal of redundant contigs from an initial *de novo* assembly
+- **scaffolding**: joining of genome fragments using paired-end reads, mate-pairs, long reads and/or reference chromosomes
+- **gap closing**: filling the gaps after scaffolding using paired-end and/or mate-pair reads
+
+<img align="right" src="/docs/redundans_flowchart.png">
 
 Redundans is: 
 - **fast** & **lightweight**, multi-core support and memory-optimised, 
 so it can be run even on the laptop for small-to-medium size genomes
-- **flexible** toward many sequencing technologies (Illumina, 454 or Sanger) and library types (paired-end, mate pairs, fosmids)
-- **modular**: every step can be ommited or replaced by another tools
-- ** reliable**: it has been already used to improve assemblies of many genomes, of any size (several Mb to several Gb) and complexity (fungal, animal & plants)
+- **flexible** toward many sequencing technologies (Illumina, 454, Sanger, PacBio & Nanopore) and library types (paired-end, mate pairs, fosmids, long reads)
+- **modular**: every step can be ommited or replaced by other tools
+- **reliable**: it has been already used to improve genome assemblies varying in size (several Mb to several Gb) and complexity (fungal, animal & plants)
 
-For more information have a look at the [documentation](/docs), [poster](/docs/poster.pdf) or [manuscript](/docs/manuscript.pdf).
-
-![Flowchart](/docs/redundans_flowchart.png)
+For more information have a look at the [documentation](/docs), [poster](/docs/poster.pdf), [publication](http://nar.oxfordjournals.org/content/44/12/e113) and [test dataset](/test). 
 
 ## Prerequisites
 Redundans uses several programs (all provided within this repository): 
