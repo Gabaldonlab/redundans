@@ -16,9 +16,9 @@ Redundans pipeline assists **an assembly of heterozygous genomes**. Program take
 <img align="right" src="/docs/redundans_flowchart.png">
 
 The pipeline consists of three steps/modules: 
-- **redundancy reduction**: detection and selective removal of redundant contigs from an initial *de novo* assembly
-- **scaffolding**: joining of genome fragments using paired-end reads, mate-pairs, long reads and/or reference chromosomes
-- **gap closing**: filling the gaps after scaffolding using paired-end and/or mate-pair reads
+1. **redundancy reduction**: detection and selective removal of redundant contigs from an initial *de novo* assembly
+2. **scaffolding**: joining of genome fragments using paired-end reads, mate-pairs, long reads and/or reference chromosomes
+3. **gap closing**: filling the gaps after scaffolding using paired-end and/or mate-pair reads
 
 Redundans is: 
 - **fast** & **lightweight**, multi-core support and memory-optimised, 
@@ -47,7 +47,9 @@ cd redundans
 
 If it fails, make sure you have below dependencies installed: 
 - Python 2.7 or 2.6
-- [zlib including zlib.h headers](http://zlib.net/) needed for compilation ie. `sudo apt-get install zlib1g-dev`
+- Perl [SSPACE3]
+- make, gcc & g++ [BWA & LAST] ie. `sudo apt-get install make gcc g++`
+- [zlib including zlib.h headers](http://zlib.net/) [BWA] ie. `sudo apt-get install zlib1g-dev`
 
 For user convenience, we provide [UNIX installer](#unix-installer) and [Docker image](#docker-image), that can be used instead of manually installation.  
 
@@ -161,7 +163,7 @@ You can play with **any combination of inputs** ie. paired-end, mate pairs, long
 For more details have a look in [test directory](/test). 
 
 ## Support 
-If you have any issues or doubts check [documentation](/docs) and [FAQ (Frequently Asked Questions)](/docs#faq).  
+If you have any issues or doubts check [documentation](/docs) and [FAQ (Frequently Asked Questions)](/docs#faq). 
 You may want also to sign to [our forum](https://groups.google.com/d/forum/redundans).
 
 
