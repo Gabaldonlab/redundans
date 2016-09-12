@@ -98,34 +98,36 @@ def pstdev(data):
         raise ValueError('variance requires at least two data points')
     ss = _ss(data)
     pvar = ss/n # the population variance
-    return pvar**0.5    
-    
+    return pvar**0.5
+
 def get_isize_stats(fq1, fq2, fasta, mapqTh=10, threads=1, limit=1e5, verbose=0, 
                     percent=5, stdfracTh=0.66, maxcfracTh=0.9): 
     """Return estimated insert size median, mean, stdev and
     pairing orientation counts (FF, FR, RF, RR). 
     Ignore bottom and up percentile for insert size statistics. 
     """
+    orientations = ('FF', 'FR', 'RF', 'RR')
     # read dumped info
     if os.path.isfile(fq2+".is.txt"):
         ldata = open(fq2+".is.txt").readline().split("\t")
         if len(ldata) == 7:
             ismedian, ismean, isstd = map(float, ldata[:3])
             pairs = map(int, ldata[3:])
+            # select major orientation
+            reads, orientation = sorted(zip(pairs, orientations), reverse=1)[0]
             # skip insert size estimation only if satisfactory previous estimate 
             if isstd / ismean < stdfracTh: # sum(pairs)*maxcfracTh >= limit and 
-                return ismedian, ismean, isstd, pairs
+                return ismedian, ismean, isstd, pairs, orientation
     # run bwa
     bwa = get_bwa_subprocess(fq1, fq2, fasta, threads, verbose)
     # parse alignments
-    isizes = []
-    pairs = [0, 0, 0, 0]
+    isizes = [[], [], [], []] #0, 0, 0, 0]
     #read from stdin
     for i, sam in enumerate(bwa.stdout, 1):
         if sam.startswith("@"):
             continue
-        if not i%1000:
-            sys.stderr.write(' %s %s \r'%(i, len(isizes)))
+        if verbose and not i%1000:
+            sys.stderr.write(' %s %s \r'%(i, sum(map(len, isizes))))
         # read sam entry
         rname, flag, chrom, pos, mapq, cigar, mchrom, mpos, isize, seq = sam.split('\t')[:10]
         flag, pos, mapq, mpos, isize = map(int, (flag, pos, mapq, mpos, isize))
@@ -134,17 +136,23 @@ def get_isize_stats(fq1, fq2, fasta, mapqTh=10, threads=1, limit=1e5, verbose=0,
         if mapq < mapqTh or isize < 1 or flag&256 or flag&2048: # or not flag&2:
             continue
         #store isize
-        isizes.append(isize)
-        #store pair orientation
-        pairs[flag2orientation(flag)] += 1
+        isizes[flag2orientation(flag)].append(isize)
         #stop if limit reached
-        if len(isizes) >= limit:
+        if sum(map(len, isizes)) >= limit:
             break
     # terminate subprocess
     bwa.terminate()
     # catch cases with very few reads aligned
+    pairs = map(len, isizes)
     if sum(pairs)<100:
-        return 0, 0, 0, []
+        return 0, 0, 0, [], ''
+    # select major orientation - replace isizes by major isizes
+    isizes, orientation = sorted(zip(isizes, orientations), key=lambda x: len(x[0]), reverse=1)[0]    
+    # get frac of total reads
+    maxcfrac = 1.0 * len(isizes) / sum(pairs)
+    if verbose and maxcfrac < maxcfracTh:
+        info = "[WARNING] Poor quality: Major orientation (%s) represent %s%s of pairs in %s - %s: %s\n"
+        sys.stderr.write(info%(orientation, 100*maxcfrac, '%', fq1, fq2, str(pairs)))
     #get rid of 5 percentile from both sides
     isizes.sort()
     maxins = percentile(isizes, 0.01*(100-percent))
@@ -158,7 +166,7 @@ def get_isize_stats(fq1, fq2, fasta, mapqTh=10, threads=1, limit=1e5, verbose=0,
             out.write("%s\t%s\t%s\t%s\n"%(ismedian, ismean, isstd, "\t".join(map(str, pairs))))
     except:
         sys.stderr.write("[WARNING] Couldn't write library statistics to %s\n"%(fq2+".is.txt",))
-    return ismedian, ismean, isstd, pairs
+    return ismedian, ismean, isstd, pairs, orientation
 
 def prepare_genome(fasta, genomeFrac=0.05):
     """Prepare new fasta file that will contain
@@ -185,8 +193,8 @@ def fastq2insert_size(out, fastq, fasta, mapq, threads, limit, verbose, log=sys.
     data = []
     for fq1, fq2 in zip(fastq[0::2], fastq[1::2]):
         # get IS stats
-        ismedian, ismean, isstd, pairs = get_isize_stats(fq1, fq2, fasta, mapq, threads, limit, verbose, 
-                                                         stdfracTh, maxcfracTh)
+        ismedian, ismean, isstd, pairs, orientation = get_isize_stats(fq1, fq2, fasta, mapq, threads, limit, verbose, 
+                                                                      stdfracTh, maxcfracTh)
         if not sum(pairs):
             log.write("[WARNING] No alignments for %s - %s!\n"%(fq1, fq2))
             continue
@@ -194,7 +202,7 @@ def fastq2insert_size(out, fastq, fasta, mapq, threads, limit, verbose, log=sys.
         if verbose:
             out.write(line%(fq1, fq2, ismedian, ismean, isstd, "\t".join(map(str, pairs))))
         # store data
-        data.append((fq1, fq2, ismedian, ismean, isstd, pairs))
+        data.append((fq1, fq2, ismedian, ismean, isstd, pairs, orientation))
     return data
     
 def main():

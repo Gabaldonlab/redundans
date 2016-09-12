@@ -200,7 +200,7 @@ def filter_paired(fpair, outfiles, minlen, maxlen, limit, minqual, \
                            stripHeaders, outformat, pi)
 
     ## Process
-    both = fori = revi = filtered = 0
+    i = both = fori = revi = filtered = 0
     for i, rec1 in enumerate(fqparser1, pi+1):
         # will crash if len(fq1) > len(fq2)
         rec2 = fqparser2.next()

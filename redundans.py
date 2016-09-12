@@ -33,22 +33,6 @@ def timestamp():
     """Return formatted date-time string"""
     return "\n%s\n[%s] "%("#"*50, datetime.ctime(datetime.now()))
 
-def get_orientation(pairs, fq1, fq2, log=sys.stderr, maxcfracTh=0.9):
-    """Return orientation of paired reads, either FF, FR, RF or RR.
-    Warn if major orientation is represented by less than 90% of reads.
-    """
-    orientations = ('FF', 'FR', 'RF', 'RR')
-    maxc = max(pairs)
-    # get major orientation
-    maxci = pairs.index(maxc)
-    orientation = orientations[maxci]
-    # get frac of total reads
-    maxcfrac = 1.0 * maxc / sum(pairs)
-    if maxcfrac < maxcfracTh:
-        info = "[WARNING] Poor quality: Major orientation (%s) represent %s%s of pairs in %s - %s: %s\n"
-        log.write(info%(orientation, 100*maxcfrac, '%', fq1, fq2, str(pairs)))
-    return orientation 
-
 def get_libraries(fastq, fasta, mapq, threads, verbose, log=sys.stderr, limit=0,
                   libraries=[], stdfracTh=0.66, maxcfracTh=0.9, genomeFrac=0.05):
     """Return libraries"""
@@ -68,7 +52,8 @@ def get_libraries(fastq, fasta, mapq, threads, verbose, log=sys.stderr, limit=0,
     ## also separate 300 and 600 paired-ends
     libraries = []
     # add libraries strating from lowest insert size
-    for fq1, fq2, ismedian, ismean, isstd, pairs in sorted(libdata, key=lambda x: x[3]):
+    for data in sorted(libdata, key=lambda x: x[3]):
+        fq1, fq2, ismedian, ismean, isstd, pairs, orientation = data
         # add new library set if 
         if not libraries or ismean > 1.5*libraries[-1][4][0]:
             # libnames, libFs, libRs, orientations, libIS, libISStDev
@@ -79,7 +64,7 @@ def get_libraries(fastq, fasta, mapq, threads, verbose, log=sys.stderr, limit=0,
         libraries[-1][1].append(open(fq1))
         libraries[-1][2].append(open(fq2))
         # orientation
-        orientation = get_orientation(pairs, fq1, fq2, log, maxcfracTh)
+        #orientation = get_orientation(pairs, fq1, fq2, log, maxcfracTh)
         libraries[-1][3].append(orientation)
         # insert size information
         libraries[-1][4].append(int(ismean))
@@ -172,16 +157,19 @@ def filter_reads(outdir, fq1, fq2, minlen, maxlen, limit, minqual):
     fn2 = os.path.join(outdir, "_reads.%s"%(os.path.basename(fq2.name.rstrip('.gz'))))
     # skip if fq files already generated
     if os.path.isfile(fn1) and os.path.isfile(fn2):
-        return fn1, fn2
+        # notify about empty trimmed libs
+        if not os.path.getsize(fn1) or not os.path.getsize(fn2):
+            return fn1, fn2, 0
+        return fn1, fn2, 1
     # open output files
     out1 = open(fn1, "w")
     out2 = open(fn2, "w")
     outfiles = (out1, out2, 0, 0)
     # run filtering
-    filter_paired(fastq, outfiles, minlen, maxlen, limit, minqual)
+    i, filtered, orphans = filter_paired(fastq, outfiles, minlen, maxlen, limit, minqual)
     out1.close()
     out2.close()
-    return fn1, fn2
+    return fn1, fn2, i-filtered
     
 def prepare_gapcloser(outdir, mapq, configFn, libFs, libRs, orientations,
                       libIS, libISStDev, minlen, maxlen, limit, verbose, log): 
@@ -202,9 +190,10 @@ def prepare_gapcloser(outdir, mapq, configFn, libFs, libRs, orientations,
                 log.write(info%(orient, fq1, fq2))
             continue
         # filter reads
-        fn1, fn2 = filter_reads(outdir, fq1, fq2, minlen, maxlen, limit, mapq)
-        #store config info - make is smaller 100
-        config.append(lines%(iSize, reverse_seq, i, fn1, fn2))
+        fn1, fn2, passed = filter_reads(outdir, fq1, fq2, minlen, maxlen, limit, mapq)
+        #store config info only if some reads
+        if passed:
+            config.append(lines%(iSize, reverse_seq, i, fn1, fn2))
         
     # store config only if some libs passed filtering
     if len(config)>1:

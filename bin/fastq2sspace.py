@@ -52,12 +52,9 @@ def sam2sspace_tab(inhandle, outhandle, mapqTh=0, upto=float('inf'), verbose=Fal
         i   += 1
         if upto and i>upto:
             break        
-        '''#gem uses entire fasta header as seq name
-        ref1 = ref1.split()[0]
-        ref2 = ref2.split()[0]'''
         #skip 0 quality pair
         if mapqTh:
-            if mapq1<mapqTh or mapq2<mapqTh:
+            if mapq1 < mapqTh or mapq2 < mapqTh:
                 continue  
         if q1!=q2:
             log.write("Warning: Queries have different names: %s vs %s\n" % (q1, q2))
@@ -68,49 +65,16 @@ def sam2sspace_tab(inhandle, outhandle, mapqTh=0, upto=float('inf'), verbose=Fal
             continue
         k += 1
         #define start-stop ranges
-        start1,end1 = get_start_stop(start1,len1,flag1)
-        start2,end2 = get_start_stop(start2,len2,flag2)    
+        start1, end1 = get_start_stop(start1, len1, flag1)
+        start2, end2 = get_start_stop(start2, len2, flag2)
         #print output
         outhandle.write("%s\t%s\t%s\t%s\t%s\t%s\n" % (ref1, start1, end1, ref2, start2, end2))
-    log.write("   %s pairs. %s passed filtering [%.2f%s]. %s in different contigs [%.2f%s].\n" % (i, j, j*100.0/i, '%', k, k*100.0/i, '%'))
+    if i:
+        info = "   %s pairs. %s passed filtering [%.2f%s]. %s in different contigs [%.2f%s].\n" % (i, j, j*100.0/i, '%', k, k*100.0/i, '%')
+    else:
+        info = "   No pairs were aligned!\n"
+    log.write(info)
     
-def sam2sspace_tab_OLD(inhandle, outhandle, mapqTh=0, verbose=False, log=sys.stderr):
-    """Convert SAM to SSPACE TAB file."""
-    i = j = k = pq1 = 0
-    sam = parse_sam(inhandle)
-    while 1:
-        try:
-            #read pair sam
-            sam1 = sam.next()
-            sam2 = sam.next()
-            #get variables
-            q1,flag1,ref1,start1,mapq1,len1 = sam1[0],int(sam1[1]),sam1[2],int(sam1[3]),int(sam1[4]),len(sam1[9])
-            q2,flag2,ref2,start2,mapq2,len2 = sam2[0],int(sam2[1]),sam2[2],int(sam2[3]),int(sam2[4]),len(sam2[9])
-            i   += 1
-            #gem uses entire fasta header as seq name
-            ref1 = ref1.split()[0]
-            ref2 = ref2.split()[0]
-            #skip 0 quality pair
-            if mapqTh:
-                if mapq1<mapqTh or mapq2<mapqTh:
-                    continue  
-            if q1!=q2:
-                log.write("Warning: Queries have different names: %s vs %s\n" % (q1,q2) )
-                continue
-            j   += 1
-            #skip self matches
-            if ref1==ref2:
-                continue
-            k += 1
-            #define start-stop ranges
-            start1,end1 = get_start_stop( start1,len1,flag1 )
-            start2,end2 = get_start_stop( start2,len2,flag2 )    
-            #print output
-            outhandle.write( "%s\t%s\t%s\t%s\t%s\t%s\n" % ( ref1,start1,end1,ref2,start2,end2 ) )
-        except StopIteration:
-            break
-    log.write( "   %s pairs. %s passed filtering [%.2f%s]. %s in different contigs [%.2f%s].\n" % (i,j,j*100.0/i,'%',k,k*100.0/i,'%') )
-
 def _get_bwamem_proc(fn1, fn2, ref, maxins, cores, upto, verbose, log=sys.stderr):
     """Return bwamem subprocess.
     bufsize: 0 no buffer; 1 buffer one line; -1 set system default.
