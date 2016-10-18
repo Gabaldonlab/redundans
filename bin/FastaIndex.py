@@ -43,9 +43,9 @@ class FastaIndex(object):
         self.log = log.write
         self.genomeSize = 0
         # guess handle
-        if type(handle) is str and os.path.isfile(handle):
-            self.handle = open(handle)
-        elif type(handle) is file:
+        if type(handle) is str and os.path.isfile(handle): 
+            handle = open(handle)
+        if type(handle) is file:
             if handle.name.endswith(('.gz','.bz')):
                 raise Exception("Compressed files are currently not supported!")
             self.handle = handle
