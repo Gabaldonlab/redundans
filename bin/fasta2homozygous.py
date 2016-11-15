@@ -117,7 +117,7 @@ def fasta2homozygous(out, fasta, identity, overlap, minLength, \
     plt.title("Identity level between contigs")
     plt.xlabel("Identity")
     plt.ylabel("Frequency")
-    plt.savefig(out.name+".png")
+    plt.savefig(out.name+".png") 
     
     #report homozygous fasta
     nsize, k, skipped, ssize, avgIdentity = save_homozygous(out, faidx, contig2skip, minLength, verbose)
@@ -131,30 +131,37 @@ def fasta2homozygous(out, fasta, identity, overlap, minLength, \
     return genomeSize, len(faidx), ssize, skipped, avgIdentity
 
 def save_homozygous(out, faidx, contig2skip, minLength, verbose):
-    """Save homozygous contigs to out stream"""
-    k = skipped = ssize = nsize = 0
-    identities = algLengths = 0
-    # process contigs starting from the largest
+    """Save homozygous contigs to out stream
+
+    Here you could learn from distibution of identities,
+    what really is the reasonable identity cut-off. 
+    """
+    k = skipped = ssize = nsize = identities = algLengths = 0
+    # store skipped hetero contigs stats
     out2 = open(out.name+".hetero.tsv", "w")
-    out2.write("#contig\ttarget\titentity\toverlap\n")
+    out2.write("#contig\tsize\ttarget\titentity\toverlap\n")
+    # process contigs starting from the largest
     for i, c in enumerate(faidx, 1):
-        # don't report skipped 
-        if contig2skip[c]: # or faidx.id2stats[c][0] < minLength
+        # skip short
+        if faidx.id2stats[c][0] < minLength:
+            skipped += 1
+            ssize   += faidx.id2stats[c][0]
+        # skip hetero
+        elif contig2skip[c]: 
             skipped += 1
             ssize   += faidx.id2stats[c][0]
             score, t, algLen, identity, overlap = contig2skip[c]
-            out2.write("%s\t%s\t%s\t%s\n"%(c, t, identity, overlap))
+            out2.write("%s\t%s\t%s\t%s\t%s\n"%(c, ssize, t, identity, overlap))
             # update identities and lengths
-            #algLen = overlap*ssize
             identities += identity*algLen
             algLengths += algLen
+        # save sequence
         else:
-            # save sequence
             out.write(faidx[c])
             # update counters
             k += 1
             nsize += faidx.id2stats[c][0]
-    # close output
+    # close out2
     out2.close()
     # calculate average identity        
     avgIdentity = 0
