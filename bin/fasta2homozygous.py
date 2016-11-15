@@ -26,7 +26,8 @@ def run_last(fasta, identity, threads, verbose):
     if not os.path.isfile(fasta+".suf"):
         os.system("lastdb %s %s" % (fasta, fasta))
     # run LAST
-    args = ["lastal", "-T", "1", "-f", "TAB", "-P", str(threads), fasta, fasta]
+    # consider adding -l 100 -C 2 for much faster 2-3x faster alignement 
+    args = ["lastal", "-T", "1", "-f", "TAB", "-P", str(threads), fasta, fasta] #"-l", "10", "-C", "5",
     proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=sys.stderr)        
     return proc
     
@@ -72,6 +73,10 @@ def fasta2skip(fasta, faidx, threads, identityTh, overlapTh, verbose):
         # skip contigs already marked as heterozygous
         if t not in contig2skip:
             sys.stderr.write(' [ERROR] `%s` (%s) not in contigs!\n'%(t, str(hits[i-1])))
+            continue
+        # catch missing contigs
+        if q not in contig2skip:
+            sys.stderr.write(' [ERROR] `%s` (%s) not in contigs!\n'%(q, str(hits[i-1])))
             continue
         # skip alignments of contigs already removed
         if contig2skip[q]:
