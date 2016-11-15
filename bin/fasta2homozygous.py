@@ -7,6 +7,7 @@ from heterozygous (redundant) contigs/scaffolds.
 
 TO ADD:
 - scaffold extension based on overlapping matches
+- report removed contigs
 - reporting of haplotypes
 - recognise heterozygous contigs with translocations
 """
