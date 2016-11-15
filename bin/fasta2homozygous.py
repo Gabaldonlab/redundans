@@ -18,6 +18,7 @@ Mizerow, 26/08/2014
 import gzip, os, sys, subprocess
 from datetime import datetime
 from FastaIndex import FastaIndex
+import matplotlib.pyplot as plt
 
 def run_last(fasta, identity, threads, verbose):
     """Start LAST with multi-threads"""
@@ -53,11 +54,11 @@ def fasta2hits(fasta, threads, identityTh, overlapTh, verbose):
             continue
         # store
         qend, tend = qstart + qalg, tstart + talg
-        yield score, t, q, qend-qstart, identity
+        yield score, t, q, qend-qstart, identity, overlap
     
 def fasta2skip(fasta, faidx, threads, identityTh, overlapTh, verbose):
     """
-    Return redundant dictionary with contigs marked by integers > 1
+    Return dictionary with redundant contigs marked by integers > 0
     and average identity between redundant contigs.
 
     NOTE: contigs FastA file has to be ordered by descending size !!!
@@ -65,12 +66,10 @@ def fasta2skip(fasta, faidx, threads, identityTh, overlapTh, verbose):
     # get hits generator
     hits = fasta2hits(fasta, threads, identityTh, overlapTh, verbose)
     # init
-    identities = algLengths = 0
-    contig2skip = {}
-    for c in faidx: 
-        contig2skip[c] = 0
+    identities = []
+    contig2skip = {c: 0 for c in faidx} 
     # no sorting, as contigs sorted already
-    for i, (score, t, q, algLen, identity) in enumerate(hits, 1):
+    for i, (score, t, q, algLen, identity, overlap) in enumerate(hits, 1):
         # skip contigs already marked as heterozygous
         if t not in contig2skip:
             sys.stderr.write(' [ERROR] `%s` (%s) not in contigs!\n'%(t, str(hits[i-1])))
@@ -80,22 +79,18 @@ def fasta2skip(fasta, faidx, threads, identityTh, overlapTh, verbose):
             sys.stderr.write(' [ERROR] `%s` (%s) not in contigs!\n'%(q, str(hits[i-1])))
             continue
         # skip alignments of contigs already removed
+        identities.append(identity)    
         if contig2skip[q]:
             # inform about matching already removed contig
             if verbose:
                 info = " [WARNING]: Match to already removed conting: %s %s\n"
                 sys.stderr.write(info%(q, str(hits[i-1])))
+            if score>contig2skip[q][0]:
+                contig2skip[q] = (score, t, algLen, identity, overlap)
             continue
         # store
-        contig2skip[q] += 1
-        # update identities and lengths
-        identities += identity*algLen
-        algLengths += algLen
-    # calculated identity
-    avgIdentity = 0
-    if algLengths:
-        avgIdentity = 100.0 * identities / algLengths
-    return contig2skip, avgIdentity
+        contig2skip[q] = (score, t, algLen, identity, overlap) # += 1
+    return contig2skip, identities
 
 def fasta2homozygous(out, fasta, identity, overlap, minLength, \
                      threads=1, verbose=0, log=sys.stderr):
@@ -104,6 +99,7 @@ def fasta2homozygous(out, fasta, identity, overlap, minLength, \
     Return genomeSize, no. of contigs, removed contigs size & number
     and average identity between reduced contigs.
     """
+    merged = []
     #create/load fasta index
     if verbose:
         log.write("Indexing fasta...\n")
@@ -113,10 +109,18 @@ def fasta2homozygous(out, fasta, identity, overlap, minLength, \
     # filter alignments & remove redundant
     if verbose:
         log.write("Parsing alignments...\n")
-    contig2skip, avgIdentity = fasta2skip(fasta, faidx, threads, identity, overlap, verbose)
+    contig2skip, identities = fasta2skip(fasta, faidx, threads, identity, overlap, verbose)
+
+    # plot histogram of identities
+    bins = 50
+    n, bins, patches = plt.hist(identities, bins, normed=1)
+    plt.title("Identity level between contigs")
+    plt.xlabel("Identity")
+    plt.ylabel("Frequency")
+    plt.savefig(out.name+".png")
     
     #report homozygous fasta
-    nsize, k, skipped, ssize, merged = save_homozygous(out, faidx, contig2skip, minLength, verbose)
+    nsize, k, skipped, ssize, avgIdentity = save_homozygous(out, faidx, contig2skip, minLength, verbose)
     
     #summary    
     info = "%s\t%s\t%s\t%s\t%.2f\t%s\t%.2f\t%.3f\t%s\t%s\t%.2f\t%s\t%.2f\n"
@@ -129,20 +133,34 @@ def fasta2homozygous(out, fasta, identity, overlap, minLength, \
 def save_homozygous(out, faidx, contig2skip, minLength, verbose):
     """Save homozygous contigs to out stream"""
     k = skipped = ssize = nsize = 0
+    identities = algLengths = 0
     # process contigs starting from the largest
+    out2 = open(out.name+".hetero.tsv", "w")
+    out2.write("#contig\ttarget\titentity\toverlap\n")
     for i, c in enumerate(faidx, 1):
         # don't report skipped 
-        if contig2skip[c] or faidx.id2stats[c][0] < minLength:
+        if contig2skip[c]: # or faidx.id2stats[c][0] < minLength
             skipped += 1
-            ssize   += len(faidx[c])
-            continue
-        # save sequence
-        out.write(faidx[c])
-        # update counters
-        k += 1
-        nsize += faidx.id2stats[c][0]
-        
-    return nsize, k, skipped, ssize, []
+            ssize   += faidx.id2stats[c][0]
+            score, t, algLen, identity, overlap = contig2skip[c]
+            out2.write("%s\t%s\t%s\t%s\n"%(c, t, identity, overlap))
+            # update identities and lengths
+            #algLen = overlap*ssize
+            identities += identity*algLen
+            algLengths += algLen
+        else:
+            # save sequence
+            out.write(faidx[c])
+            # update counters
+            k += 1
+            nsize += faidx.id2stats[c][0]
+    # close output
+    out2.close()
+    # calculate average identity        
+    avgIdentity = 0
+    if algLengths:
+        avgIdentity = 100.0 * identities / algLengths
+    return nsize, k, skipped, ssize, avgIdentity
         
 def main():
     import argparse

@@ -12,8 +12,11 @@ l.p.pryszcz@gmail.com
 import commands, os, subprocess, sys
 from datetime import datetime
 
-def parse_sam( handle ):
-    """Return sam tuple"""
+def _unload_sam(sam):
+    return sam[0], int(sam[1]), sam[2], int(sam[3]), int(sam[4]), len(sam[9])
+
+def parse_sam(handle):
+    """Return tuple representing entries from SAM."""
     q1 = q2 = ""
     for l in handle:
         l = l.strip()
@@ -25,17 +28,17 @@ def parse_sam( handle ):
             #skip multiple matches
             if sam[0] == q1:
                 continue
-            q1,flag1,ref1,start1,mapq1,len1 = sam[0],int(sam[1]),sam[2],int(sam[3]),int(sam[4]),len(sam[9])
+            q1, flag1, ref1, start1, mapq1, len1 = _unload_sam(sam)
         else:
             #skip multiple matches
             if sam[0] == q2:
                 continue
-            q2,flag2,ref2,start2,mapq2,len2 = sam[0],int(sam[1]),sam[2],int(sam[3]),int(sam[4]),len(sam[9])
+            q2, flag2, ref2, start2, mapq2, len2 = _unload_sam(sam)
         #report
         if q1 == q2:
-            yield q1,flag1,ref1,start1,mapq1,len1,q2,flag2,ref2,start2,mapq2,len2
+            yield q1, flag1, ref1, start1, mapq1, len1, q2, flag2, ref2, start2, mapq2, len2
 
-def get_start_stop( start,length,flag ):
+def get_start_stop(start, length, flag):
     """Return start-end read boundaries.
     Return end-start if reverse aligned (flag & 16)."""
     if flag & 16:
@@ -79,6 +82,13 @@ def _get_bwamem_proc(fn1, fn2, ref, maxins, cores, upto, verbose, log=sys.stderr
     """Return bwamem subprocess.
     bufsize: 0 no buffer; 1 buffer one line; -1 set system default.
     """
+    # create genome index
+    idxfn = ref + ".pac"
+    if not os.path.isfile(idxfn):
+        cmd = "bwa index %s" % (ref,)
+        if verbose:
+            log.write(" Creating index...\n  %s\n" % cmd)
+        bwtmessage = commands.getoutput(cmd)
     # skip mate rescue
     bwaArgs = ['bwa', 'mem', '-S', '-t', str(cores), ref, fn1, fn2 ]
     if verbose:
@@ -90,16 +100,7 @@ def _get_bwamem_proc(fn1, fn2, ref, maxins, cores, upto, verbose, log=sys.stderr
 def get_tab_files(outdir, reffile, libNames, fReadsFnames, rReadsFnames, inserts, iBounds,\
                   cores, mapqTh, upto, verbose, log=sys.stderr):
     """Prepare genome index, align all libs and save TAB file"""
-    #create genome index
     ref = reffile.name
-    #'''
-    idxfn = ref + ".pac"
-    if not os.path.isfile(idxfn):
-        cmd = "bwa index %s" % (ref,)
-        if verbose:
-            log.write(" Creating index...\n  %s\n" % cmd)
-        bwtmessage = commands.getoutput(cmd)
-       
     tabFnames = []
     #process all libs
     for libName,f1,f2,iSize,iFrac in zip(libNames, fReadsFnames, rReadsFnames, inserts, iBounds):

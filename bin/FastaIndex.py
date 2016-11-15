@@ -137,7 +137,7 @@ class FastaIndex(object):
         for seqid in self.id2stats: 
             yield seqid
 
-    def __getitem__(self, key, start=None, stop=None, name=None):
+    def __getitem__(self, key, start=None, stop=None, name=None, seqonly=False):
         """x.__getitem__(y) <==> x[y]"""
         if key not in self.id2stats:
             raise KeyError
@@ -168,6 +168,8 @@ class FastaIndex(object):
             seq = self.handle.read(bytesize).replace('\n', '')
             if reverse_complement:
                 seq = self.get_reverse_complement(seq)
+            if seqonly:
+                return seq
             # format lines
             seq = '\n'.join(seq[i:i+linebases] for i in range(0, len(seq), linebases))+'\n'
         # load whole sequence record
@@ -180,6 +182,8 @@ class FastaIndex(object):
             # read entire sequence
             self.handle.seek(offset)
             seq = self.handle.read(bytesize)
+            if seqonly:
+                return "".join(seq.split('\n'))
         # update name
         if not name:
             name = seqid
@@ -197,6 +201,13 @@ class FastaIndex(object):
                     rc.append(b)
         return "".join(reversed(rc))
 
+    def get_sequence(self, contig, reverse=False):
+        """Return sequence of given contig"""
+        seq = self.__getitem__(contig, seqonly=True)
+        if reverse:
+            return self.get_reverse_complement(seq)
+        return seq
+        
     def get_fasta(self, region="", contig="", start=None, stop=None):
         """Return FastA slice"""
         if region:

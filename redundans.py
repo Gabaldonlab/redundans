@@ -3,6 +3,10 @@ desc="""Heterozygous genome assembly pipeline. It consists of three steps:
 reduction, scaffolding and gap closing.
 
 More info at: http://bit.ly/Redundans
+
+TBA:
+- plot identity freq/hist for reduction - this may inform about divergence, ploidy etc
+- add exception if lastdb or lastal doesn't finish successfully
 """
 epilog="""Author:
 l.p.pryszcz@gmail.com
@@ -391,7 +395,7 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
         if verbose:
             log.write("%sCleaning-up...\n"%timestamp())
         for root, dirs, fnames in os.walk(outdir):
-            for fn in filter(lambda x: not x.endswith(('.fa', '.fasta', '.fai')), fnames):
+            for fn in filter(lambda x: not x.endswith(('.fa', '.fasta', '.fai', '.tsv', '.png')), fnames):
                 os.unlink(os.path.join(root, fn))
 
     if orgresume:
