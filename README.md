@@ -50,6 +50,7 @@ If it fails, make sure you have below dependencies installed:
 - Perl [SSPACE3]
 - make, gcc & g++ [BWA & LAST] ie. `sudo apt-get install make gcc g++`
 - [zlib including zlib.h headers](http://zlib.net/) [BWA] ie. `sudo apt-get install zlib1g-dev`
+- optionally for plotting `numpy` and `matplotlib` ie. `sudo -H pip install -U matplotlib numpy`
 
 For user convenience, we provide [UNIX installer](#unix-installer) and [Docker image](#docker-image), that can be used instead of manually installation.  
 

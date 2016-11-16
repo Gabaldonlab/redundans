@@ -23,18 +23,18 @@ def parse_sam(handle):
         if not l or l.startswith('@'):
             continue
         sam = l.split('\t')
-        #first in pair
+        # first in pair
         if int(sam[1]) & 64:
-            #skip multiple matches
+            # skip multiple matches
             if sam[0] == q1:
                 continue
             q1, flag1, ref1, start1, mapq1, len1 = _unload_sam(sam)
         else:
-            #skip multiple matches
+            # skip multiple matches
             if sam[0] == q2:
                 continue
             q2, flag2, ref2, start2, mapq2, len2 = _unload_sam(sam)
-        #report
+        # report
         if q1 == q2:
             yield q1, flag1, ref1, start1, mapq1, len1, q2, flag2, ref2, start2, mapq2, len2
 
@@ -97,31 +97,52 @@ def _get_bwamem_proc(fn1, fn2, ref, maxins, cores, upto, verbose, log=sys.stderr
     bwaProc = subprocess.Popen(bwaArgs, stdout=subprocess.PIPE, stderr=log)
     return bwaProc
     
+def _get_snap_proc(fn1, fn2, ref, cores, verbose, log=sys.stderr):
+    """Return snap-aligner subprocess.
+    bufsize: 0 no buffer; 1 buffer one line; -1 set system default.
+    """
+    # create genome index
+    idxfn = ref + ".snap"
+    idxcmd = "snap-aligner index %s %s" % (ref, idxfn)
+    if not os.path.isdir(idxfn):
+        if verbose:
+            log.write(" Creating index...\n  %s\n" % idxcmd)
+        idxmessage = commands.getoutput(idxcmd)
+        log.write(idxmessage)
+    # skip mate rescue
+    args = ['snap-aligner', 'paired', idxfn, fn1, fn2, '--b', '-t', str(cores), '-o', '-sam', '-']
+    if verbose:
+        log.write( "  %s\n" % " ".join(args))
+    #select ids
+    proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=log)
+    return proc
+    
 def get_tab_files(outdir, reffile, libNames, fReadsFnames, rReadsFnames, inserts, iBounds,\
                   cores, mapqTh, upto, verbose, log=sys.stderr):
     """Prepare genome index, align all libs and save TAB file"""
     ref = reffile.name
     tabFnames = []
-    #process all libs
+    # process all libs
     for libName,f1,f2,iSize,iFrac in zip(libNames, fReadsFnames, rReadsFnames, inserts, iBounds):
         if verbose:
             log.write( "[%s] [lib] %s\n" % (datetime.ctime(datetime.now()), libName))
-        #define tab output
+        # define tab output
         outfn = "%s.%s.tab" % (outdir, libName)
-        #skip if file exists
+        # skip if file exists
         if os.path.isfile( outfn ):
             log.write("  File exists: %s\n" % outfn)
             tabFnames.append(outfn)
             continue
         out = open(outfn, "w")
-        bwalog = open(outfn+".log", "w")
-        #define max insert size allowed
+        # define max insert size allowed
         maxins = (1.0+iFrac) * iSize
-        #run bowtie2 for all libs        
-        proc = _get_bwamem_proc(f1.name, f2.name, ref, maxins, cores, upto, verbose, bwalog)
-        #parse botwie output
+        # run alignment for all libs        
+        bwalog = open(outfn+".log", "w")
+        # proc = _get_bwamem_proc(f1.name, f2.name, ref, maxins, cores, upto, verbose, bwalog)
+        proc = _get_snap_proc(f1.name, f2.name, ref, cores, verbose, bwalog)
+        # parse botwie output
         sam2sspace_tab(proc.stdout, out, mapqTh, upto, verbose, log)
-        #close file
+        # close file
         out.close()
         tabFnames.append(outfn)
         # terminate subprocess
@@ -131,12 +152,12 @@ def get_tab_files(outdir, reffile, libNames, fReadsFnames, rReadsFnames, inserts
 def get_libs(outdir, libFn, libNames, tabFnames, inserts, iBounds, orientations, verbose, log=sys.stderr):
     """Save lib fname and return it's path"""
     lines = []
-    #load libs from file
+    # load libs from file
     if libFn:
         if verbose:
             log.write(" Reading libs from %s\n" % libFn)
         lines = open(libFn).readlines()
-    #add TAB libs
+    # add TAB libs
     tabline = "%s\tTAB\t%s\t%s\t%s\t%s\n"
     for libname, tabfn, isize, isfrac, orient in zip(libNames, tabFnames, inserts, \
                                                      iBounds, orientations):
@@ -157,17 +178,17 @@ def fastq2sspace(out, fasta, lib, libnames, libFs, libRs, orientations,  \
     curdir = os.path.abspath(os.path.curdir)
     outfn  = os.path.basename(out)
     outdir = os.path.dirname(out)
-    #generate outdirs if out contain dir and dir not exists
+    # generate outdirs if out contain dir and dir not exists
     if outdir:
         if not os.path.isdir(outdir):
             os.makedirs(outdir)
     
-    #get tab files
+    # get tab files
     if verbose:
         log.write("[%s] Generating TAB file(s) for %s library/ies...\n" % (datetime.ctime(datetime.now()),len(libnames)) )
     tabFnames = get_tab_files(out, fasta, libnames, libFs, libRs, libIS, libISStDev, cores, mapq, upto, verbose, log)
 
-    #generate lib file
+    # generate lib file
     if  verbose:
         log.write("[%s] Generating libraries file...\n" % datetime.ctime(datetime.now()) )
     libFn = get_libs(out, lib, libnames, tabFnames, libIS, libISStDev, orientations, verbose, log)

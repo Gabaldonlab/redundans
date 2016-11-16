@@ -131,8 +131,8 @@ def plot_histograms(fname, contig2skip, identities, algsizes):
     
 def fasta2homozygous(out, fasta, identity, overlap, minLength, \
                      threads=1, verbose=0, log=sys.stderr):
-    """
-    Parse alignments and report homozygous contigs.
+    """Parse alignments and report homozygous contigs.
+    
     Return genomeSize, no. of contigs, removed contigs size & number
     and average identity between reduced contigs.
     """
