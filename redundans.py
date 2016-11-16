@@ -5,7 +5,6 @@ reduction, scaffolding and gap closing.
 More info at: http://bit.ly/Redundans
 
 TBA:
-- plot identity freq/hist for reduction - this may inform about divergence, ploidy etc
 - add exception if lastdb or lastal doesn't finish successfully
 """
 epilog="""Author:
@@ -57,16 +56,17 @@ def get_libraries(fastq, fasta, mapq, threads, verbose, log=sys.stderr, limit=0,
     libraries = []
     # add libraries strating from lowest insert size
     for data in sorted(libdata, key=lambda x: x[3]):
-        fq1, fq2, ismedian, ismean, isstd, pairs, orientation = data
+        fq1, fq2, readlen, ismedian, ismean, isstd, pairs, orientation = data
         # add new library set if 
         if not libraries or ismean > 1.5*libraries[-1][4][0]:
             # libnames, libFs, libRs, orientations, libIS, libISStDev
-            libraries.append([[], [], [], [], [], []])
+            libraries.append([[], [], [], [], [], [], []])
             i = 1
         # add libname & fastq files
         libraries[-1][0].append("lib%s"%i)
         libraries[-1][1].append(open(fq1))
         libraries[-1][2].append(open(fq2))
+        libraries[-1][6].append(readlen)
         # orientation
         #orientation = get_orientation(pairs, fq1, fq2, log, maxcfracTh)
         libraries[-1][3].append(orientation)
@@ -105,7 +105,7 @@ def run_scaffolding(outdir, scaffoldsFname, fastq, libraries, reducedFname, mapq
     pout = reducedFname
     i = 0
     while i < len(libraries):
-        libnames, libFs, libRs, orients, libIS, libISStDev = libraries[i]
+        libnames, libFs, libRs, orients, libIS, libISStDev, libreadlen = libraries[i]
         i += 1
         for j in range(1, iters+1):
             out = os.path.join(outdir, "_sspace.%s.%s"%(i, j))
@@ -117,7 +117,7 @@ def run_scaffolding(outdir, scaffoldsFname, fastq, libraries, reducedFname, mapq
                 lib = ""
                 # run fastq scaffolding
                 fastq2sspace(out, open(pout), lib, libnames, libFs, libRs, orients, \
-                             libIS, libISStDev, threads, mapq, limit, linkratio, joins, \
+                             libIS, libISStDev, libreadlen, threads, mapq, limit, linkratio, joins, \
                              sspacebin, verbose=0, log=log)
             # store out info
             pout = out+".fa"
@@ -180,8 +180,7 @@ def prepare_gapcloser(outdir, mapq, configFn, libFs, libRs, orientations,
     """Return SOAPdenovo2 config file needed by GapCloser."""
     lines  = "[LIB]\navg_ins=%s\nreverse_seq=%s\nasm_flags=3\nrank=%s\npair_num_cutoff=5\nmap_len=35\nq1=%s\nq2=%s\n"
     config = ["max_rd_len=%s"%maxlen]
-    for i, (fq1, fq2, orient, iSize, iFrac) in enumerate(zip(libFs, libRs, orientations, \
-                                                             libIS, libISStDev), 1):
+    for i, (fq1, fq2, orient, iSize, iFrac) in enumerate(zip(libFs, libRs, orientations, libIS, libISStDev), 1):
         # consider skipping mate-pairs is libIS>1kb
         # skip orientations other than FR RF
         if orient == "FR":
@@ -207,14 +206,15 @@ def prepare_gapcloser(outdir, mapq, configFn, libFs, libRs, orientations,
     
 def run_gapclosing(outdir, mapq, libraries, nogapsFname, scaffoldsFname, \
                    threads, limit, iters, resume, verbose, log, basename="_gapcloser", \
-                   overlap=25, maxReadLen=150, minReadLen=40):
+                   overlap=25, minReadLen=40):
     """Execute gapclosing step."""
     pout = scaffoldsFname
     
-    for i, (libnames, libFs, libRs, orientations, libIS, libISStDev) in enumerate(libraries, 1):
+    for i, (libnames, libFs, libRs, orientations, libIS, libISStDev, libreadlen) in enumerate(libraries, 1):
         # prepare config file and filter reads
         configFn = os.path.join(outdir, "%s.%s.conf"%(basename, i))
         # skip if not suitable libraries
+        maxReadLen = max(libreadlen)
         if not prepare_gapcloser(outdir, mapq, configFn, libFs, libRs, orientations, libIS, libISStDev, \
                                  minReadLen, maxReadLen, limit, verbose, log):
             continue
@@ -395,8 +395,11 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
         if verbose:
             log.write("%sCleaning-up...\n"%timestamp())
         for root, dirs, fnames in os.walk(outdir):
-            for fn in filter(lambda x: not x.endswith(('.fa', '.fasta', '.fai', '.tsv', '.png')), fnames):
+            for i, fn in enumerate(filter(lambda x: not x.endswith(('.fa', '.fasta', '.fai', '.tsv', '.png')), fnames), 1):
                 os.unlink(os.path.join(root, fn))
+            # rmdir of snap index
+            if root.endswith('.snap') and i==len(fnames):
+                os.rmdir(root)
 
     if orgresume:
         log.write("%sResume report: %s step(s) have been recalculated.\n"%(timestamp(), resume-1))

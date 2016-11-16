@@ -33,6 +33,7 @@ For more information have a look at the [documentation](/docs), [poster](/docs/p
 Redundans uses several programs (all provided within this repository): 
 - [LAST](http://last.cbrc.jp/) v700+
 - [BWA](http://bio-bwa.sourceforge.net/) v0.7.12+
+- [SNAP aligner](https://github.com/amplab/snap)
 - [SSPACE3](http://www.baseclear.com/genomics/bioinformatics/basetools/SSPACE)
 - [pyScaf](https://github.com/lpryszcz/pyScaf)
 - [GapCloser](http://sourceforge.net/projects/soapdenovo2/files/GapCloser/)

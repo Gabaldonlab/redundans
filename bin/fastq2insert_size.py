@@ -110,18 +110,19 @@ def get_isize_stats(fq1, fq2, fasta, mapqTh=10, threads=1, limit=1e5, verbose=0,
     # read dumped info
     if os.path.isfile(fq2+".is.txt") and os.path.getmtime(fq2) < os.path.getmtime(fq2+".is.txt"):
         ldata = open(fq2+".is.txt").readline().split("\t")
-        if len(ldata) == 7:
-            ismedian, ismean, isstd = map(float, ldata[:3])
-            pairs = map(int, ldata[3:])
+        if len(ldata) == 8:
+            readlen, ismedian, ismean, isstd = map(float, ldata[:4])
+            pairs = map(int, ldata[-4:])
             # select major orientation
             reads, orientation = sorted(zip(pairs, orientations), reverse=1)[0]
             # skip insert size estimation only if satisfactory previous estimate
             if isstd / ismean < stdfracTh and reads > maxcfracTh * sum(pairs): 
-                return ismedian, ismean, isstd, pairs, orientation
+                return int(readlen), ismedian, ismean, isstd, pairs, orientation
     # run bwa
     bwa = get_bwa_subprocess(fq1, fq2, fasta, threads, verbose)
     # parse alignments
     isizes = [[], [], [], []] #0, 0, 0, 0]
+    readlen = 0
     #read from stdin
     for i, sam in enumerate(bwa.stdout, 1):
         if sam.startswith("@"):
@@ -137,6 +138,7 @@ def get_isize_stats(fq1, fq2, fasta, mapqTh=10, threads=1, limit=1e5, verbose=0,
             continue
         #store isize
         isizes[flag2orientation(flag)].append(isize)
+        readlen += len(seq)
         #stop if limit reached
         if sum(map(len, isizes)) >= limit:
             break
@@ -144,8 +146,9 @@ def get_isize_stats(fq1, fq2, fasta, mapqTh=10, threads=1, limit=1e5, verbose=0,
     bwa.terminate()
     # catch cases with very few reads aligned
     pairs = map(len, isizes)
-    if sum(pairs)<100:
-        return 0, 0, 0, [], ''
+    readlen = int(round(1.*readlen/sum(pairs)))
+    if sum(pairs) < 100:
+        return 0, 0, 0, 0, [], ''
     # select major orientation - replace isizes by major isizes
     isizes, orientation = sorted(zip(isizes, orientations), key=lambda x: len(x[0]), reverse=1)[0]    
     # get frac of total reads
@@ -163,10 +166,10 @@ def get_isize_stats(fq1, fq2, fasta, mapqTh=10, threads=1, limit=1e5, verbose=0,
     # save info
     try:
         with open(fq2+".is.txt", "w") as out:
-            out.write("%s\t%s\t%s\t%s\n"%(ismedian, ismean, isstd, "\t".join(map(str, pairs))))
+            out.write("%s\t%s\t%s\t%s\t%s\n"%(readlen, ismedian, ismean, isstd, "\t".join(map(str, pairs))))
     except:
         sys.stderr.write("[WARNING] Couldn't write library statistics to %s\n"%(fq2+".is.txt",))
-    return ismedian, ismean, isstd, pairs, orientation
+    return readlen, ismedian, ismean, isstd, pairs, orientation
 
 def prepare_genome(fasta, genomeFrac=0.05):
     """Prepare new fasta file that will contain
@@ -186,23 +189,23 @@ def fastq2insert_size(out, fastq, fasta, mapq, threads, limit, verbose, log=sys.
     fasta = prepare_genome(fasta, genomeFrac)
     # 
     header  = "Insert size statistics\t\t\t\tMates orientation stats\n"
-    header += "FastQ files\tmedian\tmean\tstdev\tFF\tFR\tRF\tRR\n"
+    header += "FastQ files\tread length\tmedian\tmean\tstdev\tFF\tFR\tRF\tRR\n"
     if verbose:
         out.write(header)
-    line = "%s %s\t%i\t%.2f\t%.2f\t%s\n"
+    line = "%s %s\t%i\t%i\t%.2f\t%.2f\t%s\n"
     data = []
     for fq1, fq2 in zip(fastq[0::2], fastq[1::2]):
         # get IS stats
-        ismedian, ismean, isstd, pairs, orientation = get_isize_stats(fq1, fq2, fasta, mapq, threads, limit, verbose, 
-                                                                      stdfracTh, maxcfracTh)
+        isstats = get_isize_stats(fq1, fq2, fasta, mapq, threads, limit, verbose, stdfracTh, maxcfracTh)
+        readlen, ismedian, ismean, isstd, pairs, orientation = isstats
         if not sum(pairs):
             log.write("[WARNING] No alignments for %s - %s!\n"%(fq1, fq2))
             continue
         # report
         if verbose:
-            out.write(line%(fq1, fq2, ismedian, ismean, isstd, "\t".join(map(str, pairs))))
+            out.write(line%(fq1, fq2, readlen, ismedian, ismean, isstd, "\t".join(map(str, pairs))))
         # store data
-        data.append((fq1, fq2, ismedian, ismean, isstd, pairs, orientation))
+        data.append((fq1, fq2, readlen, ismedian, ismean, isstd, pairs, orientation))
     return data
     
 def main():

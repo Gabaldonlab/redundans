@@ -78,7 +78,7 @@ def sam2sspace_tab(inhandle, outhandle, mapqTh=0, upto=float('inf'), verbose=Fal
         info = "   No pairs were aligned!\n"
     log.write(info)
     
-def _get_bwamem_proc(fn1, fn2, ref, maxins, cores, upto, verbose, log=sys.stderr):
+def _get_bwamem_proc(fn1, fn2, ref, cores, verbose, log=sys.stderr):
     """Return bwamem subprocess.
     bufsize: 0 no buffer; 1 buffer one line; -1 set system default.
     """
@@ -90,9 +90,9 @@ def _get_bwamem_proc(fn1, fn2, ref, maxins, cores, upto, verbose, log=sys.stderr
             log.write(" Creating index...\n  %s\n" % cmd)
         bwtmessage = commands.getoutput(cmd)
     # skip mate rescue
-    bwaArgs = ['bwa', 'mem', '-S', '-t', str(cores), ref, fn1, fn2 ]
+    bwaArgs = ['bwa', 'mem', '-S', '-t', str(cores), ref, fn1, fn2]
     if verbose:
-        log.write( "  %s\n" % " ".join(bwaArgs) )
+        log.write( "  %s\n" % " ".join(bwaArgs))
     #select ids
     bwaProc = subprocess.Popen(bwaArgs, stdout=subprocess.PIPE, stderr=log)
     return bwaProc
@@ -117,13 +117,16 @@ def _get_snap_proc(fn1, fn2, ref, cores, verbose, log=sys.stderr):
     proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=log)
     return proc
     
-def get_tab_files(outdir, reffile, libNames, fReadsFnames, rReadsFnames, inserts, iBounds,\
+def get_tab_files(outdir, reffile, libNames, fReadsFnames, rReadsFnames, inserts, iBounds, libreadlen, \
                   cores, mapqTh, upto, verbose, log=sys.stderr):
     """Prepare genome index, align all libs and save TAB file"""
     ref = reffile.name
     tabFnames = []
+    _get_aligner_proc = _get_bwamem_proc
+    if max(libreadlen)<=300 and min(libreadlen)>40:
+        _get_aligner_proc = _get_snap_proc
     # process all libs
-    for libName,f1,f2,iSize,iFrac in zip(libNames, fReadsFnames, rReadsFnames, inserts, iBounds):
+    for libName, f1, f2, iSize, iFrac in zip(libNames, fReadsFnames, rReadsFnames, inserts, iBounds):
         if verbose:
             log.write( "[%s] [lib] %s\n" % (datetime.ctime(datetime.now()), libName))
         # define tab output
@@ -138,8 +141,7 @@ def get_tab_files(outdir, reffile, libNames, fReadsFnames, rReadsFnames, inserts
         maxins = (1.0+iFrac) * iSize
         # run alignment for all libs        
         bwalog = open(outfn+".log", "w")
-        # proc = _get_bwamem_proc(f1.name, f2.name, ref, maxins, cores, upto, verbose, bwalog)
-        proc = _get_snap_proc(f1.name, f2.name, ref, cores, verbose, bwalog)
+        proc = _get_aligner_proc(f1.name, f2.name, ref, cores, verbose, bwalog)
         # parse botwie output
         sam2sspace_tab(proc.stdout, out, mapqTh, upto, verbose, log)
         # close file
@@ -171,7 +173,7 @@ def get_libs(outdir, libFn, libNames, tabFnames, inserts, iBounds, orientations,
     return outfn
 
 def fastq2sspace(out, fasta, lib, libnames, libFs, libRs, orientations,  \
-                 libIS, libISStDev, cores, mapq, upto, minlinks, linkratio, \
+                 libIS, libISStDev, libreadlen, cores, mapq, upto, minlinks, linkratio, \
                  sspacebin, verbose, log=sys.stderr):
     """Map reads onto contigs, prepare library file and execute SSPACE2"""
     # get dir variables
@@ -186,7 +188,7 @@ def fastq2sspace(out, fasta, lib, libnames, libFs, libRs, orientations,  \
     # get tab files
     if verbose:
         log.write("[%s] Generating TAB file(s) for %s library/ies...\n" % (datetime.ctime(datetime.now()),len(libnames)) )
-    tabFnames = get_tab_files(out, fasta, libnames, libFs, libRs, libIS, libISStDev, cores, mapq, upto, verbose, log)
+    tabFnames = get_tab_files(out, fasta, libnames, libFs, libRs, libIS, libISStDev, libreadlen, cores, mapq, upto, verbose, log)
 
     # generate lib file
     if  verbose:
