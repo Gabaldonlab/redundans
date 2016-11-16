@@ -17,10 +17,6 @@ Mizerow, 26/08/2014
 import gzip, os, sys, subprocess
 from datetime import datetime
 from FastaIndex import FastaIndex
-# Force matplotlib to not use any Xwindows backend.
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
 
 def run_last(fasta, identity, threads, verbose):
     """Start LAST with multi-threads"""
@@ -57,19 +53,13 @@ def fasta2hits(fasta, threads, identityTh, overlapTh, verbose):
         qend, tend = qstart + qalg, tstart + talg
         yield score, t, q, qend-qstart, identity, overlap
     
-def fasta2skip(fasta, faidx, threads, identityTh, overlapTh, verbose):
-    """
-    Return dictionary with redundant contigs marked by integers > 0
-    and average identity between redundant contigs.
-
-    NOTE: contigs FastA file has to be ordered by descending size !!!
-    """
+def fasta2skip(out, fasta, faidx, threads, identityTh, overlapTh, verbose):
+    """Return dictionary with redundant contigs and their best alignments"""
     # get hits generator
     hits = fasta2hits(fasta, threads, identityTh, overlapTh, verbose)
-    # init
-    identities = []
+    # iterate through hits
+    identities, sizes = [], []
     contig2skip = {c: 0 for c in faidx} 
-    # no sorting, as contigs sorted already
     for i, (score, t, q, algLen, identity, overlap) in enumerate(hits, 1):
         # skip contigs already marked as heterozygous
         if t not in contig2skip:
@@ -79,20 +69,66 @@ def fasta2skip(fasta, faidx, threads, identityTh, overlapTh, verbose):
         if q not in contig2skip:
             sys.stderr.write(' [ERROR] `%s` (%s) not in contigs!\n'%(q, str(hits[i-1])))
             continue
-        # skip alignments of contigs already removed
+        # store first match or update best match
+        if not contig2skip[q] or score > contig2skip[q][0]:
+            contig2skip[q] = (score, t, algLen, identity, overlap)
+        # store identity and alignment for plotting
         identities.append(identity)
-        if contig2skip[q]:
-            # inform about matching already removed contig
-            if verbose:
-                info = " [WARNING]: Match to already removed conting: %s %s\n"
-                sys.stderr.write(info%(q, str(hits[i-1])))
-            if score>contig2skip[q][0]:
-                contig2skip[q] = (score, t, algLen, identity, overlap)
-            continue
-        # store
-        contig2skip[q] = (score, t, algLen, identity, overlap) # += 1
-    return contig2skip, identities
+        sizes.append(algLen)
+    # plot histogram of identities
+    plot_histograms(out.name, contig2skip, identities, sizes)
+    return contig2skip
 
+def plot_histograms(fname, contig2skip, identities, algsizes):
+    """Plot histogram for matches"""
+    try:
+        import numpy as np
+        # Force matplotlib to not use any Xwindows backend.
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
+    except:
+        return
+    fig = plt.figure()
+    contigs = contig2skip.keys()
+    best = [contig2skip[c][3] for c in contigs if contig2skip[c]]
+    bestalgsizes = [contig2skip[c][2] for c in contigs if contig2skip[c]]
+    # get bins
+    bins = np.arange(.5, 1., 0.01)
+    
+    # get counts
+    bestcounts = [0]*len(bins)
+    bestsizes = [0]*len(bins)
+    for i, isize in zip(np.digitize(best, bins, right=1), bestalgsizes):
+        bestcounts[i] += 1
+        bestsizes[i] += isize
+            
+    counts = [0]*len(bins)
+    sizes = [0]*len(bins)
+    for i, isize in zip(np.digitize(identities, bins, right=1), algsizes):
+        counts[i] += 1
+        sizes[i] += isize
+        
+    # plot no. of contigs at give identity
+    plt.subplot(211)
+    plt.bar(bins*100, bestcounts, color="red", label="best", alpha=1.0)
+    plt.bar(bins*100, counts, color="grey", label="all", alpha=0.33)
+    plt.legend(loc=2)
+        
+    plt.title("Identity between contigs")
+    plt.ylabel("No. of contigs")
+
+    # plot cumulative alignment size at give identity
+    plt.subplot(212)
+    plt.bar(bins*100, np.array(bestsizes)/1e6, color="blue", label="best", alpha=1.0)
+    plt.bar(bins*100, np.array(sizes)/1e6, color="grey", label="all", alpha=0.33)
+
+    plt.xlabel("Identity [%]")
+    plt.ylabel("Cumulative alignment size [Mb]")
+    plt.legend(loc=2)
+
+    fig.savefig(fname+".hist.png", dpi=300)
+    
 def fasta2homozygous(out, fasta, identity, overlap, minLength, \
                      threads=1, verbose=0, log=sys.stderr):
     """
@@ -110,18 +146,7 @@ def fasta2homozygous(out, fasta, identity, overlap, minLength, \
     # filter alignments & remove redundant
     if verbose:
         log.write("Parsing alignments...\n")
-    contig2skip, identities = fasta2skip(fasta, faidx, threads, identity, overlap, verbose)
-    
-    # plot histogram of identities
-    bests = [contig2skip[c][-2] for c in contig2skip if contig2skip[c]]
-    bins = 50
-    n, bins, patches = plt.hist(bests, bins, normed=1, color="red", label="best", alpha=1.0)
-    n, bins, patches = plt.hist(identities, bins, normed=1, color="grey", label="all", alpha=0.5)
-    plt.title("Identity level between contigs")
-    plt.xlabel("Identity")
-    plt.ylabel("Frequency [%]")
-    plt.legend(loc=2)
-    plt.savefig(out.name+".png")
+    contig2skip = fasta2skip(out, fasta, faidx, threads, identity, overlap, verbose)
     
     #report homozygous fasta
     nsize, k, skipped, ssize, avgIdentity = save_homozygous(out, faidx, contig2skip, minLength, verbose)
