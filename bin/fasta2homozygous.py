@@ -83,9 +83,8 @@ def plot_histograms(fname, contig2skip, identities, algsizes):
     """Plot histogram for matches"""
     try:
         import numpy as np
-        # Force matplotlib to not use any Xwindows backend.
-        import matplotlib
-        matplotlib.use('Agg')
+        import matplotlib 
+        matplotlib.use('Agg') # Force matplotlib to not use any Xwindows backend
         import matplotlib.pyplot as plt
     except:
         return
@@ -137,6 +136,7 @@ def fasta2homozygous(out, fasta, identity, overlap, minLength, \
     and average identity between reduced contigs.
     """
     merged = []
+    
     #create/load fasta index
     if verbose:
         log.write("Indexing fasta...\n")

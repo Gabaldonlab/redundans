@@ -20,7 +20,7 @@ from datetime import datetime
 
 # update sys.path & environmental PATH
 root = os.path.dirname(os.path.abspath(sys.argv[0]))
-src = ["bin", "bin/bwa", "bin/last/build", "bin/last/scripts", "bin/last/src", "bin/pyScaf"]
+src = ["bin", "bin/bwa", "bin/bwa", "bin/last/build", "bin/last/scripts", "bin/last/src", "bin/pyScaf"]
 paths = [os.path.join(root, p) for p in src]
 sys.path = paths + sys.path
 os.environ["PATH"] = "%s:%s"%(':'.join(paths), os.environ["PATH"])

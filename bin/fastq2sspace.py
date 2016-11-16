@@ -129,7 +129,7 @@ def get_tab_files(outdir, reffile, libNames, fReadsFnames, rReadsFnames, inserts
         # define tab output
         outfn = "%s.%s.tab" % (outdir, libName)
         # skip if file exists
-        if os.path.isfile( outfn ):
+        if os.path.isfile(outfn):
             log.write("  File exists: %s\n" % outfn)
             tabFnames.append(outfn)
             continue
