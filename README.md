@@ -43,6 +43,7 @@ git clone --recursive https://github.com/lpryszcz/redundans.git
 cd redundans
 (cd bin/bwa && make clean && make)
 (cd bin/last && make clean && make)
+(cd bin/snap && make clean && make)
 ```
 
 If it fails, make sure you have below dependencies installed: 

@@ -20,7 +20,7 @@ from datetime import datetime
 
 # update sys.path & environmental PATH
 root = os.path.dirname(os.path.abspath(sys.argv[0]))
-src = ["bin", "bin/bwa", "bin/bwa", "bin/last/build", "bin/last/scripts", "bin/last/src", "bin/pyScaf"]
+src = ["bin", "bin/bwa", "bin/snap", "bin/last/build", "bin/last/scripts", "bin/last/src", "bin/pyScaf"]
 paths = [os.path.join(root, p) for p in src]
 sys.path = paths + sys.path
 os.environ["PATH"] = "%s:%s"%(':'.join(paths), os.environ["PATH"])
@@ -500,7 +500,7 @@ def main():
     sspacebin = os.path.join(root, "bin/SSPACE/SSPACE_Standard_v3.0.pl")
 
     # check if all executables exists & in correct versions
-    dependencies = {'lastal': 700, 'lastdb': 700, 'bwa': 0, sspacebin: 0, 'GapCloser': 0}
+    dependencies = {'lastal': 700, 'lastdb': 700, 'bwa': 0, sspacebin: 0, 'GapCloser': 0, 'snap-aligner': 0}
     _check_dependencies(dependencies)
     
     # initialise pipeline
