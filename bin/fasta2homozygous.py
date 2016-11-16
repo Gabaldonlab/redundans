@@ -17,10 +17,10 @@ Mizerow, 26/08/2014
 import gzip, os, sys, subprocess
 from datetime import datetime
 from FastaIndex import FastaIndex
-import matplotlib.pyplot as plt
 # Force matplotlib to not use any Xwindows backend.
 import matplotlib
 matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 
 def run_last(fasta, identity, threads, verbose):
     """Start LAST with multi-threads"""
