@@ -7,7 +7,6 @@ from heterozygous (redundant) contigs/scaffolds.
 
 TO ADD:
 - scaffold extension based on overlapping matches
-- report removed contigs
 - reporting of haplotypes
 - recognise heterozygous contigs with translocations
 """
@@ -19,6 +18,9 @@ import gzip, os, sys, subprocess
 from datetime import datetime
 from FastaIndex import FastaIndex
 import matplotlib.pyplot as plt
+# Force matplotlib to not use any Xwindows backend.
+import matplotlib
+matplotlib.use('Agg')
 
 def run_last(fasta, identity, threads, verbose):
     """Start LAST with multi-threads"""
@@ -28,8 +30,7 @@ def run_last(fasta, identity, threads, verbose):
     if not os.path.isfile(fasta+".suf"):
         os.system("lastdb %s %s" % (fasta, fasta))
     # run LAST
-    # consider adding -l 100 -C 2 for much faster 2-3x faster alignement 
-    args = ["lastal", "-T", "1", "-f", "TAB", "-P", str(threads), fasta, fasta] #"-l", "10", "-C", "5",
+    args = ["lastal", "-T", "1", "-f", "TAB", "-P", str(threads), fasta, fasta] 
     proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=sys.stderr)        
     return proc
     
@@ -46,10 +47,10 @@ def fasta2hits(fasta, threads, identityTh, overlapTh, verbose):
         # skip reverse matches
         if q == t or tsize < qsize: 
             continue
-        #get score, identity & overlap # LASTal is using +1/-1 for match/mismatch, while I need +1/0
+        # get score, identity & overlap # LASTal is using +1/-1 for match/mismatch, while I need +1/0
         identity = 1.0 * (score+(qalg-score)/2) / qalg
         overlap  = 1.0 * qalg / qsize
-        #filter by identity and overlap
+        # filter by identity and overlap
         if identity < identityTh or overlap < overlapTh:
             continue
         # store
@@ -79,7 +80,7 @@ def fasta2skip(fasta, faidx, threads, identityTh, overlapTh, verbose):
             sys.stderr.write(' [ERROR] `%s` (%s) not in contigs!\n'%(q, str(hits[i-1])))
             continue
         # skip alignments of contigs already removed
-        identities.append(identity)    
+        identities.append(identity)
         if contig2skip[q]:
             # inform about matching already removed contig
             if verbose:
@@ -110,14 +111,17 @@ def fasta2homozygous(out, fasta, identity, overlap, minLength, \
     if verbose:
         log.write("Parsing alignments...\n")
     contig2skip, identities = fasta2skip(fasta, faidx, threads, identity, overlap, verbose)
-
+    
     # plot histogram of identities
+    bests = [contig2skip[c][-2] for c in contig2skip if contig2skip[c]]
     bins = 50
-    n, bins, patches = plt.hist(identities, bins, normed=1)
+    n, bins, patches = plt.hist(bests, bins, normed=1, color="red", label="best", alpha=1.0)
+    n, bins, patches = plt.hist(identities, bins, normed=1, color="grey", label="all", alpha=0.5)
     plt.title("Identity level between contigs")
     plt.xlabel("Identity")
-    plt.ylabel("Frequency")
-    plt.savefig(out.name+".png") 
+    plt.ylabel("Frequency [%]")
+    plt.legend(loc=2)
+    plt.savefig(out.name+".png")
     
     #report homozygous fasta
     nsize, k, skipped, ssize, avgIdentity = save_homozygous(out, faidx, contig2skip, minLength, verbose)
