@@ -9,3 +9,7 @@
 [submodule "bin/pyScaf"]
     path = bin/pyScaf
     url = https://github.com/lpryszcz/pyScaf.git
+
+[submodule "bin/snap"]
+    path = bin/snap
+    url = https://github.com/amplab/snap
