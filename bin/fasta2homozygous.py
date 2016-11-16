@@ -89,12 +89,13 @@ def plot_histograms(fname, contig2skip, identities, algsizes):
         import matplotlib.pyplot as plt
     except:
         return
+        
     fig = plt.figure()
     contigs = contig2skip.keys()
     best = [contig2skip[c][3] for c in contigs if contig2skip[c]]
     bestalgsizes = [contig2skip[c][2] for c in contigs if contig2skip[c]]
     # get bins
-    bins = np.arange(.5, 1., 0.01)
+    bins = np.arange(.5, 1.01, 0.01)
     
     # get counts
     bestcounts = [0]*len(bins)
@@ -113,8 +114,8 @@ def plot_histograms(fname, contig2skip, identities, algsizes):
     plt.subplot(211)
     plt.bar(bins*100, bestcounts, color="red", label="best", alpha=1.0)
     plt.bar(bins*100, counts, color="grey", label="all", alpha=0.33)
+    plt.xlim(50, 100)
     plt.legend(loc=2)
-        
     plt.title("Identity between contigs")
     plt.ylabel("No. of contigs")
 
@@ -122,11 +123,10 @@ def plot_histograms(fname, contig2skip, identities, algsizes):
     plt.subplot(212)
     plt.bar(bins*100, np.array(bestsizes)/1e6, color="blue", label="best", alpha=1.0)
     plt.bar(bins*100, np.array(sizes)/1e6, color="grey", label="all", alpha=0.33)
-
+    plt.xlim(50, 100)
+    plt.legend(loc=2)
     plt.xlabel("Identity [%]")
     plt.ylabel("Cumulative alignment size [Mb]")
-    plt.legend(loc=2)
-
     fig.savefig(fname+".hist.png", dpi=300)
     
 def fasta2homozygous(out, fasta, identity, overlap, minLength, \
