@@ -258,8 +258,8 @@ def prepare_contigs(fasta, contigsFname, minLength=200):
         for i, c in enumerate(faidx.sort(minLength=minLength), 1):
             if i%1e5 == 1:
                 sys.stderr.write(' %s   \r'%i)
-            seq = faidx.__getitem__(c, name=str(i))
-            out.write(seq)
+            #seq = faidx.__getitem__(c, name=str(i))
+            out.write(faidx[c])
         sys.stderr.write(' %s sequences stored.\n'%i)
         
 def redundans(fastq, longreads, fasta, reference, outdir, mapq, 
