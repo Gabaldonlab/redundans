@@ -28,7 +28,7 @@ from fasta2homozygous import fasta2homozygous
 from fastq2sspace import fastq2sspace
 from fastq2insert_size import fastq2insert_size
 from filterReads import filter_paired
-from fasta_stats import fasta_stats
+#from fasta_stats import fasta_stats
 from FastaIndex import FastaIndex, symlink
 from pyScaf import LongReadGraph, SyntenyGraph
 
@@ -89,8 +89,8 @@ def get_read_limit(fasta, readLimit, verbose, log=sys.stderr):
     # limit no. of reads to align as fraction of genome size
     limit = 0
     if readLimit:
-        stats = fasta_stats(open(fasta))
-        fastaSize = int(stats.split('\t')[2])
+        faidx = FastaIndex(fasta)
+        fastaSize = faidx.genomeSize
         limit = int(readLimit * fastaSize)
         if verbose:
             log.write(" Aligning %s mates per library...\n"%limit)
@@ -124,11 +124,8 @@ def run_scaffolding(outdir, scaffoldsFname, fastq, libraries, reducedFname, mapq
             # link output ie out/_sspace.1.1/_sspace.1.1.scaffolds.fasta --> out/_sspace.1.1.scaffolds.fasta
             targetout = os.path.join(os.path.basename(out), os.path.basename(out+".final.scaffolds.fasta"))
             symlink(targetout, pout)
-            # index
-            with open(pout) as index:
-                fasta_stats(index)
             # if number of gaps larger than 1%, run gap closer & reduction
-            stats     = fasta_stats(open(pout))
+            stats     = FastaIndex(pout).stats()
             fastaSize = int(stats.split('\t')[2])
             gapSize   = int(stats.split('\t')[-2])
             if gapclosing and 1.0 * gapSize / fastaSize > 0.01:
@@ -142,9 +139,6 @@ def run_scaffolding(outdir, scaffoldsFname, fastq, libraries, reducedFname, mapq
                     run_gapclosing(outdir, mapq, [libraries[i-1],], nogapsFname, pout, \
                                    threads, limit, iters=1, resume=resume, verbose=0, log=log, basename=basename)
                 pout = nogapsFname
-                # index
-                with open(pout) as index:
-                    fasta_stats(index)
         # update library insert size estimation, especially for mate-pairs
         libraries = get_libraries(fastq, pout, mapq, threads, verbose=0,log=log,
                                   libraries=libraries)
@@ -235,9 +229,6 @@ def run_gapclosing(outdir, mapq, libraries, nogapsFname, scaffoldsFname, \
                     GapCloser.wait()
             # store out info
             pout = out
-            # index
-            with open(pout) as index:
-                fasta_stats(index)
     # create symlink to final scaffolds or pout
     symlink(os.path.basename(pout), nogapsFname)
     symlink(os.path.basename(pout+".fai"), nogapsFname+".fai")
@@ -302,9 +293,6 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
         with open(outfn, "w") as out:
             info = fasta2homozygous(out, open(lastOutFn), identity, overlap, \
                                     minLength, threads, verbose=0, log=log)
-        # index
-        with open(outfn) as index:
-            fasta_stats(index)
         # update fasta list
         lastOutFn = outfn
         fastas.append(lastOutFn)
@@ -388,7 +376,7 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
     # report stats
     log.write('#fname\tcontigs\tbases\tGC [%]\tcontigs >1kb\tbases in contigs >1kb\tN50\tN90\tNs\tlongest\n')
     for fn in fastas:
-        log.write(fasta_stats(open(fn)))
+        log.write(FastaIndex(fn).stats())
     
     # Clean-up
     if cleaning:
