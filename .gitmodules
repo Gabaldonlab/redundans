@@ -13,3 +13,7 @@
 [submodule "bin/snap"]
     path = bin/snap
     url = https://github.com/amplab/snap
+
+[submodule "bin/FastaIndex"]
+    path = bin/FastaIndex
+    url = https://github.com/lpryszcz/FastaIndex.git
