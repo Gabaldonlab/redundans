@@ -66,7 +66,10 @@ paste <(zcat 600_1.fastq.gz 600.d05.l40_1.fastq.gz) <(zcat 600_2.fastq.gz 600.d0
 paste <(zcat 5000_1.fastq.gz 600.d05.l40_1.fastq.gz) <(zcat 5000_2.fastq.gz 5000.d05.l40_2.fastq.gz) | paste - - - - | shuf | awk -F'\t' '{OFS="\n"; print $1,$3,$5,$7 | "gzip > random.5000.d05.l40_1.fq.gz"; print $2,$4,$6,$8 | "gzip > random.5000.d05.l40_2.fq.gz"}'
 
 # symlinks with handier names
-for f in *.fq.gz; do ln -s $f `echo $f | sed 's/random.//;s/.d05.l40//'`; done 
+for f in *.fq.gz; do ln -s $f `echo $f | sed 's/random.//;s/.d05.l40//'`; done
+
+# mate-pairs contaminated with paired-end reads
+#for i in 1 2; do zcat <(zcat test/5000_$i.fq.gz test/5000_$i.fq.gz | fastx2reverse_complement.py fastq | gzip) test/600_$i.fq.gz > test/mixed.$i.fq.gz; done
 ```
 
 ### *De novo* genome assembly
@@ -95,10 +98,10 @@ At the beginning, Redundans estimates number of parameters:
 
 ###### Table 1: Library statistics
 
-FastQ files | median | mean | stdev | FF | FR | RF | RR
+FastQ files | read length | median | mean | stdev | FF | FR | RF | RR
 ----- | -----: | -----: | -----: | -----: | -----: | -----: | -----: 
-test/5000_1.fq.gz test/5000_2.fq.gz | 5,028 | 5,031.51 | 600.93 | 5 | 17,494 | 159 | 1
-test/600_1.fq.gz test/600_2.fq.gz | 598 | 598.28 | 39.26 | 0 | 32,778 | 1 | 0
+test/5000_1.fq.gz test/5000_2.fq.gz | 50 | 4998 | 4990.20 | 721.47 | 0 | 4,674 | 0 | 0
+test/600_1.fq.gz test/600_2.fq.gz | 100 | 599 | 598.63 | 47.68 | 0 | 10,000 | 0 | 0
 
 Above, you can see, there are two libraries:
 - test/5000_1.fq.gz & test/5000_2.fq.gz:

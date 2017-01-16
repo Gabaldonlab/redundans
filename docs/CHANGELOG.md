@@ -15,6 +15,11 @@
 - prints how many iterations in total ie. `iteration 1.1 of 2.2 ...`
 - libraries stats are estimated after reduction (avoiding double estimations for crappy libs)
   - insert size estimated only on the major read orientation
+- reduction:
+  - plotting identity histogram of heterozygous contigs as `contigs.reduced.fa.hist.png`
+  - reporting heterozygous contigs statistics in `contigs.reduced.fa.hetero.tsv`
+- scaffolding:
+  - added [SNAP aligner](https://github.com/amplab/snap), faster mapping alternative to BWA MEM
 
 TBD
 - check if something need recompilation and try to recompile
