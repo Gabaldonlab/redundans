@@ -1,1 +1,1 @@
-FastaIndex/fasta_stats.py
+pyScaf/FastaIndex/fasta_stats.py

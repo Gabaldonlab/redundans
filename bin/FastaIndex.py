@@ -1,1 +1,1 @@
-FastaIndex/FastaIndex.py
+pyScaf/FastaIndex/FastaIndex.py
