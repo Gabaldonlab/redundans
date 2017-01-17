@@ -11,14 +11,15 @@
 
 # Redundans
   
-Redundans pipeline assists **an assembly of heterozygous genomes**. Program takes [as input](#parameters) **assembled contigs**, **sequencing libraries** and/or **reference sequence** and returns **scaffolded homozygous genome assembly**. Final assembly should be **less fragmented** and with total **size smaller** than the input contigs. In addition, Redundans will automatically **close the gaps** resulting from genome assembly or scaffolding. 
+Redundans pipeline assists **an assembly of heterozygous genomes**.  
+Program takes [as input](#parameters) **assembled contigs**, **sequencing libraries** and/or **reference sequence** and returns **scaffolded homozygous genome assembly**. Final assembly should be **less fragmented** and with total **size smaller** than the input contigs. In addition, Redundans will automatically **close the gaps** resulting from genome assembly or scaffolding. 
 
 <img align="right" src="/docs/redundans_flowchart.png">
 
 The pipeline consists of three steps/modules: 
-1. **redundancy reduction**: detection and selective removal of redundant contigs from an initial *de novo* assembly
-2. **scaffolding**: joining of genome fragments using paired-end reads, mate-pairs, long reads and/or reference chromosomes
-3. **gap closing**: filling the gaps after scaffolding using paired-end and/or mate-pair reads
+1. **redundancy reduction**: detection and selective removal of redundant contigs from an initial *de novo* assembly 
+2. **scaffolding**: joining of genome fragments using paired-end reads, mate-pairs, long reads and/or reference chromosomes 
+3. **gap closing**: filling the gaps after scaffolding using paired-end and/or mate-pair reads 
 
 Redundans is: 
 - **fast** & **lightweight**, multi-core support and memory-optimised, 
@@ -35,8 +36,9 @@ Redundans uses several programs (all provided within this repository):
 - [BWA](http://bio-bwa.sourceforge.net/) v0.7.12+
 - [SNAP aligner](https://github.com/amplab/snap)
 - [SSPACE3](http://www.baseclear.com/genomics/bioinformatics/basetools/SSPACE)
-- [pyScaf](https://github.com/lpryszcz/pyScaf)
 - [GapCloser](http://sourceforge.net/projects/soapdenovo2/files/GapCloser/)
+- [pyScaf](https://github.com/lpryszcz/pyScaf)
+- [FastaIndex](https://github.com/lpryszcz/FastaIndex)
 
 On most Linux distros, the installation should be as easy as:
 ```
