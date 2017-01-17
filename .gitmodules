@@ -14,6 +14,3 @@
     path = bin/pyScaf
     url = https://github.com/lpryszcz/pyScaf.git
 
-[submodule "bin/pyScaf/FastaIndex"]
-    path = bin/pyScaf/FastaIndex
-    url = https://github.com/lpryszcz/FastaIndex.git
