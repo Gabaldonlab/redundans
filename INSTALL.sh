@@ -6,7 +6,7 @@
 ###
 
 log="install.log"
-branch="make" # master
+branch="master" # make
 
 echo "#####################################################################################"
 echo "#                                                                                   #"
@@ -27,7 +27,7 @@ echo -n " Do you want to proceed with installation (y/n)? "
 read answer
 if echo "$answer" | grep -viq "^y" ; then
     echo "Aborted!"
-    return 0
+    return 0 
 fi
 
 echo ""
