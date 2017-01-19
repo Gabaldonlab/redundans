@@ -478,6 +478,10 @@ def main():
     skip.add_argument('--nocleaning',    action='store_false', default=True)   
     
     o = parser.parse_args()
+    # print help if no parameters
+    if len(sys.argv)==1:
+        parser.print_help()
+        sys.exit(1)
     if o.verbose:
         o.log.write("Options: %s\n"%str(o))
 

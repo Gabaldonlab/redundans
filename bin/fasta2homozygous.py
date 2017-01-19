@@ -86,7 +86,8 @@ def plot_histograms(fname, contig2skip, identities, algsizes):
         import matplotlib 
         matplotlib.use('Agg') # Force matplotlib to not use any Xwindows backend
         import matplotlib.pyplot as plt
-    except:
+    except Exception, e:
+        sys.stderr.write("[WARNING] Cannot plot the histogram! %s\n"%e)
         return
         
     fig = plt.figure()
