@@ -117,8 +117,7 @@ Also at this stage, the user is notified about libraries with poor statistics i.
 ##### Reduction
 In the first step, Redundans will recognise and selectively remove heterozygous contigs from initial assembly.
 The details about all removed heterozygous contigs are stored in tab-delimited file `contigs.reduced.fa.hetero.tsv`.
-Additionally, the histogram with identities of reduced contigs are saved as `contigs.reduced.fa.hist.png`. 
-[Figure 5: Histogram of heterozygous contigs identities](/docs/contigs.reduced.fa.hist.png)
+Additionally, the histogram with identities of reduced contigs are saved as [`contigs.reduced.fa.hist.png`](/docs/contigs.reduced.fa.hist.png). 
 
 At the end of this step, the user will be notified about:
 - initial assembly size and fragmentation
