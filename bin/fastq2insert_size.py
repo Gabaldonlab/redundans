@@ -146,9 +146,9 @@ def get_isize_stats(fq1, fq2, fasta, mapqTh=10, threads=1, limit=1e5, verbose=0,
     bwa.terminate()
     # catch cases with very few reads aligned
     pairs = map(len, isizes)
-    readlen = int(round(1.*readlen/sum(pairs)))
     if sum(pairs) < 100:
         return 0, 0, 0, 0, [], ''
+    readlen = int(round(1.*readlen/sum(pairs)))
     # select major orientation - replace isizes by major isizes
     isizes, orientation = sorted(zip(isizes, orientations), key=lambda x: len(x[0]), reverse=1)[0]    
     # get frac of total reads
