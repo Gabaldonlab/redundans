@@ -26,6 +26,7 @@ TBD
 - instead of processing 100M reads for 4 libs with similar IS, split it by 25M each
 - estimated libs on subset of largest contigs
 - sort reads by increasing read length
+- bioconda
 
 ####0.12c
 - added `--resume` option
