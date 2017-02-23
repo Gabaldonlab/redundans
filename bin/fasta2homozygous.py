@@ -9,6 +9,7 @@ TO ADD:
 - scaffold extension based on overlapping matches
 - reporting of haplotypes
 - recognise heterozygous contigs with translocations
+- guess which identity cutoff will be the best
 """
 epilog="""Author: l.p.pryszcz@gmail.com
 Mizerow, 26/08/2014

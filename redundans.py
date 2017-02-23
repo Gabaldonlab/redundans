@@ -477,6 +477,11 @@ def main():
     skip.add_argument('--nogapclosing',  action='store_false', default=True)   
     skip.add_argument('--nocleaning',    action='store_false', default=True)   
     
+    # print help if no parameters
+    if len(sys.argv)==1:
+        parser.print_help()
+        sys.exit(1)
+        
     o = parser.parse_args()
     if o.verbose:
         o.log.write("Options: %s\n"%str(o))
