@@ -136,8 +136,8 @@ def run_scaffolding(outdir, scaffoldsFname, fastq, libraries, reducedFname, mapq
                     if verbose:
                         log.write("  closing gaps ...\n")
                     basename    = "_sspace.%s.%s._gapcloser"%(i, j)
-                    run_gapclosing(outdir, mapq, [libraries[i-1],], nogapsFname, pout, \
-                                   threads, limit, iters=1, resume=resume, verbose=0, log=log, basename=basename)
+                    run_gapclosing(outdir, [libraries[i-1],], nogapsFname, pout, threads, limit, \
+                                   iters=1, resume=resume, verbose=0, log=log, basename=basename)
                 pout = nogapsFname
         # update library insert size estimation, especially for mate-pairs
         libraries = get_libraries(fastq, pout, mapq, threads, verbose=0,log=log,
@@ -147,7 +147,7 @@ def run_scaffolding(outdir, scaffoldsFname, fastq, libraries, reducedFname, mapq
     symlink(os.path.basename(pout+".fai"), scaffoldsFname+".fai")
     return libraries, resume
 
-def filter_reads(outdir, fq1, fq2, minlen, maxlen, limit, minqual):
+def filter_reads(outdir, fq1, fq2, minlen, maxlen, limit, minqual=10):
     """Filter FastQ files and return output fnames."""
     fastq = (fq1, fq2)
     # generate output files
@@ -169,7 +169,7 @@ def filter_reads(outdir, fq1, fq2, minlen, maxlen, limit, minqual):
     out2.close()
     return fn1, fn2, i-filtered
     
-def prepare_gapcloser(outdir, mapq, configFn, libFs, libRs, orientations,
+def prepare_gapcloser(outdir, configFn, libFs, libRs, orientations,
                       libIS, libISStDev, minlen, maxlen, limit, verbose, log): 
     """Return SOAPdenovo2 config file needed by GapCloser."""
     lines  = "[LIB]\navg_ins=%s\nreverse_seq=%s\nasm_flags=3\nrank=%s\npair_num_cutoff=5\nmap_len=35\nq1=%s\nq2=%s\n"
@@ -187,7 +187,7 @@ def prepare_gapcloser(outdir, mapq, configFn, libFs, libRs, orientations,
                 log.write(info%(orient, fq1, fq2))
             continue
         # filter reads
-        fn1, fn2, passed = filter_reads(outdir, fq1, fq2, minlen, maxlen, limit, mapq)
+        fn1, fn2, passed = filter_reads(outdir, fq1, fq2, minlen, maxlen, limit)
         #store config info only if some reads
         if passed:
             config.append(lines%(iSize, reverse_seq, i, fn1, fn2))
@@ -198,9 +198,8 @@ def prepare_gapcloser(outdir, mapq, configFn, libFs, libRs, orientations,
             out.write("\n".join(config))
         return True
     
-def run_gapclosing(outdir, mapq, libraries, nogapsFname, scaffoldsFname, \
-                   threads, limit, iters, resume, verbose, log, basename="_gapcloser", \
-                   overlap=25, minReadLen=40):
+def run_gapclosing(outdir, libraries, nogapsFname, scaffoldsFname,  threads, limit, iters, 
+                   resume, verbose, log, basename="_gapcloser", overlap=25, minReadLen=40):
     """Execute gapclosing step."""
     pout = scaffoldsFname
     
@@ -209,7 +208,7 @@ def run_gapclosing(outdir, mapq, libraries, nogapsFname, scaffoldsFname, \
         configFn = os.path.join(outdir, "%s.%s.conf"%(basename, i))
         # skip if not suitable libraries
         maxReadLen = max(libreadlen)
-        if not prepare_gapcloser(outdir, mapq, configFn, libFs, libRs, orientations, libIS, libISStDev, \
+        if not prepare_gapcloser(outdir, configFn, libFs, libRs, orientations, libIS, libISStDev, \
                                  minReadLen, maxReadLen, limit, verbose, log):
             continue
         # run iterations
@@ -363,8 +362,7 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
     if fastq and gapclosing: 
         if verbose: 
             log.write("%sGap closing...\n"%timestamp())
-        resume = run_gapclosing(outdir, mapq, libraries, outfn, lastOutFn, threads, \
-                                limit, iters, resume, verbose, log)
+        resume = run_gapclosing(outdir, libraries, outfn, lastOutFn, threads, limit, iters, resume, verbose, log)
         # update fasta list
         fastas += sorted(glob.glob(os.path.join(outdir, "_gap*.fa")))
         lastOutFn = outfn
@@ -427,56 +425,44 @@ def main():
     parser  = argparse.ArgumentParser(description=desc, epilog=epilog, \
                                       formatter_class=argparse.RawTextHelpFormatter)
   
-    parser.add_argument("-v", "--verbose",  default=False, action="store_true", help="verbose")    
+    parser.add_argument("-v", "--verbose",  action="store_true", help="verbose")    
     parser.add_argument('--version', action='version', version='0.13a')
-    
-    parser.add_argument("-i", "--fastq", nargs="*", default=[], 
-                        help="FASTQ PE/MP files")
-    parser.add_argument("-f", "--fasta", required=1, 
-                        help="FASTA file with contigs")
-    parser.add_argument("-o", "--outdir",  default="redundans", 
-                        help="output directory [%(default)s]")
-    parser.add_argument("-t", "--threads", default=4, type=int, 
-                        help="max threads to run [%(default)s]")
-    parser.add_argument("--resume",  default=False, action="store_true",
-                        help="resume previous run")
-    parser.add_argument("--log",           default=sys.stderr, type=argparse.FileType('w'), 
-                        help="output log to [stderr]")
+    parser.add_argument("-i", "--fastq", nargs="*", default=[], help="FASTQ PE / MP files")
+    parser.add_argument("-f", "--fasta", required=1, help="FASTA file with contigs / scaffolds")
+    parser.add_argument("-o", "--outdir",  default="redundans", help="output directory [%(default)s]")
+    parser.add_argument("-t", "--threads", default=4, type=int, help="max threads to run [%(default)s]")
+    parser.add_argument("--resume",  default=False, action="store_true",  help="resume previous run")
+    parser.add_argument("--log", default=sys.stderr, type=argparse.FileType('w'), help="output log to [stderr]")
+    parser.add_argument('--nocleaning', action='store_false', help="keep intermediate files")   
     
     redu = parser.add_argument_group('Reduction options')
-    redu.add_argument("--identity",        default=0.51, type=float,
-                      help="min. identity [%(default)s]")
-    redu.add_argument("--overlap",         default=0.66, type=float,
-                      help="min. overlap  [%(default)s]")
-    redu.add_argument("--minLength",       default=200, type=int, 
-                      help="min. contig length [%(default)s]")
+    redu.add_argument("--identity", default=0.51, type=float, help="min. identity [%(default)s]")
+    redu.add_argument("--overlap",  default=0.66, type=float, help="min. overlap  [%(default)s]")
+    redu.add_argument("--minLength", default=200, type=int,  help="min. contig length [%(default)s]")
+    redu.add_argument('--noreduction', action='store_false', help="Skip reduction")
     
-    scaf = parser.add_argument_group('Scaffolding options')
-    scaf.add_argument("-j", "--joins",  default=5, type=int, 
-                      help="min pairs to join contigs [%(default)s]")
+    scaf = parser.add_argument_group('Short-read scaffolding options')
+    scaf.add_argument("-j", "--joins", default=5, type=int, help="min pairs to join contigs [%(default)s]")
     scaf.add_argument("-a", "--linkratio", default=0.7, type=float,
-                       help="max link ratio between two best contig pairs [%(default)s]")    
-    scaf.add_argument("--limit",  default=0.2, type=float, 
-                      help="align subset of reads [%(default)s]")
-    scaf.add_argument("-q", "--mapq",    default=10, type=int, 
-                      help="min mapping quality [%(default)s]")
-    scaf.add_argument("--iters",         default=2, type=int, 
-                      help="scaffolding iterations per library [%(default)s]")
-    scaf.add_argument("-l", "--longreads", nargs="*", default=[], 
-                      help="FastQ/FastA files with long reads")
-    scaf.add_argument("-r", "--reference", default='', 
-                      help="reference FastA file")
-    scaf.add_argument("--norearrangements", default=False, action='store_true', 
-                      help="high identity mode (rearrangements not allowed)")
+                      help="max link ratio between two best contig pairs [%(default)s]")    
+    scaf.add_argument("--limit",  default=0.2, type=float, help="align subset of reads [%(default)s]")
+    scaf.add_argument("-q", "--mapq", default=10, type=int, help="min mapping quality [%(default)s]")
+    scaf.add_argument("--iters", default=2, type=int, help="iterations per library [%(default)s]")
+    scaf.add_argument('--noscaffolding', action='store_false', help="Skip short-read scaffolding")
+    
+    longscaf = parser.add_argument_group('Long-read scaffolding options')
+    longscaf.add_argument("-l", "--longreads", nargs="*", default=[], 
+                          help="FastQ/FastA files with long reads")
+    
+    refscaf = parser.add_argument_group('Reference-based scaffolding options')
+    refscaf.add_argument("-r", "--reference", default='', 
+                         help="reference FastA file")
+    refscaf.add_argument("--norearrangements", default=False, action='store_true', 
+                         help="high identity mode (rearrangements not allowed)")
     
     gaps = parser.add_argument_group('Gap closing options')
-    
-    skip = parser.add_argument_group('Skip below steps (all performed by default)')
-    skip.add_argument('--noreduction',   action='store_false', default=True)   
-    skip.add_argument('--noscaffolding', action='store_false', default=True)   
-    skip.add_argument('--nogapclosing',  action='store_false', default=True)   
-    skip.add_argument('--nocleaning',    action='store_false', default=True)   
-    
+    gaps.add_argument('--nogapclosing',  action='store_false', default=True)   
+        
     # print help if no parameters
     if len(sys.argv)==1:
         parser.print_help()

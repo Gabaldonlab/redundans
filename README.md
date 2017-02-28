@@ -103,14 +103,17 @@ Most of the pipeline parameters can be adjusted manually (default values are giv
   -h, --help            show this help message and exit
   -v, --verbose         verbose
   --version             show program's version number and exit
+  -i FASTQ, --fastq FASTQ
+                        FASTQ PE / MP files
   -f FASTA, --fasta FASTA
-                        assembly FASTA file
+                        FASTA file with contigs / scaffolds
   -o OUTDIR, --outdir OUTDIR
                         output directory [redundans]
   -t THREADS, --threads THREADS
                         no. of threads to run [4]
   --resume              resume previous run
   --log LOG             output log to [stderr]
+  --nocleaning
 ```
 - Reduction options:
 ```
@@ -118,24 +121,38 @@ Most of the pipeline parameters can be adjusted manually (default values are giv
   --overlap OVERLAP     min. overlap  [0.66]
   --minLength MINLENGTH
                         min. contig length [200]
+  --noreduction         Skip reduction
 ```
-- Scaffolding options:
+- Short-read scaffolding options:
 ```
-  -i FASTQ [FASTQ ...], --fastq FASTQ [FASTQ ...]
-                        FASTQ PE/MP files
   -j JOINS, --joins JOINS
-                        min k pairs to join contigs [5]
+                        min pairs to join contigs [5]
   -a LINKRATIO, --linkratio LINKRATIO
                         max link ratio between two best contig pairs [0.7]
   --limit LIMIT         align subset of reads [0.2]
-                        align subset of reads [0.2]; this means 0.2*genome size reads will be aligned; so for 100Mb genome, redundans will process 20M reads per library
   -q MAPQ, --mapq MAPQ  min mapping quality [10]
-  -iters ITERS          scaffolding iterations per library  [2]
-  -l [LONGREADS [LONGREADS ...]], --longreads [LONGREADS [LONGREADS ...]]
+  --iters ITERS         iterations per library [2]
+  --noscaffolding       Skip short-read scaffolding
+```
+- Long-read scaffolding options:
+```
+  -l LONGREADS, --longreads LONGREADS
                         FastQ/FastA files with long reads
+  --identity IDENTITY   min. identity [0.51]
+  --overlap OVERLAP     min. overlap  [0.66]
+```
+- Reference-based scaffolding options:
+```
   -r REFERENCE, --reference REFERENCE
                         reference FastA file
   --norearrangements    high identity mode (rearrangements not allowed)
+  --identity IDENTITY   min. identity [0.51]
+  --overlap OVERLAP     min. overlap  [0.66]
+```
+- Gap closing options:
+```
+  --iters ITERS         iterations per library [2]
+  --nogapclosing                        
 ```
 
 Redundans is **extremely flexible**. All steps of the pipeline can be ommited using: `--noreduction`, `--noscaffolding` and/or `--nogapclosing` parameters. 
@@ -161,7 +178,7 @@ You can play with **any combination of inputs** ie. paired-end, mate pairs, long
 # scaffolding and gap closing with paired-end and mate pairs (no reduction)
 ./redundans.py -v -i test/*.fq.gz -f test/contigs.fa -o test/run_short-scaffolding-closing --noreduction
 
-# reduction, reference-based scaffolding and gap closing with paired-end reads
+# reduction, reference-based scaffolding and gap closing with paired-end reads (--noscaffolding disables only short-read scaffolding)
 ./redundans.py -v -i test/600_?.fq.gz -r test/ref.fa -f test/contigs.fa -o test/run_ref_pe-closing --noscaffolding
 ```
 

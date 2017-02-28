@@ -22,5 +22,9 @@ echo `date` " LASTal"
 (cd bin/last && make clean && make -j $cores) >> $log 2>&1
 retcode=$?; if [ $retcode -gt 0 ]; then exit $retcode; fi
 
+echo `date` " SNAP-aligner"
+(cd bin/snap && make clean && make -j $cores) >> $log 2>&1
+retcode=$?; if [ $retcode -gt 0 ]; then exit $retcode; fi
+
 echo `date` "Done!"
 
