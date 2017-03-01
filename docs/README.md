@@ -15,6 +15,7 @@ To do so, look for *.is.txt file specific for your library i.e. for `-i 5000_1.f
 - mean insert size
 - standard deviation of insert size
 - and number of reads with FF, FR, RF & RR orientation. 
+
 Make sure you specify some large number of mates for requested orientation (ie 100,000).
 For example if you want mate-pairs with RF orientation and 5kb insert size +/- 1.5kb, enter into respective *.is.txt file:
 ```bash
