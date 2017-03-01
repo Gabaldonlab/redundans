@@ -7,9 +7,18 @@
 
 ## FAQ
 ### Estimation of my library statistics is incorrect. Can I specify these values manually?   
-This can happen for highly fragmented assemblies or poor quality libraries. You can specify library statistics manually. To do so, look for *.is.txt file specific for your library i.e. for `-i 5000_1.fq.gz 5000_2.fq.gz` you will have to enter requested values into `5000_2.fq.gz.is.txt`. Make sure you specify some large number of mates for requested orientation (ie 100,000). For example if you want mate-pairs with RF orientation and 5kb insert size +/- 1.5kb, enter into respective *.is.txt file:
+This can happen for highly fragmented assemblies or poor quality libraries. You can specify library statistics manually.
+To do so, look for *.is.txt file specific for your library i.e. for `-i 5000_1.fq.gz 5000_2.fq.gz` you will have to enter requested values into `5000_2.fq.gz.is.txt`.
+.is.txt file is tab-delimited, with following columns:
+- read length
+- median insert size
+- mean insert size
+- standard deviation of insert size
+- and number of reads with FF, FR, RF & RR orientation. 
+Make sure you specify some large number of mates for requested orientation (ie 100,000).
+For example if you want mate-pairs with RF orientation and 5kb insert size +/- 1.5kb, enter into respective *.is.txt file:
 ```bash
-5000.0        5000.0  1500.0  0       0      100000   0
+60  5000.0        5000.0  1500.0  0       0      100000   0
 ```
 
 ### How is multiple redundancy handled? 
