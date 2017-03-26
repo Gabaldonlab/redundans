@@ -98,7 +98,7 @@ For the user convinience, Redundans is equipped with a wrapper that **automatica
 The only mandatory parameter required at the runtime is **assembled contigs** (FastA), although you should also specify some sequencing libraries (FastA/FastQ) or reference sequence (FastA) in order to perform scaffolding. 
 Most of the pipeline parameters can be adjusted manually (default values are given in square brackets []):  
 **HINT**: If you run fails, you may try to resume it, by adding `--resume` parameter. 
-- Genral options:
+- General options:
 ```
   -h, --help            show this help message and exit
   -v, --verbose         verbose
