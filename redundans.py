@@ -28,7 +28,6 @@ from fasta2homozygous import fasta2homozygous
 from fastq2sspace import fastq2sspace
 from fastq2insert_size import fastq2insert_size
 from filterReads import filter_paired
-#from fasta_stats import fasta_stats
 from FastaIndex import FastaIndex, symlink
 from pyScaf import LongReadGraph, SyntenyGraph
 
@@ -429,34 +428,32 @@ def main():
     parser.add_argument('--version', action='version', version='0.13a')
     parser.add_argument("-i", "--fastq", nargs="*", default=[], help="FASTQ PE / MP files")
     parser.add_argument("-f", "--fasta", required=1, help="FASTA file with contigs / scaffolds")
-    parser.add_argument("-o", "--outdir",  default="redundans", help="output directory [%(default)s]")
+    parser.add_argument("-o", "--outdir", default="redundans", help="output directory [%(default)s]")
     parser.add_argument("-t", "--threads", default=4, type=int, help="max threads to run [%(default)s]")
-    parser.add_argument("--resume",  default=False, action="store_true",  help="resume previous run")
+    parser.add_argument("--resume",  default=False, action="store_true", help="resume previous run")
     parser.add_argument("--log", default=sys.stderr, type=argparse.FileType('w'), help="output log to [stderr]")
     parser.add_argument('--nocleaning', action='store_false', help="keep intermediate files")   
     
     redu = parser.add_argument_group('Reduction options')
     redu.add_argument("--identity", default=0.51, type=float, help="min. identity [%(default)s]")
-    redu.add_argument("--overlap",  default=0.66, type=float, help="min. overlap  [%(default)s]")
-    redu.add_argument("--minLength", default=200, type=int,  help="min. contig length [%(default)s]")
+    redu.add_argument("--overlap", default=0.66, type=float, help="min. overlap [%(default)s]")
+    redu.add_argument("--minLength", default=200, type=int, help="min. contig length [%(default)s]")
     redu.add_argument('--noreduction', action='store_false', help="Skip reduction")
     
     scaf = parser.add_argument_group('Short-read scaffolding options')
     scaf.add_argument("-j", "--joins", default=5, type=int, help="min pairs to join contigs [%(default)s]")
     scaf.add_argument("-a", "--linkratio", default=0.7, type=float,
                       help="max link ratio between two best contig pairs [%(default)s]")    
-    scaf.add_argument("--limit",  default=0.2, type=float, help="align subset of reads [%(default)s]")
+    scaf.add_argument("--limit", default=0.2, type=float, help="align subset of reads [%(default)s]")
     scaf.add_argument("-q", "--mapq", default=10, type=int, help="min mapping quality [%(default)s]")
     scaf.add_argument("--iters", default=2, type=int, help="iterations per library [%(default)s]")
     scaf.add_argument('--noscaffolding', action='store_false', help="Skip short-read scaffolding")
     
     longscaf = parser.add_argument_group('Long-read scaffolding options')
-    longscaf.add_argument("-l", "--longreads", nargs="*", default=[], 
-                          help="FastQ/FastA files with long reads")
+    longscaf.add_argument("-l", "--longreads", nargs="*", default=[], help="FastQ/FastA files with long reads")
     
     refscaf = parser.add_argument_group('Reference-based scaffolding options')
-    refscaf.add_argument("-r", "--reference", default='', 
-                         help="reference FastA file")
+    refscaf.add_argument("-r", "--reference", default='', help="reference FastA file")
     refscaf.add_argument("--norearrangements", default=False, action='store_true', 
                          help="high identity mode (rearrangements not allowed)")
     
@@ -498,10 +495,5 @@ if __name__=='__main__':
         main()
     except KeyboardInterrupt:
         sys.stderr.write("\nCtrl-C pressed!      \n")
-    #except IOError as e:
-    #    log.write("I/O error({0}): {1}\n{2}\n".format(e.errno, e.strerror, str(e)))
-    #[Errno 95] Operation not supported ie symlinks over samba or in NFS shares
-    #except OSError as e:
-    #    log.write("%s\n"%str(e))
     dt = datetime.now()-t0
     sys.stderr.write("#Time elapsed: %s\n"%dt)
