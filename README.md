@@ -25,7 +25,7 @@ Redundans is:
 - **fast** & **lightweight**, multi-core support and memory-optimised, 
 so it can be run even on the laptop for small-to-medium size genomes
 - **flexible** toward many sequencing technologies (Illumina, 454, Sanger, PacBio & Nanopore) and library types (paired-end, mate pairs, fosmids, long reads)
-- **modular**: every step can be ommited or replaced by other tools
+- **modular**: every step can be omitted or replaced by other tools
 - **reliable**: it has been already used to improve genome assemblies varying in size (several Mb to several Gb) and complexity (fungal, animal & plants)
 
 For more information have a look at the [documentation](/docs), [poster](/docs/poster.pdf), [publication](http://nar.oxfordjournals.org/content/44/12/e113) and [test dataset](/test). 
@@ -94,7 +94,7 @@ Redundans will return **homozygous genome assembly** in `scaffolds.filled.fa` (F
 In addition, the program reports [statistics for every pipeline step](/test#summary-statistics), including number of contigs that were removed, GC content, N50, N90 and size of gap regions. 
 
 ### Parameters
-For the user convinience, Redundans is equipped with a wrapper that **automatically estimates run parameters** and executes all steps/modules.
+For the user convenience, Redundans is equipped with a wrapper that **automatically estimates run parameters** and executes all steps/modules.
 The only mandatory parameter required at the runtime is **assembled contigs** (FastA), although you should also specify some sequencing libraries (FastA/FastQ) or reference sequence (FastA) in order to perform scaffolding. 
 Most of the pipeline parameters can be adjusted manually (default values are given in square brackets []):  
 **HINT**: If you run fails, you may try to resume it, by adding `--resume` parameter. 
