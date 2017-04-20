@@ -140,7 +140,7 @@ Above, you can see that:
 ##### Scaffolding
 Redundans repeat scaffolding on each library several times (`--iters`). For each scaffolding iteration, the program reports number of:
 - processed pairs
-- pairs passing alignement quality
+- pairs passing alignment quality
 - pairs that aligned in different contigs
 
 ```bash

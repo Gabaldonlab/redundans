@@ -111,6 +111,7 @@ def plot_histograms(fname, contig2skip, identities, algsizes):
         counts[i] += 1
         sizes[i] += isize
         
+    bins -= 0.01
     # plot no. of contigs at give identity
     plt.subplot(211)
     plt.bar(bins*100, bestcounts, color="red", label="best", alpha=1.0)

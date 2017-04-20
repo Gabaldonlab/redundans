@@ -118,12 +118,12 @@ def _get_snap_proc(fn1, fn2, ref, cores, verbose, log=sys.stderr):
     return proc
     
 def get_tab_files(outdir, reffile, libNames, fReadsFnames, rReadsFnames, inserts, iBounds, libreadlen, \
-                  cores, mapqTh, upto, verbose, log=sys.stderr):
+                  cores, mapqTh, upto, verbose, usebwa=0, log=sys.stderr):
     """Prepare genome index, align all libs and save TAB file"""
     ref = reffile.name
     tabFnames = []
     _get_aligner_proc = _get_bwamem_proc
-    if max(libreadlen)<=300 and min(libreadlen)>40:
+    if not usebwa and max(libreadlen)<=500 and min(libreadlen)>40:
         _get_aligner_proc = _get_snap_proc
     # process all libs
     for libName, f1, f2, iSize, iFrac in zip(libNames, fReadsFnames, rReadsFnames, inserts, iBounds):
@@ -174,7 +174,7 @@ def get_libs(outdir, libFn, libNames, tabFnames, inserts, iBounds, orientations,
 
 def fastq2sspace(out, fasta, lib, libnames, libFs, libRs, orientations,  \
                  libIS, libISStDev, libreadlen, cores, mapq, upto, minlinks, linkratio, \
-                 sspacebin, verbose, log=sys.stderr):
+                 sspacebin, verbose, usebwa=0, log=sys.stderr):
     """Map reads onto contigs, prepare library file and execute SSPACE2"""
     # get dir variables
     curdir = os.path.abspath(os.path.curdir)
@@ -188,7 +188,8 @@ def fastq2sspace(out, fasta, lib, libnames, libFs, libRs, orientations,  \
     # get tab files
     if verbose:
         log.write("[%s] Generating TAB file(s) for %s library/ies...\n" % (datetime.ctime(datetime.now()),len(libnames)) )
-    tabFnames = get_tab_files(out, fasta, libnames, libFs, libRs, libIS, libISStDev, libreadlen, cores, mapq, upto, verbose, log)
+    tabFnames = get_tab_files(out, fasta, libnames, libFs, libRs, libIS, libISStDev, libreadlen, cores, mapq, upto, \
+                              verbose, usebwa, log)
 
     # generate lib file
     if  verbose:
