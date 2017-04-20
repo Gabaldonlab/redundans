@@ -31,14 +31,9 @@ def run_last(fasta, identity, threads, verbose):
     if not os.path.isfile(fasta+".suf"):
         os.system("lastdb %s %s" % (fasta, fasta))
     # run LAST
-    #args = ["lastal", "-T", "1", "-f", "TAB", "-P", str(threads), fasta, fasta] 
-    #proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=sys.stderr)
-    args1 = ["lastal", "-P", str(threads), fasta, fasta]
-    proc1 = subprocess.Popen(args1, stdout=subprocess.PIPE, stderr=sys.stderr)
-    proc15 = subprocess.Popen(["skip_selfmatches.py",], stdin=proc1.stdout, stdout=subprocess.PIPE, stderr=sys.stderr)
-    proc2 = subprocess.Popen(["last-split",], stdin=proc15.stdout, stdout=subprocess.PIPE, stderr=sys.stderr)
-    proc3 = subprocess.Popen(["maf-convert", "tab", "-"], stdin=proc2.stdout, stdout=subprocess.PIPE, stderr=sys.stderr)
-    return proc3
+    args = ["lastal", "-f", "TAB", "-P", str(threads), fasta, fasta]
+    proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=sys.stderr)
+    return proc
 
 def get_best_match(matches, q, qsize, identityTh, overlapTh):
     """Return best match"""
@@ -65,6 +60,9 @@ def fasta2hits(fasta, threads, identityTh, overlapTh, verbose):
         # unpack
         (score, t, tstart, talg, tstrand, tsize, q, qstart, qalg, qstrand, qsize, blocks) = l.split()[:12]
         (score, qstart, qalg, qsize, tstart, talg, tsize) = map(int, (score, qstart, qalg, qsize, tstart, talg, tsize))
+        # skip reverse matches
+        if t==q or tsize < qsize or tsize==qsize and t<q: 
+            continue
         # report previous query
         if pq != q:
             if get_best_match(matches, pq, pqsize, identityTh, overlapTh): 
@@ -72,11 +70,8 @@ def fasta2hits(fasta, threads, identityTh, overlapTh, verbose):
             # reset
             pq, pqsize = q, qsize
             matches = {}
-        # skip reverse matches
-        if tsize < qsize or tsize==qsize and t<q: 
-            continue
         if t not in matches:
-            matches[t] = [0, 0]                
+            matches[t] = [0, 0]
         matches[t][0] += score
         matches[t][1] += qalg
         
