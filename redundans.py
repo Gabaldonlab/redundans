@@ -425,7 +425,7 @@ def main():
                                       formatter_class=argparse.RawTextHelpFormatter)
   
     parser.add_argument("-v", "--verbose",  action="store_true", help="verbose")    
-    parser.add_argument('--version', action='version', version='0.13a')
+    parser.add_argument('--version', action='version', version='0.13b')
     parser.add_argument("-i", "--fastq", nargs="*", default=[], help="FASTQ PE / MP files")
     parser.add_argument("-f", "--fasta", required=1, help="FASTA file with contigs / scaffolds")
     parser.add_argument("-o", "--outdir", default="redundans", help="output directory [%(default)s]")

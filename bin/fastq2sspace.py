@@ -123,8 +123,8 @@ def get_tab_files(outdir, reffile, libNames, fReadsFnames, rReadsFnames, inserts
     ref = reffile.name
     tabFnames = []
     _get_aligner_proc = _get_bwamem_proc
-    if not usebwa and max(libreadlen)<=500 and min(libreadlen)>40:
-        _get_aligner_proc = _get_snap_proc
+    #if not usebwa and max(libreadlen)<=500 and min(libreadlen)>40:
+    #    _get_aligner_proc = _get_snap_proc
     # process all libs
     for libName, f1, f2, iSize, iFrac in zip(libNames, fReadsFnames, rReadsFnames, inserts, iBounds):
         if verbose:

@@ -1,3 +1,8 @@
+####0.13b
+- reduction:
+ - improved sensitivity of reduciton (local alignment mode)
+- scaffolding:
+ - bwa mem is way more sensitive, so it's used by default instead of snap
 
 ####0.13a
 - added long reads (**EXPERIMENTAL**) & reference-based scaffolding support (through [pyScaf](https://github.com/lpryszcz/pyScaf))

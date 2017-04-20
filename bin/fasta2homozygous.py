@@ -27,32 +27,56 @@ def run_last(fasta, identity, threads, verbose):
     if not os.path.isfile(fasta+".suf"):
         os.system("lastdb %s %s" % (fasta, fasta))
     # run LAST
-    args = ["lastal", "-T", "1", "-f", "TAB", "-P", str(threads), fasta, fasta] 
-    proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=sys.stderr)        
-    return proc
+    #args = ["lastal", "-T", "1", "-f", "TAB", "-P", str(threads), fasta, fasta] 
+    #proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=sys.stderr)
+    args1 = ["lastal", "-P", str(threads), fasta, fasta]
+    proc1 = subprocess.Popen(args1, stdout=subprocess.PIPE, stderr=sys.stderr)
+    proc15 = subprocess.Popen(["skip_selfmatches.py",], stdin=proc1.stdout, stdout=subprocess.PIPE, stderr=sys.stderr)
+    proc2 = subprocess.Popen(["last-split",], stdin=proc15.stdout, stdout=subprocess.PIPE, stderr=sys.stderr)
+    proc3 = subprocess.Popen(["maf-convert", "tab", "-"], stdin=proc2.stdout, stdout=subprocess.PIPE, stderr=sys.stderr)
+    return proc3
+
+def get_best_match(matches, q, qsize, identityTh, overlapTh):
+    """Return best match"""
+    # get best t mach - the one having max cumulative score
+    t, (score, qalg) = sorted(matches.iteritems(), key=lambda x: x[1][0], reverse=1)[0]
+    # get score, identity & overlap # LASTal is using +1/-1 for match/mismatch, while I need +1/0
+    identity = 1.0 * (score+(qalg-score)/2) / qalg
+    overlap  = 1.0 * qalg / qsize
+    # filter by identity and overlap
+    if identity >= identityTh and overlap > overlapTh:
+        return score, t, q, qalg, identity, overlap
     
 def fasta2hits(fasta, threads, identityTh, overlapTh, verbose):
     """Return LASTal hits passing identity and overlap thresholds"""
     # execute last
     last = run_last(fasta.name, identityTh, threads, verbose)
+    pq, pqsize = '', 0
+    matches = {}
     for l in last.stdout: 
-        if l.startswith('#'):
+        if l.startswith('#'): 
             continue
         # unpack
         (score, q, qstart, qalg, qstrand, qsize, t, tstart, talg, tstrand, tsize, blocks) = l.split()[:12]
         (score, qstart, qalg, qsize, tstart, talg, tsize) = map(int, (score, qstart, qalg, qsize, tstart, talg, tsize))
+        # report previous query
+        if pq != q:
+            if matches and get_best_match(matches, pq, pqsize, identityTh, overlapTh): 
+                yield get_best_match(matches, pq, pqsize, identityTh, overlapTh)
+            # reset
+            pq, pqsize = q, qsize
+            matches = {}
         # skip reverse matches
         if q == t or tsize < qsize: 
             continue
-        # get score, identity & overlap # LASTal is using +1/-1 for match/mismatch, while I need +1/0
-        identity = 1.0 * (score+(qalg-score)/2) / qalg
-        overlap  = 1.0 * qalg / qsize
-        # filter by identity and overlap
-        if identity < identityTh or overlap < overlapTh:
-            continue
-        # store
-        qend, tend = qstart + qalg, tstart + talg
-        yield score, t, q, qend-qstart, identity, overlap
+        if t not in matches:
+            matches[t] = [0, 0]                
+        matches[t][0] += score
+        matches[t][1] += qalg
+        
+    # yield last bit
+    if matches and get_best_match(matches, pq, pqsize, identityTh, overlapTh): 
+        yield get_best_match(matches, pq, pqsize, identityTh, overlapTh)
     
 def fasta2skip(out, fasta, faidx, threads, identityTh, overlapTh, verbose):
     """Return dictionary with redundant contigs and their best alignments"""
