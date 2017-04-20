@@ -19,6 +19,10 @@ import gzip, os, sys, subprocess
 from datetime import datetime
 from FastaIndex import FastaIndex
 
+# update sys.path & environmental PATH
+root = os.path.dirname(os.path.abspath(sys.argv[0]))
+os.environ["PATH"] = "%s:%s"%(root, os.environ["PATH"])
+
 def run_last(fasta, identity, threads, verbose):
     """Start LAST with multi-threads"""
     if verbose:
@@ -38,13 +42,15 @@ def run_last(fasta, identity, threads, verbose):
 
 def get_best_match(matches, q, qsize, identityTh, overlapTh):
     """Return best match"""
+    if not matches:
+        return
     # get best t mach - the one having max cumulative score
     t, (score, qalg) = sorted(matches.iteritems(), key=lambda x: x[1][0], reverse=1)[0]
     # get score, identity & overlap # LASTal is using +1/-1 for match/mismatch, while I need +1/0
     identity = 1.0 * (score+(qalg-score)/2) / qalg
     overlap  = 1.0 * qalg / qsize
     # filter by identity and overlap
-    if identity >= identityTh and overlap > overlapTh:
+    if identity >= identityTh and overlap >= overlapTh:
         return score, t, q, qalg, identity, overlap
     
 def fasta2hits(fasta, threads, identityTh, overlapTh, verbose):
@@ -57,17 +63,17 @@ def fasta2hits(fasta, threads, identityTh, overlapTh, verbose):
         if l.startswith('#'): 
             continue
         # unpack
-        (score, q, qstart, qalg, qstrand, qsize, t, tstart, talg, tstrand, tsize, blocks) = l.split()[:12]
+        (score, t, tstart, talg, tstrand, tsize, q, qstart, qalg, qstrand, qsize, blocks) = l.split()[:12]
         (score, qstart, qalg, qsize, tstart, talg, tsize) = map(int, (score, qstart, qalg, qsize, tstart, talg, tsize))
         # report previous query
         if pq != q:
-            if matches and get_best_match(matches, pq, pqsize, identityTh, overlapTh): 
+            if get_best_match(matches, pq, pqsize, identityTh, overlapTh): 
                 yield get_best_match(matches, pq, pqsize, identityTh, overlapTh)
             # reset
             pq, pqsize = q, qsize
             matches = {}
         # skip reverse matches
-        if q == t or tsize < qsize: 
+        if tsize < qsize or tsize==qsize and t<q: 
             continue
         if t not in matches:
             matches[t] = [0, 0]                
@@ -75,7 +81,7 @@ def fasta2hits(fasta, threads, identityTh, overlapTh, verbose):
         matches[t][1] += qalg
         
     # yield last bit
-    if matches and get_best_match(matches, pq, pqsize, identityTh, overlapTh): 
+    if get_best_match(matches, pq, pqsize, identityTh, overlapTh): 
         yield get_best_match(matches, pq, pqsize, identityTh, overlapTh)
     
 def fasta2skip(out, fasta, faidx, threads, identityTh, overlapTh, verbose):
@@ -207,7 +213,7 @@ def save_homozygous(out, faidx, contig2skip, minLength, verbose):
             skipped += 1
             ssize   += faidx.id2stats[c][0]
             score, t, algLen, identity, overlap = contig2skip[c]
-            out2.write("%s\t%s\t%s\t%s\t%s\n"%(c, ssize, t, identity, overlap))
+            out2.write("%s\t%s\t%s\t%s\t%s\n"%(c, faidx.id2stats[c][0], t, identity, overlap))
             # update identities and lengths
             identities += identity*algLen
             algLengths += algLen
