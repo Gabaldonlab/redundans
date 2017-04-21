@@ -28,7 +28,7 @@ so it can be run even on the laptop for small-to-medium size genomes
 - **modular**: every step can be omitted or replaced by other tools
 - **reliable**: it has been already used to improve genome assemblies varying in size (several Mb to several Gb) and complexity (fungal, animal & plants)
 
-For more information have a look at the [documentation](/docs), [poster](/docs/poster.pdf), [publication](http://nar.oxfordjournals.org/content/44/12/e113) and [test dataset](/test). 
+For more information have a look at the [documentation](/docs), [poster](/docs/poster.pdf), [publication](http://nar.oxfordjournals.org/content/44/12/e113), [test dataset](/test) or [manual](http://bit.ly/redundans_manual). 
 
 ## Prerequisites
 Redundans uses several programs (all provided within this repository): 

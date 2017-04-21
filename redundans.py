@@ -6,6 +6,7 @@ More info at: http://bit.ly/Redundans
 
 TBA:
 - add exception if lastdb or lastal doesn't finish successfully
+- make sure reduction isn't too intense
 """
 epilog="""Author:
 l.p.pryszcz@gmail.com

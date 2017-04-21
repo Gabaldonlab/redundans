@@ -31,7 +31,7 @@ def run_last(fasta, identity, threads, verbose):
     if not os.path.isfile(fasta+".suf"):
         os.system("lastdb %s %s" % (fasta, fasta))
     # run LAST
-    args = ["lastal", "-f", "TAB", "-P", str(threads), fasta, fasta]
+    args = ["lastal", "-T", "0", "-f", "TAB", "-P", str(threads), fasta, fasta]
     proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=sys.stderr)
     return proc
 
