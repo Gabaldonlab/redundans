@@ -76,19 +76,9 @@ def fasta2hits(fasta, threads, identityTh, overlapTh, verbose):
             pq, pqsize = q, qsize
             matches = {}
         if t not in matches:
-            matches[t] = [0, 0] #np.zeros(qsize, dtype="uint8")]
+            matches[t] = [0, 0]
         matches[t][0] += score
         matches[t][1] += qalg
-        ''' # + strand
-        if qstrand=="+":
-            s = qstart
-            e = s + qalg
-        else:
-            e = qsize - qstart
-            s = qsize - qstart - qalg
-        
-        matches[t][1][s:e] = 1
-        '''
         
     # yield last bit
     if get_best_match(matches, pq, pqsize, identityTh, overlapTh): 
