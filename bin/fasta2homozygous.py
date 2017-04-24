@@ -19,6 +19,8 @@ import gzip, os, sys, subprocess
 from datetime import datetime
 from FastaIndex import FastaIndex
 
+import numpy as np
+
 # update sys.path & environmental PATH
 root = os.path.dirname(os.path.abspath(sys.argv[0]))
 os.environ["PATH"] = "%s:%s"%(root, os.environ["PATH"])
@@ -31,9 +33,12 @@ def run_last(fasta, identity, threads, verbose):
     if not os.path.isfile(fasta+".suf"):
         os.system("lastdb %s %s" % (fasta, fasta))
     # run LAST
-    args = ["lastal", "-T", "0", "-f", "TAB", "-P", str(threads), fasta, fasta]
-    proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=sys.stderr)
-    return proc
+    args1 = ["lastal", "-P", str(threads), fasta, fasta]
+    proc1 = subprocess.Popen(args1, stdout=subprocess.PIPE, stderr=sys.stderr)
+    proc15 = subprocess.Popen(["skip_selfmatches.py",], stdin=proc1.stdout, stdout=subprocess.PIPE, stderr=sys.stderr)
+    proc2 = subprocess.Popen(["last-split",], stdin=proc15.stdout, stdout=subprocess.PIPE, stderr=sys.stderr)
+    proc3 = subprocess.Popen(["maf-convert", "tab", "-"], stdin=proc2.stdout, stdout=subprocess.PIPE, stderr=sys.stderr)
+    return proc3
 
 def get_best_match(matches, q, qsize, identityTh, overlapTh):
     """Return best match"""
@@ -71,13 +76,24 @@ def fasta2hits(fasta, threads, identityTh, overlapTh, verbose):
             pq, pqsize = q, qsize
             matches = {}
         if t not in matches:
-            matches[t] = [0, 0]
+            matches[t] = [0, 0] #np.zeros(qsize, dtype="uint8")]
         matches[t][0] += score
         matches[t][1] += qalg
+        ''' # + strand
+        if qstrand=="+":
+            s = qstart
+            e = s + qalg
+        else:
+            e = qsize - qstart
+            s = qsize - qstart - qalg
+        
+        matches[t][1][s:e] = 1
+        '''
         
     # yield last bit
     if get_best_match(matches, pq, pqsize, identityTh, overlapTh): 
         yield get_best_match(matches, pq, pqsize, identityTh, overlapTh)
+        
     
 def fasta2skip(out, fasta, faidx, threads, identityTh, overlapTh, verbose):
     """Return dictionary with redundant contigs and their best alignments"""
@@ -102,7 +118,7 @@ def fasta2skip(out, fasta, faidx, threads, identityTh, overlapTh, verbose):
         identities.append(identity)
         sizes.append(algLen)
     # plot histogram of identities
-    plot_histograms(out.name, contig2skip, identities, sizes)
+    #plot_histograms(out.name, contig2skip, identities, sizes)
     return contig2skip
 
 def plot_histograms(fname, contig2skip, identities, algsizes):
