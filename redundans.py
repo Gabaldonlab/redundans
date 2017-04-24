@@ -6,7 +6,7 @@ More info at: http://bit.ly/Redundans
 
 TBA:
 - add exception if lastdb or lastal doesn't finish successfully
-- make sure reduction isn't too intense
+- make sure reduction isn't too intense (target numpy)
 """
 epilog="""Author:
 l.p.pryszcz@gmail.com
@@ -348,7 +348,7 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
         resume += 1
         if verbose:
             log.write("%sScaffolding based on reference...\n"%timestamp())        
-        s = SyntenyGraph(lastOutFn, reference, identity, overlap, maxgap=0, threads=threads, \
+        s = SyntenyGraph(lastOutFn, reference, identity=0.51, overlap=0.66, maxgap=0, threads=threads, \
                          dotplot="", norearrangements=norearrangements, log=0)
         # save output
         with open(outfn, "w") as out:
