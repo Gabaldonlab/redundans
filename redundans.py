@@ -113,7 +113,7 @@ def run_scaffolding(outdir, scaffoldsFname, fastq, libraries, reducedFname, mapq
             if resume>1 or _corrupted_file(out+".fa"):
                 resume += 1
                 if verbose:
-                    log.write(" iteration %s.%s of %s.%s ...\n"%(i, j, len(libraries), iters))
+                    log.write(" iteration %s.%s of %s.%s: %s"%(i, j, len(libraries), iters, FastaIndex(pout).stats()))
                 lib = ""
                 # run fastq scaffolding
                 fastq2sspace(out, open(pout), lib, libnames, libFs, libRs, orients, \
@@ -221,7 +221,7 @@ def run_gapclosing(outdir, libraries, nogapsFname, scaffoldsFname,  threads, lim
                 cmd = ["GapCloser", "-t %s"%threads, "-p %s"%overlap, "-l %s"%maxReadLen, \
                        "-a", pout, "-b", configFn, "-o", out]
                 if verbose:
-                    log.write(" iteration %s.%s ...\n"%(i,j))
+                    log.write(" iteration %s.%s: %s"%(i, j, FastaIndex(pout).stats()))
                 # run GapCloser and save stdout/err to log file
                 with open(out+".log", "w") as gapcloselog:
                     GapCloser = subprocess.Popen(cmd, stdout=gapcloselog, stderr=gapcloselog)
