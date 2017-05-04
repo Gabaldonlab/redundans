@@ -433,7 +433,7 @@ def main():
     
     redu = parser.add_argument_group('Reduction options')
     redu.add_argument("--identity", default=0.51, type=float, help="min. identity [%(default)s]")
-    redu.add_argument("--overlap", default=0.75, type=float, help="min. overlap [%(default)s]")
+    redu.add_argument("--overlap", default=0.9, type=float, help="min. overlap [%(default)s]")
     redu.add_argument("--minLength", default=200, type=int, help="min. contig length [%(default)s]")
     redu.add_argument('--noreduction', action='store_false', help="Skip reduction")
     

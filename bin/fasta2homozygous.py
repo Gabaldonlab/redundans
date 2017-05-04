@@ -30,6 +30,9 @@ def run_last(fasta, identity, threads, minLength=200, verbose=1):
     if not os.path.isfile(fasta+".suf"):
         os.system("lastdb %s %s" % (fasta, fasta))
     # run LAST
+    args1 = ["lastal", "-f", "TAB", "-P", str(threads), fasta, fasta]
+    proc1 = subprocess.Popen(args1, stdout=subprocess.PIPE, stderr=sys.stderr)
+    return proc1
     args1 = ["lastal", "-P", str(threads), fasta, fasta]
     proc1 = subprocess.Popen(args1, stdout=subprocess.PIPE, stderr=sys.stderr)
     proc15 = subprocess.Popen(["skip_selfmatches.py", str(minLength)], stdin=proc1.stdout, stdout=subprocess.PIPE, stderr=sys.stderr)
@@ -37,7 +40,7 @@ def run_last(fasta, identity, threads, minLength=200, verbose=1):
     proc3 = subprocess.Popen(["maf-convert", "tab", "-"], stdin=proc2.stdout, stdout=subprocess.PIPE, stderr=sys.stderr)
     return proc3
 
-def get_best_match(matches, q, qsize, identityTh, overlapTh):
+def get_best_match0(matches, q, qsize, identityTh, overlapTh):
     """Return best match"""
     if not matches:
         return
@@ -50,7 +53,7 @@ def get_best_match(matches, q, qsize, identityTh, overlapTh):
     if identity >= identityTh and overlap >= overlapTh:
         return score, t, q, qalg, identity, overlap
     
-def fasta2hits(fasta, threads, identityTh, overlapTh, minLength, verbose):
+def fasta2hits0(fasta, threads, identityTh, overlapTh, minLength, verbose):
     """Return LASTal hits passing identity and overlap thresholds"""
     # execute last
     last = run_last(fasta.name, identityTh, threads, minLength, verbose)
@@ -80,7 +83,61 @@ def fasta2hits(fasta, threads, identityTh, overlapTh, minLength, verbose):
     # yield last bit
     if get_best_match(matches, pq, pqsize, identityTh, overlapTh): 
         yield get_best_match(matches, pq, pqsize, identityTh, overlapTh)
-    
+
+def get_best_match(matches, q, qsize, identityTh, overlapTh):
+    """Return best match"""
+    if not matches:
+        return
+    # get best t mach - the one having max cumulative score
+    t, (score, qalg) = sorted(matches.iteritems(), key=lambda x: x[1][0], reverse=1)[0]
+    # get score, identity & overlap # LASTal is using +1/-1 for match/mismatch, while I need +1/0
+    identity = 1.0 * (score+(sum(qalg)-score)/2) / sum(qalg)
+    overlap  = 1.0 * sum(qalg>0) / qsize
+    # filter by identity and overlap
+    if identity >= identityTh and overlap >= overlapTh:
+        return score, t, q, sum(qalg>0), identity, overlap
+        
+def fasta2hits(fasta, threads, identityTh, overlapTh, minLength, verbose):
+    """Return LASTal hits passing identity and overlap thresholds"""
+    # execute last
+    last = run_last(fasta.name, identityTh, threads, minLength, verbose)
+    pq, pqsize = '', 0
+    matches = {}
+    for l in last.stdout: 
+        if l.startswith('#'): 
+            continue
+        # unpack
+        (score, t, tstart, talg, tstrand, tsize, q, qstart, qalg, qstrand, qsize, blocks) = l.split()[:12]
+        (score, qstart, qalg, qsize, tstart, talg, tsize) = map(int, (score, qstart, qalg, qsize, tstart, talg, tsize))
+        # skip reverse matches
+        if t==q or tsize < qsize or tsize==qsize and t<q: 
+            continue
+        # report previous query
+        if pq != q:
+            if get_best_match(matches, pq, pqsize, identityTh, overlapTh): 
+                yield get_best_match(matches, pq, pqsize, identityTh, overlapTh)
+            # reset
+            pq, pqsize = q, qsize
+            matches = {}
+        if t not in matches:
+            matches[t] = [0, np.zeros(qsize, dtype='uint8')]
+        # get qstart & qend
+        if qstrand=="+":
+            s = qstart
+            e = s + qalg
+        else:
+            e = qsize - qstart
+            s = qsize - qstart - qalg
+        # skip if more than 10% overlap with existing matches
+        if sum(matches[t][1][s:e]>1) > 0.1*qalg:
+            continue
+        matches[t][0] += score
+        matches[t][1][s:e] += 1
+        
+    # yield last bit
+    if get_best_match(matches, pq, pqsize, identityTh, overlapTh): 
+        yield get_best_match(matches, pq, pqsize, identityTh, overlapTh)
+        
 def fasta2skip(out, fasta, faidx, threads, identityTh, overlapTh, minLength, verbose):
     """Return dictionary with redundant contigs and their best alignments"""
     # get hits generator
