@@ -2,9 +2,6 @@
 desc="""Align genome onto itself (LAST) and keep only the longest
 from heterozygous (redundant) contigs/scaffolds.
 
-!!! NOTE: contigs FastA file has to be ordered by descending size !!!
-- add exception!
-
 TO ADD:
 - scaffold extension based on overlapping matches
 - reporting of haplotypes
@@ -25,7 +22,7 @@ import numpy as np
 root = os.path.dirname(os.path.abspath(sys.argv[0]))
 os.environ["PATH"] = "%s:%s"%(root, os.environ["PATH"])
 
-def run_last(fasta, identity, threads, verbose):
+def run_last(fasta, identity, threads, minLength=200, verbose=1):
     """Start LAST with multi-threads"""
     if verbose:
         sys.stderr.write(" Running LAST...\n")
@@ -35,7 +32,7 @@ def run_last(fasta, identity, threads, verbose):
     # run LAST
     args1 = ["lastal", "-P", str(threads), fasta, fasta]
     proc1 = subprocess.Popen(args1, stdout=subprocess.PIPE, stderr=sys.stderr)
-    proc15 = subprocess.Popen(["skip_selfmatches.py",], stdin=proc1.stdout, stdout=subprocess.PIPE, stderr=sys.stderr)
+    proc15 = subprocess.Popen(["skip_selfmatches.py", str(minLength)], stdin=proc1.stdout, stdout=subprocess.PIPE, stderr=sys.stderr)
     proc2 = subprocess.Popen(["last-split",], stdin=proc15.stdout, stdout=subprocess.PIPE, stderr=sys.stderr)
     proc3 = subprocess.Popen(["maf-convert", "tab", "-"], stdin=proc2.stdout, stdout=subprocess.PIPE, stderr=sys.stderr)
     return proc3
@@ -53,10 +50,10 @@ def get_best_match(matches, q, qsize, identityTh, overlapTh):
     if identity >= identityTh and overlap >= overlapTh:
         return score, t, q, qalg, identity, overlap
     
-def fasta2hits(fasta, threads, identityTh, overlapTh, verbose):
+def fasta2hits(fasta, threads, identityTh, overlapTh, minLength, verbose):
     """Return LASTal hits passing identity and overlap thresholds"""
     # execute last
-    last = run_last(fasta.name, identityTh, threads, verbose)
+    last = run_last(fasta.name, identityTh, threads, minLength, verbose)
     pq, pqsize = '', 0
     matches = {}
     for l in last.stdout: 
@@ -83,12 +80,11 @@ def fasta2hits(fasta, threads, identityTh, overlapTh, verbose):
     # yield last bit
     if get_best_match(matches, pq, pqsize, identityTh, overlapTh): 
         yield get_best_match(matches, pq, pqsize, identityTh, overlapTh)
-        
     
-def fasta2skip(out, fasta, faidx, threads, identityTh, overlapTh, verbose):
+def fasta2skip(out, fasta, faidx, threads, identityTh, overlapTh, minLength, verbose):
     """Return dictionary with redundant contigs and their best alignments"""
     # get hits generator
-    hits = fasta2hits(fasta, threads, identityTh, overlapTh, verbose)
+    hits = fasta2hits(fasta, threads, identityTh, overlapTh, minLength, verbose)
     # iterate through hits
     identities, sizes = [], []
     contig2skip = {c: 0 for c in faidx} 
@@ -108,7 +104,7 @@ def fasta2skip(out, fasta, faidx, threads, identityTh, overlapTh, verbose):
         identities.append(identity)
         sizes.append(algLen)
     # plot histogram of identities
-    #plot_histograms(out.name, contig2skip, identities, sizes)
+    plot_histograms(out.name, contig2skip, identities, sizes)
     return contig2skip
 
 def plot_histograms(fname, contig2skip, identities, algsizes):
@@ -162,8 +158,7 @@ def plot_histograms(fname, contig2skip, identities, algsizes):
     plt.ylabel("Cumulative alignment size [Mb]")
     fig.savefig(fname+".hist.png", dpi=300)
     
-def fasta2homozygous(out, fasta, identity, overlap, minLength, \
-                     threads=1, verbose=0, log=sys.stderr):
+def fasta2homozygous(out, fasta, identity, overlap, minLength, threads=1, verbose=0, log=sys.stderr):
     """Parse alignments and report homozygous contigs.
     
     Return genomeSize, no. of contigs, removed contigs size & number
@@ -180,7 +175,7 @@ def fasta2homozygous(out, fasta, identity, overlap, minLength, \
     # filter alignments & remove redundant
     if verbose:
         log.write("Parsing alignments...\n")
-    contig2skip = fasta2skip(out, fasta, faidx, threads, identity, overlap, verbose)
+    contig2skip = fasta2skip(out, fasta, faidx, threads, identity, overlap, minLength, verbose)
     
     #report homozygous fasta
     nsize, k, skipped, ssize, avgIdentity = save_homozygous(out, faidx, contig2skip, minLength, verbose)
@@ -239,18 +234,12 @@ def main():
                                       formatter_class=argparse.RawTextHelpFormatter)
   
     parser.add_argument('--version', action='version', version='1.01d')   
-    parser.add_argument("-v", "--verbose", default=False, action="store_true",
-                        help="verbose")    
-    parser.add_argument("-i", "-f", "--fasta", nargs="+", type=file, 
-                        help="FASTA file(s)")
-    parser.add_argument("-t", "--threads", default=4, type=int, 
-                        help="max threads to run [%(default)s]")
-    parser.add_argument("--identity",    default=0.51, type=float, 
-                        help="min. identity   [%(default)s]")
-    parser.add_argument("--overlap",     default=0.66, type=float, 
-                        help="min. overlap    [%(default)s]")
-    parser.add_argument("--minLength",   default=200, type=int, 
-                        help="min. contig length [%(default)s]")
+    parser.add_argument("-v", "--verbose", default=False, action="store_true", help="verbose")    
+    parser.add_argument("-i", "-f", "--fasta", nargs="+", type=file, help="FASTA file(s)")
+    parser.add_argument("-t", "--threads", default=4, type=int, help="max threads to run [%(default)s]")
+    parser.add_argument("--identity", default=0.51, type=float, help="min. identity [%(default)s]")
+    parser.add_argument("--overlap", default=0.8, type=float, help="min. overlap [%(default)s]")
+    parser.add_argument("--minLength",   default=200, type=int, help="min. contig length [%(default)s]")
     
     o = parser.parse_args()
     if o.verbose:
@@ -261,8 +250,7 @@ def main():
     sys.stderr.write("#file name\tgenome size\tcontigs\theterozygous size\t[%]\theterozygous contigs\t[%]\tidentity [%]\tpossible joins\thomozygous size\t[%]\thomozygous contigs\t[%]\n")
     for fasta in o.fasta:
         out = gzip.open(fasta.name+".homozygous.fa.gz", "w")
-        fasta2homozygous(out, fasta, o.identity, o.overlap, o.minLength, \
-                         o.threads, o.verbose)
+        fasta2homozygous(out, fasta, o.identity, o.overlap, o.minLength, o.threads, o.verbose)
         out.close()
 
 if __name__=='__main__': 

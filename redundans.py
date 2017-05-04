@@ -6,7 +6,7 @@ More info at: http://bit.ly/Redundans
 
 TBA:
 - add exception if lastdb or lastal doesn't finish successfully
-- make sure reduction isn't too intense (target numpy)
+- pyScaf short reads
 """
 epilog="""Author:
 l.p.pryszcz@gmail.com
@@ -239,19 +239,6 @@ def _corrupted_file(fname):
        not os.path.isfile(fname+".fai") or not os.path.getsize(fname+".fai"):
         return True
 
-def prepare_contigs(fasta, contigsFname, minLength=200):
-    """Sort contigs starting from the longest and remove too short"""
-    with open(contigsFname, "w") as out:
-        # init fasta index
-        faidx = FastaIndex(fasta)
-        # filter out sequences shorter than minLength
-        for i, c in enumerate(faidx.sort(minLength=minLength), 1):
-            if i%1e5 == 1:
-                sys.stderr.write(' %s   \r'%i)
-            #seq = faidx.__getitem__(c, name=str(i))
-            out.write(faidx[c])
-        sys.stderr.write(' %s sequences stored.\n'%i)
-        
 def redundans(fastq, longreads, fasta, reference, outdir, mapq, 
               threads, resume, identity, overlap, minLength, \
               joins, linkratio, readLimit, iters, sspacebin, \
@@ -277,11 +264,7 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
         os.makedirs(outdir)
     
     # REDUCTION
-    # prepare contigs
-    if verbose:
-        log.write("%sPreparing contigs...\n"%timestamp())
-    prepare_contigs(fasta, lastOutFn, minLength)
-    # reduce
+    symlink(fasta, lastOutFn)
     outfn = os.path.join(outdir, "contigs.reduced.fa")
     if reduction and _corrupted_file(outfn):
         resume += 1
@@ -290,8 +273,7 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
             log.write("#file name\tgenome size\tcontigs\theterozygous size\t[%]\theterozygous contigs\t[%]\tidentity [%]\tpossible joins\thomozygous size\t[%]\thomozygous contigs\t[%]\n")
         # reduce
         with open(outfn, "w") as out:
-            info = fasta2homozygous(out, open(lastOutFn), identity, overlap, \
-                                    minLength, threads, verbose=0, log=log)
+            info = fasta2homozygous(out, open(lastOutFn), identity, overlap, minLength, threads, verbose=0, log=log)
         # update fasta list
         lastOutFn = outfn
         fastas.append(lastOutFn)
@@ -367,7 +349,21 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
         fastas += sorted(glob.glob(os.path.join(outdir, "_gap*.fa")))
         lastOutFn = outfn
         fastas.append(lastOutFn)
-    
+
+    # FINAL REDUCTION
+    outfn = os.path.join(outdir, "scaffolds.reduced.fa")
+    if reduction and _corrupted_file(outfn):
+        resume += 1
+        if verbose:
+            log.write("%sFinal reduction...\n"%timestamp())
+            log.write("#file name\tgenome size\tcontigs\theterozygous size\t[%]\theterozygous contigs\t[%]\tidentity [%]\tpossible joins\thomozygous size\t[%]\thomozygous contigs\t[%]\n")
+        # reduce
+        with open(outfn, "w") as out:
+            info = fasta2homozygous(out, open(lastOutFn), identity, overlap,  minLength, threads, verbose=0, log=log)
+        # update fasta list
+        lastOutFn = outfn
+        fastas.append(lastOutFn)
+        
     # FASTA STATS
     if verbose:
         log.write("%sReporting statistics...\n"%timestamp())

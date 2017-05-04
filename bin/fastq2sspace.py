@@ -60,7 +60,7 @@ def sam2sspace_tab(inhandle, outhandle, mapqTh=0, upto=float('inf'), verbose=Fal
             if mapq1 < mapqTh or mapq2 < mapqTh:
                 continue  
         if q1!=q2:
-            log.write("Warning: Queries have different names: %s vs %s\n" % (q1, q2))
+            log.write("[Warning] Queries have different names: %s vs %s\n" % (q1, q2))
             continue
         j   += 1
         #skip self matches
@@ -123,8 +123,8 @@ def get_tab_files(outdir, reffile, libNames, fReadsFnames, rReadsFnames, inserts
     ref = reffile.name
     tabFnames = []
     _get_aligner_proc = _get_bwamem_proc
-    #if not usebwa and max(libreadlen)<=500 and min(libreadlen)>40:
-    #    _get_aligner_proc = _get_snap_proc
+    if not usebwa and max(libreadlen)<=500 and min(libreadlen)>40:
+        _get_aligner_proc = _get_snap_proc
     # process all libs
     for libName, f1, f2, iSize, iFrac in zip(libNames, fReadsFnames, rReadsFnames, inserts, iBounds):
         if verbose:
@@ -136,40 +136,36 @@ def get_tab_files(outdir, reffile, libNames, fReadsFnames, rReadsFnames, inserts
             log.write("  File exists: %s\n" % outfn)
             tabFnames.append(outfn)
             continue
-        out = open(outfn, "w")
-        # define max insert size allowed
-        maxins = (1.0+iFrac) * iSize
         # run alignment for all libs        
+        out = open(outfn, "w")
         bwalog = open(outfn+".log", "w")
         proc = _get_aligner_proc(f1.name, f2.name, ref, cores, verbose, bwalog)
         # parse botwie output
         sam2sspace_tab(proc.stdout, out, mapqTh, upto, verbose, log)
-        # close file
+        # close file & terminate subprocess
         out.close()
         tabFnames.append(outfn)
-        # terminate subprocess
         proc.terminate()
     return tabFnames
     
-def get_libs(outdir, libFn, libNames, tabFnames, inserts, iBounds, orientations, verbose, log=sys.stderr):
+def get_libs(outdir, libFn, libNames, tabFnames, inserts, iBounds, orientations, libreadlen, verbose, log=sys.stderr):
     """Save lib fname and return it's path"""
-    lines = []
     # load libs from file
+    lines = []
     if libFn:
         if verbose:
             log.write(" Reading libs from %s\n" % libFn)
         lines = open(libFn).readlines()
     # add TAB libs
     tabline = "%s\tTAB\t%s\t%s\t%s\t%s\n"
-    for libname, tabfn, isize, isfrac, orient in zip(libNames, tabFnames, inserts, \
-                                                     iBounds, orientations):
-        lines.append(tabline%(libname, os.path.basename(tabfn), \
-                              isize, isfrac, orient))
+    for libname, tabfn, isize, isfrac, orient, rlen in zip(libNames, tabFnames, inserts, iBounds, orientations, libreadlen):
+        lines.append(tabline%(libname, os.path.basename(tabfn), isize, isfrac, orient))
 
-    outfn = "%s.libs.txt" % outdir #os.path.join( outdir,"libs.txt" )
+    outfn = "%s.libs.txt" % outdir 
     if verbose:
         log.write( " Updated libs saved to: %s\n" % outfn )
-    out   = open( outfn,"w" ); out.write( "".join(lines) ); out.close()
+    with open(outfn, "w") as out:
+        out.write("".join(lines))
     return outfn
 
 def fastq2sspace(out, fasta, lib, libnames, libFs, libRs, orientations,  \
@@ -188,20 +184,19 @@ def fastq2sspace(out, fasta, lib, libnames, libFs, libRs, orientations,  \
     # get tab files
     if verbose:
         log.write("[%s] Generating TAB file(s) for %s library/ies...\n" % (datetime.ctime(datetime.now()),len(libnames)) )
-    tabFnames = get_tab_files(out, fasta, libnames, libFs, libRs, libIS, libISStDev, libreadlen, cores, mapq, upto, \
-                              verbose, usebwa, log)
+    tabFnames = get_tab_files(out, fasta, libnames, libFs, libRs, libIS, libISStDev, libreadlen, \
+                              cores, mapq, upto, verbose, usebwa, log)
 
     # generate lib file
     if  verbose:
-        log.write("[%s] Generating libraries file...\n" % datetime.ctime(datetime.now()) )
-    libFn = get_libs(out, lib, libnames, tabFnames, libIS, libISStDev, orientations, verbose, log)
+        log.write("[%s] Generating library file(s)...\n" % datetime.ctime(datetime.now()))
+    libFn = get_libs(out, lib, libnames, tabFnames, libIS, libISStDev, orientations, libreadlen, verbose, log)
 
     # run sspace
     ## change dir to outdir - sspace output intermediate files always in curdir
     os.chdir(outdir)
     CMD = "perl %s -l %s -a %s -k %s -s %s -b %s > %s.sspace.log"
-    cmd = CMD%(sspacebin, os.path.basename(libFn), minlinks, linkratio, \
-               os.path.basename(fasta.name), outfn, outfn)
+    cmd = CMD%(sspacebin, os.path.basename(libFn), minlinks, linkratio, os.path.basename(fasta.name), outfn, outfn)
     if verbose:
         log.write(" %s\n"%cmd)
     os.system(cmd)
@@ -211,43 +206,28 @@ def fastq2sspace(out, fasta, lib, libnames, libFs, libRs, orientations,  \
 def main():
     import argparse
     usage   = "%(prog)s [options]" 
-    parser  = argparse.ArgumentParser( usage=usage,description=desc,epilog=epilog )
+    parser  = argparse.ArgumentParser(usage=usage, description=desc, epilog=epilog)
 
-    parser.add_argument("-v", dest="verbose", default=False, action="store_true")
-    parser.add_argument("-f", dest="fasta",      required=True, type=file,
-                       help="genome fasta        [mandatory]")
-    parser.add_argument("-k", dest="minlinks",   default=5, type=int,
-                       help="min number of links [%(default)s]")    
-    parser.add_argument("-a", "--linkratio",     default=0.7, type=float,
-                       help="max link ratio between two best contig pairs [%(default)s]")    
-    parser.add_argument("-l", dest="lib",        default="",
-                       help="lib file            [No libs]")    
-    parser.add_argument("-o", dest="out",        default="sspace_out",
-                       help="output basename     [%(default)s]")
-    parser.add_argument("-n", dest="libnames",   nargs="+",
-                       help="libraries names     [%(default)s]")
-    parser.add_argument("-1", dest="libFs",      nargs="+", type=file,
-                       help="libs forward reads  [%(default)s]")
-    parser.add_argument("-2", dest="libRs",      nargs="+", type=file,
-                       help="libs reverse reads  [%(default)s]")
-    parser.add_argument("-i", dest="libIS",      nargs="+", type=int,
-                       help="libs insert sizes   [%(default)s]")
-    parser.add_argument("-s", dest="libISStDev", nargs="+", type=float,
-                       help="libs IS StDev       [%(default)s]")    
-    parser.add_argument("-t", dest="orientations", nargs="+", #type=float,
-                       help="libs orientations   [%(default)s]")    
-    parser.add_argument("-c", dest="cores",      default=2, type=int,
-                       help="no. of cpus         [%(default)s]")
-    parser.add_argument("-q", dest="mapq",       default=10, type=int,
-                       help="min map quality     [%(default)s]")
-    parser.add_argument("-u", dest="upto",       default=0,  type=int,
-                       help="process up to pairs [all]")
-    parser.add_argument("--sspacebin", default="~/src/SSPACE/SSPACE_Standard_v3.0.pl", 
-                       help="SSPACE2 perl script [%(default)s]")
+    parser.add_argument("-v", "--verbose", default=False, action="store_true")
+    parser.add_argument("-f", "--fasta", required=True, type=file, help="genome fasta")
+    parser.add_argument("-k", "--minlinks", default=5, type=int, help="min number of links [%(default)s]")    
+    parser.add_argument("-a", "--linkratio", default=0.7, type=float, help="max link ratio between two best contig pairs [%(default)s]") 
+    parser.add_argument("-l", "--lib", default="", help="lib file [No libs]")    
+    parser.add_argument("-o", "--out", default="sspace_out", help="output basename [%(default)s]")
+    parser.add_argument("-n", "--libnames", nargs="+", help="libraries names [%(default)s]")
+    parser.add_argument("-1", "--libFs", nargs="+", type=file, help="libs forward reads [%(default)s]")
+    parser.add_argument("-2", "--libRs", nargs="+", type=file, help="libs reverse reads [%(default)s]")
+    parser.add_argument("-i", "--libIS", nargs="+", type=int, help="libs insert sizes [%(default)s]")
+    parser.add_argument("-s", "--libISStDev", nargs="+", type=float, help="libs IS StDev [%(default)s]")    
+    parser.add_argument("-t", "--orientations", nargs="+", help="libs orientations [%(default)s]")    
+    parser.add_argument("-c", "--cores", default=2, type=int, help="no. of cpus [%(default)s]")
+    parser.add_argument("-q", "--mapq", default=10, type=int, help="min map quality [%(default)s]")
+    parser.add_argument("-u", "--upto", default=0, type=int, help="process up to pairs [all]")
+    parser.add_argument("--sspacebin", default="~/src/SSPACE/SSPACE_Standard_v3.0.pl", help="SSPACE perl script [%(default)s]")
     
     o = parser.parse_args()
     if o.verbose:
-        sys.stderr.write( "Options: %s\n" % str(o) )
+        sys.stderr.write("Options: %s\n" % str(o))
     
     if len(o.libnames)*6 != len(o.libnames)+len(o.libFs)+len(o.libRs)+len(o.libIS)+len(o.libISStDev)+len(o.orientations):
         parser.error("Wrong number of arguments!")
