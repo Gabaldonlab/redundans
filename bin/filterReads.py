@@ -117,8 +117,7 @@ def _clipSeq(seq, quals, sep='.'):
         seq, quals = seq[:pos], quals[:pos]
     return seq, quals
 
-def rawtrimmer(infile, minlen, maxlen, limit, minqual, \
-               qual64offset, qseq, stripHeaders, outformat, \
+def rawtrimmer(infile, minlen, maxlen, limit, minqual, qual64offset, qseq, stripHeaders, outformat, \
                pi, pair="", phixReads=[], logFile=sys.stderr):
     """Single process implementation of rawtrimmer.
     Open zcat subprocess and read from stdin."""
@@ -192,18 +191,17 @@ def filter_paired(fpair, outfiles, minlen, maxlen, limit, minqual, \
     """Filter paired reads."""
     inF, inR = fpair
     outF, outR, outCombined, outUnpaired = outfiles
+    pair1 = pair2 = ""
+    if stripHeaders:
+        pair1, pair2 = "/1", "/2"
 
     ## Define parsers rawtrimmer fqtrimmer
-    fqparser1 = rawtrimmer(inF, minlen, maxlen, limit, minqual, qual64offset, qseq, \
-                           stripHeaders, outformat, pi)
-    fqparser2 = rawtrimmer(inR, minlen, maxlen, limit, minqual, qual64offset, qseq, \
-                           stripHeaders, outformat, pi)
+    fqparser1 = rawtrimmer(inF, minlen, maxlen, limit, minqual, qual64offset, qseq, stripHeaders, outformat, pi, pair1)
+    fqparser2 = rawtrimmer(inR, minlen, maxlen, limit, minqual, qual64offset, qseq, stripHeaders, outformat, pi, pair2)
 
     ## Process
     i = both = fori = revi = filtered = 0
-    for i, rec1 in enumerate(fqparser1, pi+1):
-        # will crash if len(fq1) > len(fq2)
-        rec2 = fqparser2.next()
+    for i, (rec1, rec2) in enumerate(zip(fqparser1, fqparser2), pi+1):
         if rec1 and rec2:
             #store paired output
             if outF:
@@ -215,11 +213,11 @@ def filter_paired(fpair, outfiles, minlen, maxlen, limit, minqual, \
             both += 1
         elif outUnpaired and rec1:
             ## Store F read if R didn't pass filtering and orphans requested
-            fori+=1
+            fori += 1
             outUnpaired.write(rec1)
         elif outUnpaired and rec2:
             ## Store R read if F didn't pass filtering and orphans requested
-            revi+=1
+            revi += 1
             outUnpaired.write(rec2)
         else:
             #count skipped reads
@@ -274,7 +272,10 @@ def process_paired(inputs, qseq, outdir, outprefix, unpaired, minlen, maxlen, li
         outUnpaired = open(unpairedfn, 'w')
     #open out file for combined FastQ
     if combined:
-        outCombined = open(combinedfn, 'w')
+        if outdir:
+            outCombined = open(combinedfn, 'w')
+        else:
+            outCombined = sys.stdout
     outfiles = (outF, outR, outCombined, outUnpaired)
 
     #process all input files
@@ -316,7 +317,7 @@ def filter_single(infile, out, minlen, maxlen, limit, minqual, qual64offset, qse
                   stripHeaders, outformat, pi):
     """Filter single reads."""
     #define parser
-    fqparser = fqtrimmer(infile, minlen, maxlen, limit, minqual, qual64offset, qseq, stripHeaders, outformat, pi)
+    fqparser = rawtrimmer(infile, minlen, maxlen, limit, minqual, qual64offset, qseq, stripHeaders, outformat, pi)
     #process output of subprocesses
     both = filtered = 0
     for i, rec in enumerate(fqparser, pi+1):
@@ -347,26 +348,26 @@ def process_single(inputs, qseq, outdir, outprefix, minlen, maxlen, limit, minqu
     ## Define output fnames
     fnend = outformat = 'fasta' if fasta else 'fastq'
     prefix = ("%sq%s_l%s") % (outprefix, minqual, minlen)
-    outfn     = os.path.join(outdir, '%s.%s'        % (prefix, fnend))
+    outfn = os.path.join(outdir, '%s.%s' % (prefix, fnend))
 
     #check if outfiles exists
     if not replace:
         if os.path.isfile(outfn):
-            logFile.write("File exists: %s. Remove them or run with --replace "
-                + "parameter. Exiting!\n"%outfn)
+            logFile.write("File exists: %s. Remove them or run with --replace parameter. Exiting!\n"%outfn)
             logFile.flush()
             exit(-3)
     #process input files
     i = pi = filtered = 0
-    out = open(outfn, 'w')
+    out = sys.stdout
+    if outdir:        
+        out = open(outfn, 'w')
     for fn in inputs:
         ## Process QSEQ files: GERALD->FASTA
         i, pfiltered = filter_single(fn, out, minlen, maxlen, limit, minqual, qual64offset, \
             qseq, stripHeaders, outformat, pi)
         ## Print info
         if verbose:
-            logFile.write('[%s]   %s  %s  %s\n' % \
-                (datetime.ctime(datetime.now()), fn, i-pi, pfiltered))
+            logFile.write('[%s]   %s  %s  %s\n' % (datetime.ctime(datetime.now()), fn, i-pi, pfiltered))
             logFile.flush()
         #update read counts
         pi        = i
@@ -385,10 +386,8 @@ def main():
 
     parser.add_argument("-v", "--verbose", default=False, action="store_true")
     parser.add_argument("--version", action="version", version='%(prog)s 0.23')
-    parser.add_argument("-i", "--inputs", nargs="+", type=str,
-                        help="input file(s)")
-    parser.add_argument("-o", "--outdir", default='outdir',
-                        help="define where to store output files")
+    parser.add_argument("-i", "--inputs", nargs="+", help="input file(s)")
+    parser.add_argument("-o", "--outdir", default="", help="define where to store output files")
     parser.add_argument("-g", "--qseq", action="store_true",  default=False,
                         help="input is QSEQ, not FastQ")
     parser.add_argument("-l", "--minlen", default=31, type=int,
@@ -443,7 +442,7 @@ def main():
             exit(-1)
 
     ## Create output directory if not present already
-    if not os.path.isdir(o.outdir):
+    if o.outdir and not os.path.isdir(o.outdir):
         os.makedirs(o.outdir)
 
     ## If define, read the PHIX Sequence files and fragment it into chunks of

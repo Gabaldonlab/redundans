@@ -116,15 +116,86 @@ def _get_snap_proc(fn1, fn2, ref, cores, verbose, log=sys.stderr):
     #select ids
     proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=log)
     return proc
+
+def _get_last_proc(fn1, fn2, ref, cores, verbose, log=sys.stderr):
+    # create genome index
+    if not os.path.isdir(ref+".suf"):
+        if verbose:
+            log.write(" Creating index...\n  %s\n" % idxcmd)
+        os.system("lastdb -W 11 %s %s" % (ref, ref))
+    # skip mate rescue
+    args1 = ['filterReads.py', '-bcHp', '-i', fn1, fn2]    
+    args2 = ['lastal', '-P', str(cores), '-j1', '-Q1', '-fTAB', ref]
+    if verbose:
+        log.write( "  %s\n" % " ".join(args1))
+        log.write( "  %s\n" % " ".join(args2))
+    #select ids
+    proc1 = subprocess.Popen(args1, stdout=subprocess.PIPE, stderr=log)
+    proc2 = subprocess.Popen(args2, stdout=subprocess.PIPE, stdin=proc1.stdout, stderr=log)
+    return proc2
+
+def _last2pairs(handle):
+    """Yield pairs from LASTal"""
+    pq = ""
+    hits = [[]]
+    for l in handle: 
+        if l.startswith('#'): 
+            continue
+        # unpack
+        (score, t, tstart, talg, tstrand, tsize, q, qstart, qalg, qstrand, qsize, blocks) = l.split()[:12]
+        score, tstart, talg = map(int, (score, tstart, talg))
+        # report previous query
+        if pq != q:
+            #print map(len, hits)
+            if map(len, hits) == [1, 1] and hits[0][0][-1][:-1] == hits[1][0][-1][:-1]:
+                yield hits[0][0][1:4], hits[1][0][1:4]
+                hits = [[]]
+            elif len(hits)==2:
+                hits = hits[1:]
+            if hits[-1]:
+                hits.append([])
+        # store current hit
+        s, e = tstart, tstart+talg
+        if qstrand=="-":
+            s, e = e, s
+        data = (score, t, s, e, q)
+        if not hits[-1] or score>hits[-1][0][0]:
+            hits[-1] = [data]
+        elif score==hits[-1][0][0]:
+            hits[-1].append(data)
+        pq = q
+    # yield last bit
+    if map(len, hits) == [1, 1] and hits[0][0][-1][:-1] == hits[1][0][-1][:-1]:
+        yield hits[0][0][1:4], hits[1][0][1:4]
+    
+def last_tab2sspace_tab(handle, out, mapqTh, upto, verbose, log):
+    """Generate TAB based on LASTal alignments"""
+    i = j = k = 0
+    for i, ((ref1, start1, end1), (ref2, start2, end2)) in enumerate(_last2pairs(handle), 1):
+        if upto and i>upto:
+            break
+        j += 1
+        if ref1==ref2:
+            continue
+        k += 1
+        out.write("%s\t%s\t%s\t%s\t%s\t%s\n" % (ref1, start1, end1, ref2, start2, end2))
+    if i:
+        info = "   %s pairs. %s passed filtering [%.2f%s]. %s in different contigs [%.2f%s].\n" % (i, j, j*100.0/i, '%', k, k*100.0/i, '%')
+    else:
+        info = "   No pairs were aligned!\n"
+    log.write(info)
     
 def get_tab_files(outdir, reffile, libNames, fReadsFnames, rReadsFnames, inserts, iBounds, libreadlen, \
                   cores, mapqTh, upto, verbose, usebwa=0, log=sys.stderr):
     """Prepare genome index, align all libs and save TAB file"""
     ref = reffile.name
     tabFnames = []
+    algs2sspace_tab = sam2sspace_tab
     _get_aligner_proc = _get_bwamem_proc
     if not usebwa and max(libreadlen)<=500 and min(libreadlen)>40:
         _get_aligner_proc = _get_snap_proc
+    # use last
+    _get_aligner_proc = _get_last_proc; algs2sspace_tab = last_tab2sspace_tab
     # process all libs
     for libName, f1, f2, iSize, iFrac in zip(libNames, fReadsFnames, rReadsFnames, inserts, iBounds):
         if verbose:
@@ -141,7 +212,7 @@ def get_tab_files(outdir, reffile, libNames, fReadsFnames, rReadsFnames, inserts
         bwalog = open(outfn+".log", "w")
         proc = _get_aligner_proc(f1.name, f2.name, ref, cores, verbose, bwalog)
         # parse botwie output
-        sam2sspace_tab(proc.stdout, out, mapqTh, upto, verbose, log)
+        algs2sspace_tab(proc.stdout, out, mapqTh, upto, verbose, log)
         # close file & terminate subprocess
         out.close()
         tabFnames.append(outfn)
