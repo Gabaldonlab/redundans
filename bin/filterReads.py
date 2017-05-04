@@ -123,8 +123,7 @@ def rawtrimmer(infile, minlen, maxlen, limit, minqual, qual64offset, qseq, strip
     Open zcat subprocess and read from stdin."""
     handle = infile
     if infile.name.endswith('.gz'):
-        zcat = subprocess.Popen(['zcat', infile.name], bufsize=-1, \
-                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        zcat = subprocess.Popen(['zcat', infile.name], bufsize=-1, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         handle = zcat.stdout
 
     ## Get parser

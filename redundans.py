@@ -97,7 +97,7 @@ def get_read_limit(fasta, readLimit, verbose, log=sys.stderr):
     return limit
     
 def run_scaffolding(outdir, scaffoldsFname, fastq, libraries, reducedFname, mapq, threads, \
-                    joins, linkratio, limit, iters, sspacebin, gapclosing, verbose, usebwa, log, \
+                    joins, linkratio, limit, iters, sspacebin, gapclosing, verbose, log, \
                     identity, overlap, minLength, resume, lib=""):
     """Execute scaffolding step using libraries with increasing insert size
     in multiple iterations.
@@ -118,27 +118,12 @@ def run_scaffolding(outdir, scaffoldsFname, fastq, libraries, reducedFname, mapq
                 # run fastq scaffolding
                 fastq2sspace(out, open(pout), lib, libnames, libFs, libRs, orients, \
                              libIS, libISStDev, libreadlen, threads, mapq, limit, linkratio, joins, \
-                             sspacebin, verbose=0, usebwa=usebwa, log=log)
+                             sspacebin, verbose=0, log=log)
             # store out info
             pout = out+".fa"
             # link output ie out/_sspace.1.1/_sspace.1.1.scaffolds.fasta --> out/_sspace.1.1.scaffolds.fasta
             targetout = os.path.join(os.path.basename(out), os.path.basename(out+".final.scaffolds.fasta"))
             symlink(targetout, pout)
-            # if number of gaps larger than 1%, run gap closer & reduction
-            stats     = FastaIndex(pout).stats()
-            fastaSize = int(stats.split('\t')[2])
-            gapSize   = int(stats.split('\t')[-2])
-            if gapclosing and 1.0 * gapSize / fastaSize > 0.01:
-                nogapsFname = ".".join(pout.split(".")[:-1]) + ".filled.fa"
-                if resume>1 or _corrupted_file(nogapsFname):
-                    resume += 1
-                    # close gaps
-                    if verbose:
-                        log.write("  closing gaps ...\n")
-                    basename    = "_sspace.%s.%s._gapcloser"%(i, j)
-                    run_gapclosing(outdir, [libraries[i-1],], nogapsFname, pout, threads, limit, \
-                                   iters=1, resume=resume, verbose=0, log=log, basename=basename)
-                pout = nogapsFname
         # update library insert size estimation, especially for mate-pairs
         libraries = get_libraries(fastq, pout, mapq, threads, verbose=0,log=log,
                                   libraries=libraries)
@@ -243,7 +228,7 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
               threads, resume, identity, overlap, minLength, \
               joins, linkratio, readLimit, iters, sspacebin, \
               reduction=1, scaffolding=1, gapclosing=1, cleaning=1, \
-              norearrangements=0, verbose=1, usebwa=0, log=sys.stderr):
+              norearrangements=0, verbose=1, log=sys.stderr):
     """Launch redundans pipeline."""
     fastas = [fasta, ]
     # update fasta list
@@ -291,7 +276,7 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
         if verbose:
             log.write("%sScaffolding...\n"%timestamp())
         libraries, resume = run_scaffolding(outdir, outfn, fastq, libraries, lastOutFn, mapq, threads, joins, \
-                                            linkratio, limit, iters, sspacebin, gapclosing, verbose, usebwa, log, \
+                                            linkratio, limit, iters, sspacebin, gapclosing, verbose, log, \
                                             identity, overlap, minLength, resume)
         # update fasta list
         fastas += filter(lambda x: "_gapcloser" not in x, sorted(glob.glob(os.path.join(outdir, "_sspace.*.fa"))))
@@ -417,12 +402,11 @@ def _check_dependencies(dependencies):
     
 def main():
     import argparse
-    usage   = "%(prog)s -v" #usage=usage, 
-    parser  = argparse.ArgumentParser(description=desc, epilog=epilog, \
-                                      formatter_class=argparse.RawTextHelpFormatter)
+    usage   = "%(prog)s -v"
+    parser  = argparse.ArgumentParser(description=desc, epilog=epilog, formatter_class=argparse.RawTextHelpFormatter)
   
     parser.add_argument("-v", "--verbose",  action="store_true", help="verbose")    
-    parser.add_argument('--version', action='version', version='0.13b')
+    parser.add_argument('--version', action='version', version='0.13c')
     parser.add_argument("-i", "--fastq", nargs="*", default=[], help="FASTQ PE / MP files")
     parser.add_argument("-f", "--fasta", required=1, help="FASTA file with contigs / scaffolds")
     parser.add_argument("-o", "--outdir", default="redundans", help="output directory [%(default)s]")
@@ -443,8 +427,7 @@ def main():
                       help="max link ratio between two best contig pairs [%(default)s]")    
     scaf.add_argument("--limit", default=0.2, type=float, help="align subset of reads [%(default)s]")
     scaf.add_argument("-q", "--mapq", default=10, type=int, help="min mapping quality [%(default)s]")
-    scaf.add_argument("--iters", default=2, type=int, help="iterations per library [%(default)s]")
-    scaf.add_argument("--usebwa", action='store_true', help="use BWA MEM for alignments [snap-aligner]")
+    scaf.add_argument("--iters", default=1, type=int, help="iterations per library [%(default)s]")
     scaf.add_argument('--noscaffolding', action='store_false', help="Skip short-read scaffolding")
      
     longscaf = parser.add_argument_group('Long-read scaffolding options')
@@ -477,7 +460,7 @@ def main():
     sspacebin = os.path.join(root, "bin/SSPACE/SSPACE_Standard_v3.0.pl")
 
     # check if all executables exists & in correct versions
-    dependencies = {'lastal': 700, 'lastdb': 700, 'bwa': 0, sspacebin: 0, 'GapCloser': 0, 'snap-aligner': 0}
+    dependencies = {'lastal': 800, 'lastdb': 800, 'GapCloser': 0, 'paste': 0, 'sed': 0, 'zcat': 0}
     _check_dependencies(dependencies)
     
     # initialise pipeline
@@ -485,7 +468,7 @@ def main():
               o.threads, o.resume, o.identity, o.overlap, o.minLength,  \
               o.joins, o.linkratio, o.limit, o.iters, sspacebin, \
               o.noreduction, o.noscaffolding, o.nogapclosing, o.nocleaning, \
-              o.norearrangements, o.verbose, o.usebwa, o.log)
+              o.norearrangements, o.verbose, o.log)
 
 if __name__=='__main__': 
     t0 = datetime.now()

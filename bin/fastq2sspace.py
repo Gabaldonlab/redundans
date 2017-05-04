@@ -1,130 +1,24 @@
 #!/usr/bin/env python
 desc="""Align pairs/mates onto contigs and run SSPACE scaffolder.
-Example:
-fastq2sspace.py -v -f contigs.fa -n pe300 pe600 pe5000 -1 ../../_archives/PL429.{3,6,50}00_read1*.fastq.gz -2 ../../_archives/PL429.{3,6,50}00_read2*.fastq.gz -i 300 600 5000 -s 0.15 0.25 0.5 -t FR FR RF -u 5000000
 """
 epilog="""Author:
-l.p.pryszcz@gmail.com
+l.p.pryszcz+git@gmail.com
 
-19/06/2012 Dublin
+19/06/2012 Dublin/Warsaw
 """
 
 import commands, os, subprocess, sys
 from datetime import datetime
 
-def _unload_sam(sam):
-    return sam[0], int(sam[1]), sam[2], int(sam[3]), int(sam[4]), len(sam[9])
-
-def parse_sam(handle):
-    """Return tuple representing entries from SAM."""
-    q1 = q2 = ""
-    for l in handle:
-        l = l.strip()
-        if not l or l.startswith('@'):
-            continue
-        sam = l.split('\t')
-        # first in pair
-        if int(sam[1]) & 64:
-            # skip multiple matches
-            if sam[0] == q1:
-                continue
-            q1, flag1, ref1, start1, mapq1, len1 = _unload_sam(sam)
-        else:
-            # skip multiple matches
-            if sam[0] == q2:
-                continue
-            q2, flag2, ref2, start2, mapq2, len2 = _unload_sam(sam)
-        # report
-        if q1 == q2:
-            yield q1, flag1, ref1, start1, mapq1, len1, q2, flag2, ref2, start2, mapq2, len2
-
-def get_start_stop(start, length, flag):
-    """Return start-end read boundaries.
-    Return end-start if reverse aligned (flag & 16)."""
-    if flag & 16:
-        end    = start
-        start += length
-    else:
-        end    = start + length
-    return start, end
-
-def sam2sspace_tab(inhandle, outhandle, mapqTh=0, upto=float('inf'), verbose=False, log=sys.stderr):
-    """Convert SAM to SSPACE TAB file."""
-    i = j = k = pq1 = 0
-    for q1, flag1, ref1, start1, mapq1, len1, q2, flag2, ref2, start2, mapq2, len2 in parse_sam(inhandle):
-        i   += 1
-        if upto and i>upto:
-            break        
-        #skip 0 quality pair
-        if mapqTh:
-            if mapq1 < mapqTh or mapq2 < mapqTh:
-                continue  
-        if q1!=q2:
-            log.write("[Warning] Queries have different names: %s vs %s\n" % (q1, q2))
-            continue
-        j   += 1
-        #skip self matches
-        if ref1==ref2:
-            continue
-        k += 1
-        #define start-stop ranges
-        start1, end1 = get_start_stop(start1, len1, flag1)
-        start2, end2 = get_start_stop(start2, len2, flag2)
-        #print output
-        outhandle.write("%s\t%s\t%s\t%s\t%s\t%s\n" % (ref1, start1, end1, ref2, start2, end2))
-    if i:
-        info = "   %s pairs. %s passed filtering [%.2f%s]. %s in different contigs [%.2f%s].\n" % (i, j, j*100.0/i, '%', k, k*100.0/i, '%')
-    else:
-        info = "   No pairs were aligned!\n"
-    log.write(info)
-    
-def _get_bwamem_proc(fn1, fn2, ref, cores, verbose, log=sys.stderr):
-    """Return bwamem subprocess.
-    bufsize: 0 no buffer; 1 buffer one line; -1 set system default.
-    """
-    # create genome index
-    idxfn = ref + ".pac"
-    if not os.path.isfile(idxfn):
-        cmd = "bwa index %s" % (ref,)
-        if verbose:
-            log.write(" Creating index...\n  %s\n" % cmd)
-        bwtmessage = commands.getoutput(cmd)
-    # skip mate rescue
-    bwaArgs = ['bwa', 'mem', '-S', '-t', str(cores), ref, fn1, fn2]
-    if verbose:
-        log.write( "  %s\n" % " ".join(bwaArgs))
-    #select ids
-    bwaProc = subprocess.Popen(bwaArgs, stdout=subprocess.PIPE, stderr=log)
-    return bwaProc
-    
-def _get_snap_proc(fn1, fn2, ref, cores, verbose, log=sys.stderr):
-    """Return snap-aligner subprocess.
-    bufsize: 0 no buffer; 1 buffer one line; -1 set system default.
-    """
-    # create genome index
-    idxfn = ref + ".snap"
-    idxcmd = "snap-aligner index %s %s" % (ref, idxfn)
-    if not os.path.isdir(idxfn):
-        if verbose:
-            log.write(" Creating index...\n  %s\n" % idxcmd)
-        idxmessage = commands.getoutput(idxcmd)
-        log.write(idxmessage)
-    # skip mate rescue
-    args = ['snap-aligner', 'paired', idxfn, fn1, fn2, '--b', '-t', str(cores), '-o', '-sam', '-']
-    if verbose:
-        log.write( "  %s\n" % " ".join(args))
-    #select ids
-    proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=log)
-    return proc
-
 def _get_last_proc(fn1, fn2, ref, cores, verbose, log=sys.stderr):
+    """Run last process"""
     # create genome index
     if not os.path.isdir(ref+".suf"):
         if verbose:
             log.write(" Creating index...\n  %s\n" % idxcmd)
         os.system("lastdb -W 11 %s %s" % (ref, ref))
     # skip mate rescue
-    args1 = ['filterReads.py', '-bcHp', '-i', fn1, fn2]    
+    args1 = ["fastq2shuffled.sh", fn1, fn2]
     args2 = ['lastal', '-P', str(cores), '-j1', '-Q1', '-fTAB', ref]
     if verbose:
         log.write( "  %s\n" % " ".join(args1))
@@ -170,36 +64,32 @@ def _last2pairs(handle):
     
 def last_tab2sspace_tab(handle, out, mapqTh, upto, verbose, log):
     """Generate TAB based on LASTal alignments"""
-    i = j = k = 0
+    i = k = 0
     for i, ((ref1, start1, end1), (ref2, start2, end2)) in enumerate(_last2pairs(handle), 1):
         if upto and i>upto:
             break
-        j += 1
         if ref1==ref2:
             continue
         k += 1
         out.write("%s\t%s\t%s\t%s\t%s\t%s\n" % (ref1, start1, end1, ref2, start2, end2))
     if i:
-        info = "   %s pairs. %s passed filtering [%.2f%s]. %s in different contigs [%.2f%s].\n" % (i, j, j*100.0/i, '%', k, k*100.0/i, '%')
+        info = "   %s pairs. %s in different contigs [%.2f%s].\n" % (i, k, k*100.0/i, '%')
     else:
         info = "   No pairs were aligned!\n"
     log.write(info)
     
 def get_tab_files(outdir, reffile, libNames, fReadsFnames, rReadsFnames, inserts, iBounds, libreadlen, \
-                  cores, mapqTh, upto, verbose, usebwa=0, log=sys.stderr):
+                  cores, mapqTh, upto, verbose,  log=sys.stderr):
     """Prepare genome index, align all libs and save TAB file"""
     ref = reffile.name
     tabFnames = []
-    algs2sspace_tab = sam2sspace_tab
-    _get_aligner_proc = _get_bwamem_proc
-    if not usebwa and max(libreadlen)<=500 and min(libreadlen)>40:
-        _get_aligner_proc = _get_snap_proc
     # use last
-    _get_aligner_proc = _get_last_proc; algs2sspace_tab = last_tab2sspace_tab
+    _get_aligner_proc = _get_last_proc
+    algs2sspace_tab = last_tab2sspace_tab
     # process all libs
     for libName, f1, f2, iSize, iFrac in zip(libNames, fReadsFnames, rReadsFnames, inserts, iBounds):
         if verbose:
-            log.write( "[%s] [lib] %s\n" % (datetime.ctime(datetime.now()), libName))
+            log.write("[%s] [lib] %s\n" % (datetime.ctime(datetime.now()), libName))
         # define tab output
         outfn = "%s.%s.tab" % (outdir, libName)
         # skip if file exists
@@ -241,7 +131,7 @@ def get_libs(outdir, libFn, libNames, tabFnames, inserts, iBounds, orientations,
 
 def fastq2sspace(out, fasta, lib, libnames, libFs, libRs, orientations,  \
                  libIS, libISStDev, libreadlen, cores, mapq, upto, minlinks, linkratio, \
-                 sspacebin, verbose, usebwa=0, log=sys.stderr):
+                 sspacebin, verbose, log=sys.stderr):
     """Map reads onto contigs, prepare library file and execute SSPACE2"""
     # get dir variables
     curdir = os.path.abspath(os.path.curdir)
@@ -256,7 +146,7 @@ def fastq2sspace(out, fasta, lib, libnames, libFs, libRs, orientations,  \
     if verbose:
         log.write("[%s] Generating TAB file(s) for %s library/ies...\n" % (datetime.ctime(datetime.now()),len(libnames)) )
     tabFnames = get_tab_files(out, fasta, libnames, libFs, libRs, libIS, libISStDev, libreadlen, \
-                              cores, mapq, upto, verbose, usebwa, log)
+                              cores, mapq, upto, verbose, log)
 
     # generate lib file
     if  verbose:

@@ -28,7 +28,7 @@ def run_last(fasta, identity, threads, minLength=200, verbose=1):
         sys.stderr.write(" Running LAST...\n")
     # build db
     if not os.path.isfile(fasta+".suf"):
-        os.system("lastdb -W 5 %s %s" % (fasta, fasta))
+        os.system("lastdb -W 11 %s %s" % (fasta, fasta))
     # run LAST
     args1 = ["lastal", "-f", "TAB", "-P", str(threads), fasta, fasta]
     proc1 = subprocess.Popen(args1, stdout=subprocess.PIPE, stderr=sys.stderr)
