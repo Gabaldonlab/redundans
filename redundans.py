@@ -113,7 +113,7 @@ def run_scaffolding(outdir, scaffoldsFname, fastq, libraries, reducedFname, mapq
             if resume>1 or _corrupted_file(out+".fa"):
                 resume += 1
                 if verbose:
-                    log.write(" iteration %s.%s of %s.%s: %s"%(i, j, len(libraries), iters, FastaIndex(pout).stats()))
+                    log.write(" iteration %s.%s: %s"%(i, j, FastaIndex(pout).stats()))
                 lib = ""
                 # run fastq scaffolding
                 fastq2sspace(out, open(pout), lib, libnames, libFs, libRs, orients, \
@@ -293,7 +293,7 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
         poutfn = lastOutFn
         for i, fname in enumerate(longreads, 1):
             if verbose:
-                log.write(" iteration %s out of %s ...\n"%(i, len(longreads)))
+                log.write(" iteration %s...\n"%i)
             s = LongReadGraph(lastOutFn, fname, identity, overlap, maxgap=0, threads=threads, \
                               dotplot="", norearrangements=norearrangements, log=0)
             # save output
@@ -427,7 +427,7 @@ def main():
                       help="max link ratio between two best contig pairs [%(default)s]")    
     scaf.add_argument("--limit", default=0.2, type=float, help="align subset of reads [%(default)s]")
     scaf.add_argument("-q", "--mapq", default=10, type=int, help="min mapping quality [%(default)s]")
-    scaf.add_argument("--iters", default=1, type=int, help="iterations per library [%(default)s]")
+    scaf.add_argument("--iters", default=2, type=int, help="iterations per library [%(default)s]")
     scaf.add_argument('--noscaffolding', action='store_false', help="Skip short-read scaffolding")
      
     longscaf = parser.add_argument_group('Long-read scaffolding options')
@@ -460,7 +460,7 @@ def main():
     sspacebin = os.path.join(root, "bin/SSPACE/SSPACE_Standard_v3.0.pl")
 
     # check if all executables exists & in correct versions
-    dependencies = {'lastal': 800, 'lastdb': 800, 'GapCloser': 0, 'paste': 0, 'sed': 0, 'zcat': 0}
+    dependencies = {'lastal': 800, 'lastdb': 800, 'GapCloser': 0, 'paste': 0, 'tr': 0, 'zcat': 0}
     _check_dependencies(dependencies)
     
     # initialise pipeline
