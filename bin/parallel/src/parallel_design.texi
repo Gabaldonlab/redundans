@@ -1,0 +1,1163 @@
+\input texinfo
+@setfilename Design_of_GNU_Parallel.info
+
+@documentencoding utf-8
+
+@settitle Design of GNU Parallel
+
+@node Top
+@top Design of GNU Parallel
+
+@menu
+* Design of GNU Parallel::
+* Ideas for new design::
+* Historical decisions::
+@end menu
+
+@node Design of GNU Parallel
+@chapter Design of GNU Parallel
+
+This document describes design decisions made in the development of
+GNU @strong{parallel} and the reasoning behind them. It will give an
+overview of why some of the code looks the way it does, and will help
+new maintainers understand the code better.
+
+@menu
+* One file program::
+* Old Perl style::
+* Exponentially back off::
+* Shell compatibility::
+* env_parallel::
+* Job slots::
+* Rsync protocol version::
+* Compression::
+* Wrapping::
+* Convenience options --nice --basefile --transfer --return --cleanup --tmux --group --compress --cat --fifo --workdir::
+* Shell shock::
+* The remote system wrapper::
+* Transferring of variables and functions::
+* Base64 encoded bzip2::
+* Which shell to use::
+* Quoting::
+* --pipepart vs. --pipe::
+* --block-size adjustment::
+* Automatic --block-size computation::
+* --jobs and --onall::
+* --shuf::
+* Buffering on disk::
+* Disk full::
+* Perl replacement strings@comma{} @{= =@}@comma{} and --rpl::
+* Test suite::
+* Median run time::
+* Error messages and warnings::
+* Computation of load::
+* Killing jobs::
+* SQL interface::
+* Logo::
+@end menu
+
+@node One file program
+@section One file program
+
+GNU @strong{parallel} is a Perl script in a single file. It is object
+oriented, but contrary to normal Perl scripts each class is not in its
+own file. This is due to user experience: The goal is that in a pinch
+the user will be able to get GNU @strong{parallel} working simply by copying
+a single file: No need messing around with environment variables like
+PERL5LIB.
+
+@node Old Perl style
+@section Old Perl style
+
+GNU @strong{parallel} uses some old, deprecated constructs. This is due to a
+goal of being able to run on old installations. Currently the target
+is CentOS 3.9 and Perl 5.8.0.
+
+@node Exponentially back off
+@section Exponentially back off
+
+GNU @strong{parallel} busy waits. This is because the reason why a job is
+not started may be due to load average (when using @strong{--load}), and
+thus it will not make sense to wait for a job to finish. Instead the
+load average must be checked again. Load average is not the only
+reason: @strong{--timeout} has a similar problem.
+
+To not burn up too much CPU GNU @strong{parallel} sleeps exponentially
+longer and longer if nothing happens, maxing out at 1 second.
+
+@node Shell compatibility
+@section Shell compatibility
+
+It is a goal to have GNU @strong{parallel} work equally well in any
+shell. However, in practice GNU @strong{parallel} is being developed in
+@strong{bash} and thus testing in other shells is limited to reported bugs.
+
+When an incompatibility is found there is often not an easy fix:
+Fixing the problem in @strong{csh} often breaks it in @strong{bash}. In these
+cases the fix is often to use a small Perl script and call that.
+
+@node env_parallel
+@section env_parallel
+
+@strong{env_parallel} is a dummy shell script that will run if
+@strong{env_parallel} is not an alias or a function and tell the user how to
+activate the alias/function for the supported shells.
+
+The alias or function will copy the current environment and run the
+command with GNU @strong{parallel} in the copy of the environment.
+
+The problem is that you cannot access all of the current environment
+inside Perl. E.g. aliases, functions and unexported shell variables.
+
+The idea is therefore to take the environment and put it in
+@strong{$PARALLEL_ENV} which GNU @strong{parallel} prepends to every command.
+
+The only way to have access to the environment is directly from the
+shell, so the program must be written in a shell script that will be
+sourced and there has to deal with the dialect of the relevant shell.
+
+@menu
+* env_parallel.*::
+* env_parallel.bash / env_parallel.zsh / env_parallel.ksh / env_parallel.pdksh::
+* env_parallel.csh::
+* env_parallel.fish::
+@end menu
+
+@node env_parallel.*
+@subsection env_parallel.*
+
+These are the files that implements the alias or function
+@strong{env_parallel} for a given shell. It could be argued that these
+should be put in some obscure place under /usr/lib, but by putting
+them in your path it becomes trivial to find the path to them and
+@strong{source} them:
+
+@verbatim
+  source `which env_parallel.foo`
+@end verbatim
+
+The beauty is that they can be put anywhere in the path without the
+user having to know the location. So if the user's path includes
+/afs/bin/i386_fc5 or /usr/pkg/parallel/bin or
+/usr/local/parallel/20161222/sunos5.6/bin the files can be put in the
+dir that makes most sense for the sysadmin.
+
+@node env_parallel.bash / env_parallel.zsh / env_parallel.ksh / env_parallel.pdksh
+@subsection env_parallel.bash / env_parallel.zsh / env_parallel.ksh / env_parallel.pdksh
+
+@strong{env_parallel.(bash|ksh|pdksh|zsh)} sets the function @strong{env_parallel}. It uses
+@strong{alias} and @strong{typeset} to dump the configuration (with a few
+exceptions) into @strong{$PARALLEL_ENV} before running GNU @strong{parallel}.
+
+After GNU @strong{parallel} is finished, @strong{$PARALLEL_ENV} is deleted.
+
+@node env_parallel.csh
+@subsection env_parallel.csh
+
+@strong{env_parallel.csh} has two purposes: If @strong{env_parallel} is not an
+alias: make it into an alias that sets @strong{$PARALLEL} with arguments
+and calls @strong{env_parallel.csh}.
+
+If @strong{env_parallel} is an alias, then @strong{env_parallel.csh} uses
+@strong{$PARALLEL} as the arguments for GNU @strong{parallel}.
+
+It exports the environment by writing a variable definition to a file
+for each variable.  The definitions of aliases are appended to this
+file. Finally the file is put into @strong{$PARALLEL_ENV}.
+
+GNU @strong{parallel} is then run and @strong{$PARALLEL_ENV} is deleted.
+
+@node env_parallel.fish
+@subsection env_parallel.fish
+
+First all functions definitions are generated using a loop and
+@strong{functions}.
+
+Dumping the scalar variable definitions is harder.
+
+@strong{fish} can represent non-printable characters in (at least) 2
+ways. To avoid problems all scalars are converted to \XX quoting.
+
+Then commands to generate the definitions are made and separated by
+NUL.
+
+This is then piped into a Perl script that quotes all values. List
+elements will be appended using two spaces.
+
+Finally \n is converted into \1 because @strong{fish} variables cannot
+contain \n. GNU @strong{parallel} will later convert all \1 from
+@strong{$PARALLEL_ENV} into \n.
+
+This is then all saved in @strong{$PARALLEL_ENV}.
+
+GNU @strong{parallel} is called, and @strong{$PARALLEL_ENV} is deleted.
+
+@node Job slots
+@section Job slots
+
+The easiest way to explain what GNU @strong{parallel} does is to assume that
+there are a number of job slots, and when a slot becomes available a
+job from the queue will be run in that slot. But originally GNU
+@strong{parallel} did not model job slots in the code. Job slots have been
+added to make it possible to use @strong{@{%@}} as a replacement string.
+
+While the job sequence number can be computed in advance, the job slot
+can only be computed the moment a slot becomes available. So it has
+been implemented as a stack with lazy evaluation: Draw one from an
+empty stack and the stack is extended by one. When a job is done, push
+the available job slot back on the stack.
+
+This implementation also means that if you re-run the same jobs, you
+cannot assume jobs will get the same slots. And if you use remote
+executions, you cannot assume that a given job slot will remain on the
+same remote server. This goes double since number of job slots can be
+adjusted on the fly (by giving @strong{--jobs} a file name).
+
+@node Rsync protocol version
+@section Rsync protocol version
+
+@strong{rsync} 3.1.x uses protocol 31 which is unsupported by version
+2.5.7. That means that you cannot push a file to a remote system using
+@strong{rsync} protocol 31, if the remote system uses 2.5.7. @strong{rsync} does
+not automatically downgrade to protocol 30.
+
+GNU @strong{parallel} does not require protocol 31, so if the @strong{rsync}
+version is >= 3.1.0 then @strong{--protocol 30} is added to force newer
+@strong{rsync}s to talk to version 2.5.7.
+
+@node Compression
+@section Compression
+
+GNU @strong{parallel} buffers output in temporary files. @strong{--compress}
+compresses the buffered data.  This is a bit tricky because there
+should be no files to clean up if GNU @strong{parallel} is killed by a power
+outage.
+
+GNU @strong{parallel} first selects a compression program. If the user has
+not selected one, the first of these that is in $PATH is used: @strong{pzstd
+lbzip2 pbzip2 zstd pigz lz4 lzop plzip lzip lrz gzip pxz lzma bzip2 xz
+clzip}. They are sorted by speed on a 32 core machine.
+
+Schematically the setup is as follows:
+
+@verbatim
+  command started by parallel | compress > tmpfile
+  cattail tmpfile | uncompress | parallel
+@end verbatim
+
+The setup is duplicated for both standard output (stdout) and standard
+error (stderr).
+
+GNU @strong{parallel} pipes output from the command run into the compression
+program which saves to a tmpfile. GNU @strong{parallel} records the pid of
+the compress program.  At the same time a small perl script (called
+@strong{cattail} above) is started: It basically does @strong{cat} followed by
+@strong{tail -f}, but it also removes the tmpfile as soon as the first byte
+is read, and it continously checks if the pid of the compression
+program is dead. If the compress program is dead, @strong{cattail} reads the
+rest of tmpfile and exits.
+
+As most compression programs write out a header when they start, the
+tmpfile in practice is unlinked after around 40 ms.
+
+@node Wrapping
+@section Wrapping
+
+The command given by the user can be wrapped in multiple
+templates. Templates can be wrapped in other templates.
+
+@table @asis
+@item --shellquote
+@anchor{--shellquote}
+
+echo @emph{shell double quoted input}
+
+@item --nice @emph{pri}
+@anchor{--nice @emph{pri}}
+
+Remote: See @strong{The remote system wrapper}.
+
+Local: @strong{setpriority(0,0,$nice)}
+
+@item --cat
+@anchor{--cat}
+
+@verbatim
+  cat > {}; <<command>> {};
+  perl -e '$bash = shift;
+    $csh = shift;
+    for(@ARGV) { unlink;rmdir; }
+    if($bash =~ s/h//) { exit $bash;  }
+    exit $csh;' "$?h" "$status" {};
+@end verbatim
+
+@{@} is set to @strong{$PARALLEL_TMP} which is a tmpfile. The Perl script
+saves the exit value, unlinks the tmpfile, and returns the exit value
+- no matter if the shell is @strong{bash}/@strong{ksh}/@strong{zsh} (using $?) or
+@strong{*csh}/@strong{fish} (using $status).
+
+@item --fifo
+@anchor{--fifo}
+
+@verbatim
+  perl -e '($s,$c,$f) = @ARGV;
+    # mkfifo $PARALLEL_TMP
+    system "mkfifo", $f;
+    # spawn $shell -c $command &
+    $pid = fork || exec $s, "-c", $c;
+    open($o,">",$f) || die $!;
+    # cat > $PARALLEL_TMP
+    while(sysread(STDIN,$buf,131072)){
+       syswrite $o, $buf;
+    }
+    close $o;
+    # waitpid to get the exit code from $command
+    waitpid $pid,0;
+    # Cleanup
+    unlink $f;
+    exit $?/256;' <<shell>> -c <<command>> $PARALLEL_TMP
+@end verbatim
+
+This is an elaborate way of: mkfifo @{@}; run @emph{<<command}>> in the
+background using @emph{<<shell}>>; copying STDIN to @{@}; waiting for background
+to complete; remove @{@} and exit with the exit code from @emph{<<command}>>.
+
+It is made this way to be compatible with @strong{*csh}/@strong{fish}.
+
+@item --pipepart
+@anchor{--pipepart}
+
+@verbatim
+  < <<file>> perl -e 'while(@ARGV) {
+      sysseek(STDIN,shift,0) || die;
+      $left = shift;
+      while($read = sysread(STDIN,$buf, ($left > 131072 ? 131072 : $left))){
+        $left -= $read;
+        syswrite(STDOUT,$buf);
+      }
+    }' <<startposition>> <<length>>
+@end verbatim
+
+This will read @emph{<<length}>> bytes from @emph{<<file}>> starting at
+@emph{<<startposition}>> and send it to STDOUT.
+
+@item --sshlogin @emph{sln}
+@anchor{--sshlogin @emph{sln}}
+
+ssh @emph{sln} @emph{shell quoted command}
+
+Where @emph{sln} is the sshlogin and @emph{shell quoted command} is the
+command quoted so it will be passed to the server.
+
+@item --transfer
+@anchor{--transfer}
+
+( ssh @emph{sln} mkdir -p ./@emph{workdir};rsync --protocol 30 -rlDzR -essh ./@{@} @emph{sln}:./@emph{workdir} ); @emph{<<command}>>
+
+Read about @strong{--protocol 30} in the section @strong{Rsync protocol version}.
+
+@item --transferfile @emph{file}
+@anchor{--transferfile @emph{file}}
+
+<<todo>>
+
+@item --basefile
+@anchor{--basefile}
+
+<<todo>>
+
+@item --return @emph{file}
+@anchor{--return @emph{file}}
+
+@emph{<<command}>>; _EXIT_status=$?; mkdir -p @emph{<<workdir}>>; rsync --protocol 30 --rsync-path=cd\ ./@emph{<<workdir}>>\;\ rsync -rlDzR -essh @emph{<<sln}>>:./@emph{<<file}>> ./@emph{<<workdir}>>; exit $_EXIT_status;
+
+The @strong{--rsync-path=cd ...} is needed because old versions of @strong{rsync}
+do not support @strong{--no-implied-dirs}.
+
+The @strong{$_EXIT_status} trick is to postpone the exit value. This makes it
+incompatible with @strong{*csh} and should be fixed in the future. Maybe a
+wrapping 'sh -c' is enough?
+
+@item --cleanup
+@anchor{--cleanup}
+
+@emph{<<command}>> _EXIT_status=$?; <<return>>; 
+
+ssh @emph{sln} \(rm\ -f\ ./@emph{workdir}/@{@}\;\ rmdir\ ./@emph{workdir}\ \>\&/dev/null\;\); exit $_EXIT_status;
+
+@strong{$_EXIT_status}: see @strong{--return} above.
+
+@item --pipe
+@anchor{--pipe}
+
+@verbatim
+  perl -e 'if(sysread(STDIN, $buf, 1)) {
+        open($fh, "|-", "@ARGV") || die;
+        syswrite($fh, $buf);
+        # Align up to 128k block
+        if($read = sysread(STDIN, $buf, 131071)) {
+            syswrite($fh, $buf);
+        }
+        while($read = sysread(STDIN, $buf, 131072)) {
+            syswrite($fh, $buf);
+        }
+        close $fh;
+        exit ($?&127 ? 128+($?&127) : 1+$?>>8)
+    }' I<shell> -c I<input>
+@end verbatim
+
+This small wrapper makes sure that @emph{input} will never be run if
+there is no data.
+
+@item --tmux
+@anchor{--tmux}
+
+<<TODO Fixup>>
+mkfifo /tmp/tmx3cMEV &&
+  sh -c 'tmux -S /tmp/tmsaKpv1 new-session -s p334310 -d "sleep .2" >/dev/null 2>&1';
+tmux -S /tmp/tmsaKpv1 new-window -t p334310 -n wc\ 10 \(wc\ 10\)\;\ perl\ -e\ \'while\(\$t++\<3\)\@{\ print\ \$ARGV\[0\],\"\\n\"\ \@}\'\ \$\?h/\$status\ \>\>\ /tmp/tmx3cMEV\&echo\ wc\\\ 10\;\ echo\ \Job\ finished\ at:\ \`date\`\;sleep\ 10;
+exec perl -e '$/="/";$_=<>;$c=<>;unlink $ARGV; /(\d+)h/ and exit($1);exit$c' /tmp/tmx3cMEV
+
+mkfifo @emph{tmpfile.tmx};
+tmux -S <tmpfile.tms> new-session -s p@emph{PID} -d 'sleep .2' >&/dev/null;
+tmux -S <tmpfile.tms> new-window -t p@emph{PID} -n <<shell quoted input>> \(<<shell quoted input>>\)\;\ perl\ -e\ \'while\(\$t++\<3\)\@{\ print\ \$ARGV\[0\],\"\\n\"\ \@}\'\ \$\?h/\$status\ \>\>\ @emph{tmpfile.tmx}\&echo\ <<shell double quoted input>>\;echo\ \Job\ finished\ at:\ \`date\`\;sleep\ 10;
+exec perl -e '$/="/";$_=<>;$c=<>;unlink $ARGV; /(\d+)h/ and exit($1);exit$c' @emph{tmpfile.tmx}
+
+First a FIFO is made (.tmx). It is used for communicating exit
+value. Next a new tmux session is made. This may fail if there is
+already a session, so the output is ignored. If all job slots finish
+at the same time, then @strong{tmux} will close the session. A temporary
+socket is made (.tms) to avoid a race condition in @strong{tmux}. It is
+cleaned up when GNU @strong{parallel} finishes.
+
+The input is used as the name of the windows in @strong{tmux}. When the job
+inside @strong{tmux} finishes, the exit value is printed to the FIFO (.tmx).
+This FIFO is opened by @strong{perl} outside @strong{tmux}, and @strong{perl} then
+removes the FIFO. @strong{Perl} blocks until the first value is read from
+the FIFO, and this value is used as exit value.
+
+To make it compatible with @strong{csh} and @strong{bash} the exit value is
+printed as: $?h/$status and this is parsed by @strong{perl}.
+
+There is a bug that makes it necessary to print the exit value 3
+times.
+
+Another bug in @strong{tmux} requires the length of the tmux title and
+command to not have certain limits.  When inside these limits, 75 '\ '
+are added to the title to force it to be outside the limits.
+
+You can map the bad limits using:
+
+@verbatim
+  perl -e 'sub r { int(rand(shift)).($_[0] && "\t".r(@_)) } print map { r(@ARGV)."\n" } 1..10000' 1600 1500 90 |
+    perl -ane '$F[0]+$F[1]+$F[2] < 2037 and print ' | 
+    parallel --colsep '\t' --tagstring '{1}\t{2}\t{3}' tmux -S /tmp/p{%}-'{=3 $_="O"x$_ =}' \
+      new-session -d -n '{=1 $_="O"x$_ =}' true'\ {=2 $_="O"x$_ =};echo $?;rm -f /tmp/p{%}-O*' 
+
+  perl -e 'sub r { int(rand(shift)).($_[0] && "\t".r(@_)) } print map { r(@ARGV)."\n" } 1..10000' 17000 17000 90 |
+    parallel --colsep '\t' --tagstring '{1}\t{2}\t{3}' \
+  tmux -S /tmp/p{%}-'{=3 $_="O"x$_ =}' new-session -d -n '{=1 $_="O"x$_ =}' true'\ {=2 $_="O"x$_ =};echo $?;rm /tmp/p{%}-O*'
+  > value.csv 2>/dev/null
+
+  R -e 'a<-read.table("value.csv");X11();plot(a[,1],a[,2],col=a[,4]+5,cex=0.1);Sys.sleep(1000)'
+@end verbatim
+
+For @strong{tmux 1.8} 17000 can be lowered to 2100.
+
+The interesting areas are title 0..1000 with (title + whole command)
+in 996..1127 and 9331..9636.
+
+@end table
+
+The ordering of the wrapping is important:
+
+@itemize
+@item $PARALLEL_ENV which is set in env_parallel.* must be prepended to the
+command first, as the command may contain exported variables or
+functions.
+
+@item @strong{--nice}/@strong{--cat}/@strong{--fifo} should be done on the remote machine
+
+@item @strong{--pipepart}/@strong{--pipe} should be done on the local machine inside @strong{--tmux}
+
+@end itemize
+
+@node Convenience options --nice --basefile --transfer --return --cleanup --tmux --group --compress --cat --fifo --workdir
+@section Convenience options --nice --basefile --transfer --return --cleanup --tmux --group --compress --cat --fifo --workdir
+
+These are all convenience options that make it easier to do a
+task. But more importantly: They are tested to work on corner cases,
+too. Take @strong{--nice} as an example:
+
+@verbatim
+  nice parallel command ...
+@end verbatim
+
+will work just fine. But when run remotely, you need to move the nice
+command so it is being run on the server:
+
+@verbatim
+  parallel -S server nice command ...
+@end verbatim
+
+And this will again work just fine, as long as you are running a
+single command. When you are running a composed command you need nice
+to apply to the whole command, and it gets harder still:
+
+@verbatim
+  parallel -S server -q nice bash -c 'command1 ...; command2 | command3'
+@end verbatim
+
+It is not impossible, but by using @strong{--nice} GNU @strong{parallel} will do
+the right thing for you. Similarly when transferring files: It starts
+to get hard when the file names contain space, :, `, *, or other
+special characters.
+
+To run the commands in a @strong{tmux} session you basically just need to
+quote the command. For simple commands that is easy, but when commands
+contain special characters, it gets much harder to get right.
+
+@strong{--cat} and @strong{--fifo} are easy to do by hand, until you want to clean
+up the tmpfile and keep the exit code of the command.
+
+The real killer comes when you try to combine several of these: Doing
+that correctly for all corner cases is next to impossible to do by
+hand.
+
+@node Shell shock
+@section Shell shock
+
+The shell shock bug in @strong{bash} did not affect GNU @strong{parallel}, but the
+solutions did. @strong{bash} first introduced functions in variables named:
+@emph{BASH_FUNC_myfunc()} and later changed that to @emph{BASH_FUNC_myfunc%%}. When
+transferring functions GNU @strong{parallel} reads off the function and changes
+that into a function definition, which is copied to the remote system and
+executed before the actual command is executed. Therefore GNU @strong{parallel}
+needs to know how to read the function.
+
+From version 20150122 GNU @strong{parallel} tries both the ()-version and
+the %%-version, and the function definition works on both pre- and
+post-shellshock versions of @strong{bash}.
+
+@node The remote system wrapper
+@section The remote system wrapper
+
+The remote system wrapper does some initialization before starting the
+command on the remote system.
+
+@menu
+* Ctrl-C and standard error (stderr)::
+* --nice::
+* Setting $PARALLEL_TMP::
+* The wrapper::
+@end menu
+
+@node Ctrl-C and standard error (stderr)
+@subsection Ctrl-C and standard error (stderr)
+
+If the user presses Ctrl-C the user expects jobs to stop. This works
+out of the box if the jobs are run locally. Unfortunately it is not so
+simple if the jobs are run remotely.
+
+If remote jobs are run in a tty using @strong{ssh -tt}, then Ctrl-C works,
+but all output to standard error (stderr) is sent to standard output
+(stdout). This is not what the user expects.
+
+If remote jobs are run without a tty using @strong{ssh} (without @strong{-tt}),
+then output to standard error (stderr) is kept on stderr, but Ctrl-C
+does not kill remote jobs. This is not what the user expects.
+
+So what is needed is a way to have both. It seems the reason why
+Ctrl-C does not kill the remote jobs is because the shell does not
+propagate the hang-up signal from @strong{sshd}. But when @strong{sshd} dies, the
+parent of the login shell becomes @strong{init} (process id 1). So by
+exec'ing a Perl wrapper to monitor the parent pid and kill the child
+if the parent pid becomes 1, then Ctrl-C works and stderr is kept on
+stderr.
+
+To be able to kill all (grand)*children a new process group is
+started.
+
+@node --nice
+@subsection --nice
+
+@strong{nice}ing the remote process is done by @strong{setpriority(0,0,$nice)}. A
+few old systems do not implement this and @strong{--nice} is unsupported on
+those.
+
+@node Setting $PARALLEL_TMP
+@subsection Setting $PARALLEL_TMP
+
+@strong{$PARALLEL_TMP} is used by @strong{--fifo} and @strong{--cat} and must point to a
+non-exitent file in @strong{$TMPDIR}. This file name is computed on the
+remote system.
+
+@node The wrapper
+@subsection The wrapper
+
+The wrapper looks like this:
+
+@verbatim
+  $shell = $PARALLEL_SHELL || $SHELL;
+  $tmpdir = $TMPDIR;
+  $nice = $opt::nice;
+  # Set $PARALLEL_TMP to a non-existent file name in $TMPDIR
+  do {
+      $ENV{PARALLEL_TMP} = $tmpdir."/par".
+        join"", map { (0..9,"a".."z","A".."Z")[rand(62)] } (1..5);
+  } while(-e $ENV{PARALLEL_TMP});
+  $SIG{CHLD} = sub { $done = 1; };
+  $pid = fork;
+  unless($pid) {
+      # Make own process group to be able to kill HUP it later
+      setpgrp;
+      eval { setpriority(0,0,$nice) };
+      exec $shell, "-c", ($bashfunc."@ARGV");
+      die "exec: $!\n";
+  }
+  do {
+      # Parent is not init (ppid=1), so sshd is alive
+      # Exponential sleep up to 1 sec
+      $s = $s < 1 ? 0.001 + $s * 1.03 : $s;
+      select(undef, undef, undef, $s);
+  } until ($done || getppid == 1);
+  # Kill HUP the process group if job not done
+  kill(SIGHUP, -${pid}) unless $done;
+  wait;
+  exit ($?&127 ? 128+($?&127) : 1+$?>>8)
+@end verbatim
+
+@node Transferring of variables and functions
+@section Transferring of variables and functions
+
+Transferring of variables and functions given by @strong{--env} is done by
+running a Perl script remotely that calls the actual command. The Perl
+script sets @strong{$ENV@{}@emph{variable}@strong{@}} to the correct value before
+exec'ing a shell that runs the function definition followed by the
+actual command.
+
+The function @strong{env_parallel} copies the full current environment into
+the environment variable @strong{PARALLEL_ENV}. This variable is picked up
+by GNU @strong{parallel} and used to create the Perl script mentioned above.
+
+@node Base64 encoded bzip2
+@section Base64 encoded bzip2
+
+@strong{csh} limits words of commands to 1024 chars. This is often too little
+when GNU @strong{parallel} encodes environment variables and wraps the
+command with different templates. All of these are combined and quoted
+into one single word, which often is longer than 1024 chars.
+
+When the line to run is > 1000 chars, GNU @strong{parallel} therefore
+encodes the line to run. The encoding @strong{bzip2}s the line to run,
+converts this to base64, splits the base64 into 1000 char blocks (so @strong{csh}
+does not fail), and prepends it with this Perl script that decodes,
+decompresses and @strong{eval}s the line.
+
+@verbatim
+    @GNU_Parallel=("use","IPC::Open3;","use","MIME::Base64");
+    eval "@GNU_Parallel";
+
+    $SIG{CHLD}="IGNORE";
+    # Search for bzip2. Not found => use default path
+    my $zip = (grep { -x $_ } "/usr/local/bin/bzip2")[0] || "bzip2";
+    # $in = stdin on $zip, $out = stdout from $zip
+    my($in, $out,$eval);
+    open3($in,$out,">&STDERR",$zip,"-dc");
+    if(my $perlpid = fork) {
+        close $in;
+        $eval = join "", <$out>;
+        close $out;
+    } else {
+        close $out;
+        # Pipe decoded base64 into 'bzip2 -dc'
+        print $in (decode_base64(join"",@ARGV));
+        close $in;
+        exit;
+    }
+    wait;
+    eval $eval;
+@end verbatim
+
+Perl and @strong{bzip2} must be installed on the remote system, but a small
+test showed that @strong{bzip2} is installed by default on all platforms
+that runs GNU @strong{parallel}, so this is not a big problem.
+
+The added bonus of this is that much bigger environments can now be
+transferred as they will be below @strong{bash}'s limit of 131072 chars.
+
+@node Which shell to use
+@section Which shell to use
+
+Different shells behave differently. A command that works in @strong{tcsh}
+may not work in @strong{bash}.  It is therefore important that the correct
+shell is used when GNU @strong{parallel} executes commands.
+
+GNU @strong{parallel} tries hard to use the right shell. If GNU @strong{parallel}
+is called from @strong{tcsh} it will use @strong{tcsh}.  If it is called from
+@strong{bash} it will use @strong{bash}. It does this by looking at the
+(grand)*parent process: If the (grand)*parent process is a shell, use
+this shell; otherwise look at the parent of this (grand)*parent. If
+none of the (grand)*parents are shells, then $SHELL is used.
+
+This will do the right thing if called from:
+
+@itemize
+@item an interactive shell
+
+@item a shell script
+
+@item a Perl script in `` or using @strong{system} if called as a single string.
+
+@end itemize
+
+While these cover most cases, there are situations where it will fail:
+
+@itemize
+@item When run using @strong{exec}.
+
+@item When run as the last command using @strong{-c} from another shell (because
+some shells use @strong{exec}):
+
+@verbatim
+  zsh% bash -c "parallel 'echo {} is not run in bash; set | grep BASH_VERSION' ::: This"
+@end verbatim
+
+You can work around that by appending '&& true':
+
+@verbatim
+  zsh% bash -c "parallel 'echo {} is run in bash; set | grep BASH_VERSION' ::: This && true"
+@end verbatim
+
+@item When run in a Perl script using @strong{system} with parallel as the first
+string:
+
+@verbatim
+  #!/usr/bin/perl
+
+  system("parallel",'setenv a {}; echo $a',":::",2);
+@end verbatim
+
+Here it depends on which shell is used to call the Perl script. If the
+Perl script is called from @strong{tcsh} it will work just fine, but if it
+is called from @strong{bash} it will fail, because the command @strong{setenv} is
+not known to @strong{bash}.
+
+@end itemize
+
+If GNU @strong{parallel} guesses wrong in these situation, set the shell using
+@strong{$PARALLEL_SHELL}.
+
+@node Quoting
+@section Quoting
+
+Quoting depends on the shell. For most shells \ is used for all
+special chars and ' is used for newline. Whether a char is special
+depends on the shell and the context. Luckily quoting a bit too many
+chars does not break things.
+
+It is fast, but has the distinct disadvantage that if a string needs
+to be quoted multiple times, the \'s double every time - increasing
+the string length exponentially.
+
+For @strong{tcsh}/@strong{csh} newline is quoted as \ followed by newline.
+
+For @strong{rc} everything is quoted using '.
+
+@node --pipepart vs. --pipe
+@section --pipepart vs. --pipe
+
+While @strong{--pipe} and @strong{--pipepart} look much the same to the user, they are
+implemented very differently.
+
+With @strong{--pipe} GNU @strong{parallel} reads the blocks from standard input
+(stdin), which is then given to the command on standard input (stdin);
+so every block is being processed by GNU @strong{parallel} itself. This is
+the reason why @strong{--pipe} maxes out at around 500 MB/sec.
+
+@strong{--pipepart}, on the other hand, first identifies at which byte
+positions blocks start and how long they are. It does that by seeking
+into the file by the size of a block and then reading until it meets
+end of a block. The seeking explains why GNU @strong{parallel} does not know
+the line number and why @strong{-L/-l} and @strong{-N} do not work.
+
+With a reasonable block and file size this seeking is more than 1000
+time faster than reading the full file. The byte positions are then
+given to a small script that reads from position X to Y and sends
+output to standard output (stdout). This small script is prepended to
+the command and the full command is executed just as if GNU
+@strong{parallel} had been in its normal mode. The script looks like this:
+
+@verbatim
+  < file perl -e 'while(@ARGV) { 
+     sysseek(STDIN,shift,0) || die;
+     $left = shift;
+     while($read = sysread(STDIN,$buf, ($left > 32768 ? 32768 : $left))){
+       $left -= $read; syswrite(STDOUT,$buf);
+     }
+  }' startbyte length_in_bytes
+@end verbatim
+
+It delivers 1 GB/s per core.
+
+Instead of the script @strong{dd} was tried, but many versions of @strong{dd} do
+not support reading from one byte to another and might cause partial
+data. See this for a surprising example:
+
+@verbatim
+  yes | dd bs=1024k count=10 | wc
+@end verbatim
+
+@node --block-size adjustment
+@section --block-size adjustment
+
+Every time GNU @strong{parallel} detects a record bigger than
+@strong{--block-size} it increases the block size by 30%. A small
+@strong{--block-size} gives very poor performance; by exponentially
+increasing the block size performance will not suffer.
+
+GNU @strong{parallel} will waste CPU power if @strong{--block-size} does not
+contain a full record, because it tries to find a full record and will
+fail to do so. The recommendation is therefore to use a
+@strong{--block-size} > 2 records, so you always get at least one full
+record when you read one block.
+
+If you use @strong{-N} then @strong{--block-size} should be big enough to contain
+N+1 records.
+
+@node Automatic --block-size computation
+@section Automatic --block-size computation
+
+With @strong{--pipepart} GNU @strong{parallel} can compute the @strong{--block-size}
+automatically. A @strong{--block-size} of @strong{-1} will use a block size so
+that each jobslot will receive approximately 1 block. @strong{--block -2}
+will pass 2 blocks to each jobslot and @strong{-@emph{n}} will pass @emph{n} blocks
+to each jobslot.
+
+This can be done because @strong{--pipepart} reads from files, and we can
+compute the total size of the input.
+
+@node --jobs and --onall
+@section --jobs and --onall
+
+When running the same commands on many servers what should @strong{--jobs}
+signify? Is it the number of servers to run on in parallel?  Is it the
+number of jobs run in parallel on each server?
+
+GNU @strong{parallel} lets @strong{--jobs} represent the number of servers to run
+on in parallel. This is to make it possible to run a sequence of
+commands (that cannot be parallelized) on each server, but run the
+same sequence on multiple servers.
+
+@node --shuf
+@section --shuf
+
+When using @strong{--shuf} to shuffle the jobs, all jobs are read, then they
+are shuffled, and finally executed. When using SQL this makes the
+@strong{--sqlmaster} be the part that shuffles the jobs. The @strong{--sqlworker}s
+simply executes according to Seq number.
+
+@node Buffering on disk
+@section Buffering on disk
+
+GNU @strong{parallel} buffers output, because if output is not buffered you
+have to be ridiculously careful on sizes to avoid mixing of outputs
+(see excellent example on https://catern.com/posts/pipes.html).
+
+GNU @strong{parallel} buffers on disk in $TMPDIR using files, that are
+removed as soon as they are created, but which are kept open. So even
+if GNU @strong{parallel} is killed by a power outage, there will be no files
+to clean up afterwards. Another advantage is that the file system is
+aware that these files will be lost in case of a crash, so it does
+not need to sync them to disk.
+
+It gives the odd situation that a disk can be fully used, but there
+are no visible files on it.
+
+@menu
+* Partly buffering in memory::
+* Comparing to buffering in memory::
+@end menu
+
+@node Partly buffering in memory
+@subsection Partly buffering in memory
+
+When using output formats SQL and CSV then GNU Parallel has to read
+the whole output into memory. When run normally it will only read the
+output from a single job. But when using @strong{--linebuffer} every line
+printed will also be buffered in memory - for all jobs currently
+running.
+
+If memory is tight, then do not use the output format SQL/CSV with
+@strong{--linebuffer}.
+
+@node Comparing to buffering in memory
+@subsection Comparing to buffering in memory
+
+@strong{gargs} is a parallelizing tool that buffers in memory. It is
+therefore a useful way of comparing the advantages and disadvantages
+of buffering in memory to buffering on disk.
+
+On an system with 6 GB RAM free and 6 GB free swap these were tested
+with different sizes:
+
+@verbatim
+  echo /dev/zero | gargs "head -c $size {}" >/dev/null
+  echo /dev/zero | parallel "head -c $size {}" >/dev/null
+@end verbatim
+
+The results are here:
+
+@verbatim
+  JobRuntime      Command
+       0.344      parallel_test 1M
+       0.362      parallel_test 10M
+       0.640      parallel_test 100M
+       9.818      parallel_test 1000M
+      23.888      parallel_test 2000M
+      30.217      parallel_test 2500M
+      30.963      parallel_test 2750M
+      34.648      parallel_test 3000M
+      43.302      parallel_test 4000M
+      55.167      parallel_test 5000M
+      67.493      parallel_test 6000M
+     178.654      parallel_test 7000M
+     204.138      parallel_test 8000M
+     230.052      parallel_test 9000M
+     255.639      parallel_test 10000M
+     757.981      parallel_test 30000M
+       0.537      gargs_test 1M
+       0.292      gargs_test 10M
+       0.398      gargs_test 100M
+       3.456      gargs_test 1000M
+       8.577      gargs_test 2000M
+      22.705      gargs_test 2500M
+     123.076      gargs_test 2750M
+      89.866      gargs_test 3000M
+     291.798      gargs_test 4000M
+@end verbatim
+
+GNU @strong{parallel} is pretty much limited by the speed of the disk: Up to
+6 GB data is written to disk but cached, so reading is fast. Above 6
+GB data are both written and read from disk. When the 30000MB job is
+running, the disk system is slow, but usable: If you are not using the
+disk, you almost do not feel it.
+
+@strong{gargs} has a speed advantage up until 2500M where it hits a
+wall. Then the system starts swapping like crazy and is completely
+unusable. At 5000M it goes out of memory.
+
+You can make GNU @strong{parallel} behave similar to @strong{gargs} if you point
+$TMPDIR to a tmpfs-filesystem: It will be faster for small outputs,
+but may kill your system for larger outputs and cause you to lose
+output.
+
+@node Disk full
+@section Disk full
+
+GNU @strong{parallel} buffers on disk. If the disk is full, data may be
+lost. To check if the disk is full GNU @strong{parallel} writes a 8193 byte
+file every second. If this file is written successfully, it is removed
+immediately. If it is not written successfully, the disk is full. The
+size 8193 was chosen because 8192 gave wrong result on some file
+systems, whereas 8193 did the correct thing on all tested filesystems.
+
+@node Perl replacement strings@comma{} @{= =@}@comma{} and --rpl
+@section Perl replacement strings, @{= =@}, and --rpl
+
+The shorthands for replacement strings make a command look more
+cryptic. Different users will need different replacement
+strings. Instead of inventing more shorthands you get more
+flexible replacement strings if they can be programmed by the user.
+
+The language Perl was chosen because GNU @strong{parallel} is written in
+Perl and it was easy and reasonably fast to run the code given by the
+user.
+
+If a user needs the same programmed replacement string again and
+again, the user may want to make his own shorthand for it. This is
+what @strong{--rpl} is for. It works so well, that even GNU @strong{parallel}'s
+own shorthands are implemented using @strong{--rpl}.
+
+In Perl code the bigrams @{= and =@} rarely exist. They look like a
+matching pair and can be entered on all keyboards. This made them good
+candidates for enclosing the Perl expression in the replacement
+strings. Another candidate ,, and ,, was rejected because they do not
+look like a matching pair. @strong{--parens} was made, so that the users can
+still use ,, and ,, if they like: @strong{--parens ,,,,}
+
+Internally, however, the @{= and =@} are replaced by \257< and
+\257>. This is to make it simple to make regular expressions: \257 is
+disallowed on the command line, so when that is matched in a regular
+expression, it is known that this is a replacement string.
+
+@node Test suite
+@section Test suite
+
+GNU @strong{parallel} uses its own testing framework. This is mostly due to
+historical reasons. It deals reasonably well with tests that are
+dependent on how long a given test runs (e.g. more than 10 secs is a
+pass, but less is a fail). It parallelizes most tests, but it is easy
+to force a test to run as the single test (which may be important for
+timing issues). It deals reasonably well with tests that fail
+intermittently. It detects which tests failed and pushes these to the
+top, so when running the test suite again, the tests that failed most
+recently are run first.
+
+If GNU @strong{parallel} should adopt a real testing framework then those
+elements would be important.
+
+Since many tests are dependent on which hardware it is running on,
+these tests break when run on a different hardware than what the test
+was written for.
+
+When most bugs are fixed a test is added, so this bug will not
+reappear. It is, however, sometimes hard to create the environment in
+which the bug shows up - especially if the bug only shows up
+sometimes. One of the harder problems was to make a machine start
+swapping without forcing it to its knees.
+
+@node Median run time
+@section Median run time
+
+Using a percentage for @strong{--timeout} causes GNU @strong{parallel} to compute
+the median run time of a job. The median is a better indicator of the
+expected run time than average, because there will often be outliers
+taking way longer than the normal run time.
+
+To avoid keeping all run times in memory, an implementation of
+remedian was made (Rousseeuw et al).
+
+@node Error messages and warnings
+@section Error messages and warnings
+
+Error messages like: ERROR, Not found, and 42 are not very
+helpful. GNU @strong{parallel} strives to inform the user:
+
+@itemize
+@item What went wrong?
+
+@item Why did it go wrong?
+
+@item What can be done about it?
+
+@end itemize
+
+Unfortunately it is not always possible to predict the root cause of
+the error.
+
+@node Computation of load
+@section Computation of load
+
+Contrary to the obvious @strong{--load} does not use load average. This is
+due to load average rising too slowly. Instead it uses @strong{ps} to list
+the number of threads in running or blocked state (state D, O or
+R). This gives an instant load.
+
+As remote calculation of load can be slow, a process is spawned to run
+@strong{ps} and put the result in a file, which is then used next time.
+
+@node Killing jobs
+@section Killing jobs
+
+GNU @strong{parallel} kills jobs. It can be due to @strong{--memfree}, @strong{--halt},
+or when GNU @strong{parallel} meets a condition from which it cannot
+recover. Every job is started as its own process group. This way any
+(grand)*children will get killed, too. The process group is killed
+with the specification mentioned in @strong{--termseq}.
+
+@node SQL interface
+@section SQL interface
+
+GNU @strong{parallel} uses the DBURL from GNU @strong{sql} to give database
+software, username, password, host, port, database, and table in a
+single string.
+
+The DBURL must point to a table name. The table will be dropped and
+created. The reason for not reusing an exising table is that the user
+may have added more input sources which would require more columns in
+the table. By prepending '+' to the DBURL the table will not be
+dropped.
+
+The table columns are similar to joblog with the addition of @strong{V1}
+.. @strong{Vn} which are values from the input sources, and Stdout and
+Stderr which are the output from standard output and standard error,
+respectively.
+
+The Signal column has been renamed to _Signal due to Signal being a
+reserved word in MySQL.
+
+@node Logo
+@section Logo
+
+The logo is inspired by the Cafe Wall illusion. The font is DejaVu
+Sans.
+
+@node Ideas for new design
+@chapter Ideas for new design
+
+@menu
+* Multiple processes working together::
+* --rrs on remote using a perl wrapper::
+@end menu
+
+@node Multiple processes working together
+@section Multiple processes working together
+
+Open3 is slow. Printing is slow. It would be good if they did not tie
+up ressources, but were run in separate threads.
+
+@node --rrs on remote using a perl wrapper
+@section --rrs on remote using a perl wrapper
+
+... | perl -pe '$/=$recend$recstart;BEGIN@{ if(substr($_) eq $recstart) substr($_)="" @} eof and substr($_) eq $recend) substr($_)="" 
+
+It ought to be possible to write a filter that removed rec sep on the
+fly instead of inside GNU @strong{parallel}. This could then use more cpus.
+
+Will that require 2x record size memory?
+
+Will that require 2x block size memory?
+
+@node Historical decisions
+@chapter Historical decisions
+
+@menu
+* --tollef::
+* Transferring of variables and functions 1::
+@end menu
+
+@node --tollef
+@section --tollef
+
+You can read about the history of GNU @strong{parallel} on
+https://www.gnu.org/software/parallel/history.html
+
+@strong{--tollef} was included to make GNU @strong{parallel} switch compatible
+with the parallel from moreutils (which is made by Tollef Fog
+Heen). This was done so that users of that parallel easily could port
+their use to GNU @strong{parallel}: Simply set @strong{PARALLEL="--tollef"} and
+that would be it.
+
+But several distributions chose to make @strong{--tollef} global (by putting
+it into /etc/parallel/config) without making the users aware of this,
+and that caused much confusion when people tried out the examples from
+GNU @strong{parallel}'s man page and these did not work.  The users became
+frustrated because the distribution did not make it clear to them that
+it has made @strong{--tollef} global.
+
+So to lessen the frustration and the resulting support, @strong{--tollef}
+was obsoleted 20130222 and removed one year later.
+
+@node Transferring of variables and functions 1
+@section Transferring of variables and functions
+
+Until 20150122 variables and functions were transferred by looking at
+$SHELL to see whether the shell was a @strong{*csh} shell. If so the
+variables would be set using @strong{setenv}. Otherwise they would be set
+using @strong{=}. This caused the content of the variable to be repeated:
+
+echo $SHELL | grep "/t\@{0,1\@}csh" > /dev/null && setenv VAR foo ||
+export VAR=foo
+
+@bye

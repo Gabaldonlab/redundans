@@ -33,6 +33,7 @@ For more information have a look at the [documentation](/docs), [poster](/docs/p
 ## Prerequisites
 Redundans uses several programs (all provided within this repository): 
 - [LAST](http://last.cbrc.jp/) v700+
+ - GNU parallel (https://www.gnu.org/software/parallel/)
 - [BWA](http://bio-bwa.sourceforge.net/) v0.7.12+
 - [SNAP aligner](https://github.com/amplab/snap)
 - [SSPACE3](http://www.baseclear.com/genomics/bioinformatics/basetools/SSPACE)
@@ -44,6 +45,7 @@ On most Linux distros, the installation should be as easy as:
 ```
 git clone --recursive https://github.com/lpryszcz/redundans.git
 cd redundans
+(cd bin/parallel && make clean && ./configure && make)
 (cd bin/bwa && make clean && make)
 (cd bin/last && make clean && make)
 (cd bin/snap && make clean && make)

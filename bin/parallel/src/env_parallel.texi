@@ -1,0 +1,923 @@
+\input texinfo
+@setfilename env_parallel.info
+
+@documentencoding utf-8
+
+@settitle env_parallel - export environment to GNU parallel
+
+@node Top
+@top env_parallel
+
+@menu
+* NAME::
+* SYNOPSIS::
+* DESCRIPTION::
+* OPTIONS::
+* SUPPORTED SHELLS::
+* EXIT STATUS::
+* AUTHOR::
+* LICENSE::
+* DEPENDENCIES::
+* SEE ALSO::
+@end menu
+
+@node NAME
+@chapter NAME
+
+env_parallel - export environment to GNU parallel
+
+@node SYNOPSIS
+@chapter SYNOPSIS
+
+@strong{env_parallel} [options for GNU Parallel]
+
+@node DESCRIPTION
+@chapter DESCRIPTION
+
+@strong{env_parallel} is a shell function that exports the current
+environment to GNU @strong{parallel}.
+
+If the shell function is not loaded, a dummy script will be run
+instead that explains how to install the function.
+
+@strong{env_parallel} is beta quality and not production ready, but please
+use it for everyday use and report bugs.
+
+@strong{env_parallel} is 0.1 sec slower at startup than pure GNU
+@strong{parallel}, and takes up to 15 ms to start a job.
+
+Due to the problem with environment space (see below) the recommended
+usage is:
+
+@verbatim
+  # Record the "clean" environment (this only needs to be run once)
+  env_parallel --record-env
+
+  # Optionally edit ~/.parallel/ignored_vars (only needed once)
+
+  # Define whatever you want to use
+  alias myalias=echo
+  myvar=it
+  myfunc() { myalias $1 $myvar works.; }
+
+  # Use --env _ to only transfer the names not in the "empty" environment
+  env_parallel --env _ -S localhost myfunc ::: Yay,
+@end verbatim
+
+In @strong{csh}:
+
+@verbatim
+  # Record the "clean" environment (this only needs to be run once)
+  env_parallel --record-env
+
+  # Optionally edit ~/.parallel/ignored_vars (only needed once)
+
+  # Define whatever you want to use
+  alias myalias 'echo \!* $myvar works.'
+  set myvar=it
+
+  # Use --env _ to only transfer the names not in the "empty" environment
+  env_parallel --env _ -S localhost myalias ::: Yay,
+@end verbatim
+
+@menu
+* Environment space::
+@end menu
+
+@node Environment space
+@section Environment space
+
+By default @strong{env_parallel} will export all environment variables,
+arrays, aliases, functions and shell options (see details for the
+individual shells below).
+
+But this only works if the size of the current environment is smaller
+than the maximal length of a command and smaller than half of the max
+if running remotely. E.g. The max size of Bash's command is 128 KB, so
+@strong{env_parallel} will fail if '@strong{set | wc -c}' is bigger than 128
+KB. Technically the limit is in execve(1) which IPC::open3 uses.
+
+Bash completion functions are well-known for taking up well over 128
+KB of environment space and the primary reason for causing
+@strong{env_parallel} to fail.
+
+Instead you can use @strong{--env} to specify which variables, arrays,
+aliases and functions to export as this will only export those with
+the given name. Or follow the recommended usage in shown in
+DESCRIPTION.
+
+@node OPTIONS
+@chapter OPTIONS
+
+Same as GNU @strong{parallel}.
+
+@node SUPPORTED SHELLS
+@chapter SUPPORTED SHELLS
+
+@menu
+* Ash::
+* Bash::
+* csh::
+* Dash::
+* fish::
+* ksh::
+* pdksh::
+* sh::
+* tcsh::
+* Zsh::
+@end menu
+
+@node Ash
+@section Ash
+
+@strong{--env} is supported to export only the variable, or alias with the
+given name. Multiple @strong{--env}s can be given.
+
+Installation
+
+Put this in $HOME/.profile:
+
+@verbatim
+  . `which env_parallel.ash`
+@end verbatim
+
+E.g. by doing:
+
+@verbatim
+  echo '. `which env_parallel.ash`' >> $HOME/.profile
+@end verbatim
+
+@table @asis
+@item aliases
+@anchor{aliases}
+
+@verbatim
+  alias myecho='echo aliases'
+  env_parallel myecho ::: work
+  env_parallel -S server myecho ::: work
+  env_parallel --env myecho myecho ::: work
+  env_parallel --env myecho -S server myecho ::: work
+@end verbatim
+
+@item functions
+@anchor{functions}
+
+@verbatim
+  ash cannot list defined functions - thus is not supported.
+@end verbatim
+
+@item variables
+@anchor{variables}
+
+@verbatim
+  myvar=variables
+  env_parallel echo '$myvar' ::: work
+  env_parallel -S server echo '$myvar' ::: work
+  env_parallel --env myvar echo '$myvar' ::: work
+  env_parallel --env myvar -S server echo '$myvar' ::: work
+@end verbatim
+
+@item arrays
+@anchor{arrays}
+
+Arrays are not supported by Ash.
+
+@end table
+
+@node Bash
+@section Bash
+
+@strong{--env} is supported to export only the variable, alias, function, or
+array with the given name. Multiple @strong{--env}s can be given.
+
+Installation
+
+Put this in $HOME/.bashrc:
+
+@verbatim
+  . `which env_parallel.bash`
+@end verbatim
+
+E.g. by doing:
+
+@verbatim
+  echo '. `which env_parallel.bash`' >> $HOME/.bashrc
+@end verbatim
+
+@table @asis
+@item aliases
+@anchor{aliases 1}
+
+@verbatim
+  alias myecho='echo aliases'
+  env_parallel myecho ::: work
+  env_parallel -S server myecho ::: work
+  env_parallel --env myecho myecho ::: work
+  env_parallel --env myecho -S server myecho ::: work
+@end verbatim
+
+@item functions
+@anchor{functions 1}
+
+@verbatim
+  myfunc() { echo functions $*; }
+  env_parallel myfunc ::: work
+  env_parallel -S server myfunc ::: work
+  env_parallel --env myfunc myfunc ::: work
+  env_parallel --env myfunc -S server myfunc ::: work
+@end verbatim
+
+@item variables
+@anchor{variables 1}
+
+@verbatim
+  myvar=variables
+  env_parallel echo '$myvar' ::: work
+  env_parallel -S server echo '$myvar' ::: work
+  env_parallel --env myvar echo '$myvar' ::: work
+  env_parallel --env myvar -S server echo '$myvar' ::: work
+@end verbatim
+
+@item arrays
+@anchor{arrays 1}
+
+@verbatim
+  myarray=(arrays work, too)
+  env_parallel -k echo '${myarray[{}]}' ::: 0 1 2
+  env_parallel -k -S server echo '${myarray[{}]}' ::: 0 1 2
+  env_parallel -k --env myarray echo '${myarray[{}]}' ::: 0 1 2
+  env_parallel -k --env myarray -S server echo '${myarray[{}]}' ::: 0 1 2
+@end verbatim
+
+@end table
+
+@node csh
+@section csh
+
+@strong{--env} is supported to export only the variable, alias, or
+array with the given name. Multiple @strong{--env}s can be given.
+
+@strong{env_parallel} for @strong{csh} breaks @strong{$PARALLEL}, so do not use
+@strong{$PARALLEL}.
+
+Installation
+
+Put this in $HOME/.cshrc:
+
+@verbatim
+  source `which env_parallel.csh`
+@end verbatim
+
+E.g. by doing:
+
+@verbatim
+  echo 'source `which env_parallel.csh`' >> $HOME/.cshrc
+@end verbatim
+
+@table @asis
+@item aliases
+@anchor{aliases 2}
+
+@verbatim
+  alias myecho 'echo aliases'
+  env_parallel myecho ::: work
+  env_parallel -S server myecho ::: work
+  env_parallel --env myecho myecho ::: work
+  env_parallel --env myecho -S server myecho ::: work
+@end verbatim
+
+@item functions
+@anchor{functions 2}
+
+Not supported by @strong{csh}.
+
+@item variables
+@anchor{variables 2}
+
+@verbatim
+  set myvar=variables
+  env_parallel echo '$myvar' ::: work
+  env_parallel -S server echo '$myvar' ::: work
+  env_parallel --env myvar echo '$myvar' ::: work
+  env_parallel --env myvar -S server echo '$myvar' ::: work
+@end verbatim
+
+@item arrays with no special chars
+@anchor{arrays with no special chars}
+
+@verbatim
+  set myarray=(arrays work, too)
+  env_parallel -k echo \$'{myarray[{}]}' ::: 1 2 3
+  env_parallel -k -S server echo \$'{myarray[{}]}' ::: 1 2 3
+  env_parallel -k --env myarray echo \$'{myarray[{}]}' ::: 1 2 3
+  env_parallel -k --env myarray -S server echo \$'{myarray[{}]}' ::: 1 2 3
+@end verbatim
+
+@end table
+
+@node Dash
+@section Dash
+
+@strong{--env} is supported to export only the variable, or alias with the
+given name. Multiple @strong{--env}s can be given.
+
+Installation
+
+Put this in $HOME/.profile:
+
+@verbatim
+  . `which env_parallel.dash`
+@end verbatim
+
+E.g. by doing:
+
+@verbatim
+  echo '. `which env_parallel.dash`' >> $HOME/.profile
+@end verbatim
+
+@table @asis
+@item aliases
+@anchor{aliases 3}
+
+@verbatim
+  alias myecho='echo aliases'
+  env_parallel myecho ::: work
+  env_parallel -S server myecho ::: work
+  env_parallel --env myecho myecho ::: work
+  env_parallel --env myecho -S server myecho ::: work
+@end verbatim
+
+@item functions
+@anchor{functions 3}
+
+@verbatim
+  dash cannot list defined functions - thus is not supported.
+@end verbatim
+
+@item variables
+@anchor{variables 3}
+
+@verbatim
+  myvar=variables
+  env_parallel echo '$myvar' ::: work
+  env_parallel -S server echo '$myvar' ::: work
+  env_parallel --env myvar echo '$myvar' ::: work
+  env_parallel --env myvar -S server echo '$myvar' ::: work
+@end verbatim
+
+@item arrays
+@anchor{arrays 2}
+
+@verbatim
+  dash does not support arrays.
+@end verbatim
+
+@end table
+
+@node fish
+@section fish
+
+@strong{--env} is supported to export only the variable, alias, function, or
+array with the given name. Multiple @strong{--env}s can be given.
+
+Installation
+
+Put this in $HOME/.config/fish/config.fish:
+
+@verbatim
+  source (which env_parallel.fish)
+@end verbatim
+
+E.g. by doing:
+
+@verbatim
+  echo 'source (which env_parallel.fish)' >> $HOME/.config/fish/config.fish
+@end verbatim
+
+@table @asis
+@item aliases
+@anchor{aliases 4}
+
+@verbatim
+  alias myecho 'echo aliases'
+  env_parallel myecho ::: work
+  env_parallel -S server myecho ::: work
+  env_parallel --env myecho myecho ::: work
+  env_parallel --env myecho -S server myecho ::: work
+@end verbatim
+
+@item functions
+@anchor{functions 4}
+
+@verbatim
+  function myfunc
+    echo functions $argv
+  end
+  env_parallel myfunc ::: work
+  env_parallel -S server myfunc ::: work
+  env_parallel --env myfunc myfunc ::: work
+  env_parallel --env myfunc -S server myfunc ::: work
+@end verbatim
+
+@item variables
+@anchor{variables 4}
+
+@verbatim
+  set myvar variables
+  env_parallel echo '$myvar' ::: work
+  env_parallel -S server echo '$myvar' ::: work
+  env_parallel --env myvar echo '$myvar' ::: work
+  env_parallel --env myvar -S server echo '$myvar' ::: work
+@end verbatim
+
+@item arrays
+@anchor{arrays 3}
+
+@verbatim
+  set myarray arrays work, too
+  env_parallel -k echo '$myarray[{}]' ::: 1 2 3
+  env_parallel -k -S server echo '$myarray[{}]' ::: 1 2 3
+  env_parallel -k --env myarray echo '$myarray[{}]' ::: 1 2 3
+  env_parallel -k --env myarray -S server echo '$myarray[{}]' ::: 1 2 3
+@end verbatim
+
+@end table
+
+@node ksh
+@section ksh
+
+@strong{--env} is supported to export only the variable, alias, function, or
+array with the given name. Multiple @strong{--env}s can be given.
+
+Installation
+
+Put this in $HOME/.kshrc:
+
+@verbatim
+  source `which env_parallel.ksh`
+@end verbatim
+
+E.g. by doing:
+
+@verbatim
+  echo 'source `which env_parallel.ksh`' >> $HOME/.kshrc
+@end verbatim
+
+@table @asis
+@item aliases
+@anchor{aliases 5}
+
+@verbatim
+  alias myecho='echo aliases'
+  env_parallel myecho ::: work
+  env_parallel -S server myecho ::: work
+  env_parallel --env myecho myecho ::: work
+  env_parallel --env myecho -S server myecho ::: work
+@end verbatim
+
+@item functions
+@anchor{functions 5}
+
+@verbatim
+  myfunc() { echo functions $*; }
+  env_parallel myfunc ::: work
+  env_parallel -S server myfunc ::: work
+  env_parallel --env myfunc myfunc ::: work
+  env_parallel --env myfunc -S server myfunc ::: work
+@end verbatim
+
+@item variables
+@anchor{variables 5}
+
+@verbatim
+  myvar=variables
+  env_parallel echo '$myvar' ::: work
+  env_parallel -S server echo '$myvar' ::: work
+  env_parallel --env myvar echo '$myvar' ::: work
+  env_parallel --env myvar -S server echo '$myvar' ::: work
+@end verbatim
+
+@item arrays
+@anchor{arrays 4}
+
+@verbatim
+  myarray=(arrays work, too)
+  env_parallel -k echo '${myarray[{}]}' ::: 0 1 2
+  env_parallel -k -S server echo '${myarray[{}]}' ::: 0 1 2
+  env_parallel -k --env myarray echo '${myarray[{}]}' ::: 0 1 2
+  env_parallel -k --env myarray -S server echo '${myarray[{}]}' ::: 0 1 2
+@end verbatim
+
+@end table
+
+@node pdksh
+@section pdksh
+
+@strong{--env} is supported to export only the variable, alias, function, or
+array with the given name. Multiple @strong{--env}s can be given.
+
+Installation
+
+Put this in $HOME/.profile:
+
+@verbatim
+  source `which env_parallel.pdksh`
+@end verbatim
+
+E.g. by doing:
+
+@verbatim
+  echo 'source `which env_parallel.pdksh`' >> $HOME/.profile
+@end verbatim
+
+@table @asis
+@item aliases
+@anchor{aliases 6}
+
+@verbatim
+  alias myecho="echo aliases";
+  env_parallel myecho ::: work;
+  env_parallel -S server myecho ::: work;
+  env_parallel --env myecho myecho ::: work;
+  env_parallel --env myecho -S server myecho ::: work
+@end verbatim
+
+@item functions
+@anchor{functions 6}
+
+@verbatim
+  myfunc() { echo functions $*; };
+  env_parallel myfunc ::: work;
+  env_parallel -S server myfunc ::: work;
+  env_parallel --env myfunc myfunc ::: work;
+  env_parallel --env myfunc -S server myfunc ::: work
+@end verbatim
+
+@item variables
+@anchor{variables 6}
+
+@verbatim
+  myvar=variables;
+  env_parallel echo "\$myvar" ::: work;
+  env_parallel -S server echo "\$myvar" ::: work;
+  env_parallel --env myvar echo "\$myvar" ::: work;
+  env_parallel --env myvar -S server echo "\$myvar" ::: work
+@end verbatim
+
+@item arrays
+@anchor{arrays 5}
+
+@verbatim
+  myarray=(arrays work, too);
+  env_parallel -k echo "\${myarray[{}]}" ::: 0 1 2;
+  env_parallel -k -S server echo "\${myarray[{}]}" ::: 0 1 2;
+  env_parallel -k --env myarray echo "\${myarray[{}]}" ::: 0 1 2;
+  env_parallel -k --env myarray -S server echo "\${myarray[{}]}" ::: 0 1 2
+@end verbatim
+
+@end table
+
+@node sh
+@section sh
+
+@strong{--env} is supported to export only the variable, or alias with the
+given name. Multiple @strong{--env}s can be given.
+
+Installation
+
+Put this in $HOME/.profile:
+
+@verbatim
+  . `which env_parallel.sh`
+@end verbatim
+
+E.g. by doing:
+
+@verbatim
+  echo '. `which env_parallel.sh`' >> $HOME/.profile
+@end verbatim
+
+@table @asis
+@item aliases
+@anchor{aliases 7}
+
+@verbatim
+  sh does not support aliases.
+@end verbatim
+
+@item functions
+@anchor{functions 7}
+
+@verbatim
+  myfunc() { echo functions $*; }
+  env_parallel myfunc ::: work
+  env_parallel -S server myfunc ::: work
+  env_parallel --env myfunc myfunc ::: work
+  env_parallel --env myfunc -S server myfunc ::: work
+@end verbatim
+
+@item variables
+@anchor{variables 7}
+
+@verbatim
+  myvar=variables
+  env_parallel echo '$myvar' ::: work
+  env_parallel -S server echo '$myvar' ::: work
+  env_parallel --env myvar echo '$myvar' ::: work
+  env_parallel --env myvar -S server echo '$myvar' ::: work
+@end verbatim
+
+@item arrays
+@anchor{arrays 6}
+
+@verbatim
+  sh does not support arrays.
+@end verbatim
+
+@end table
+
+@node tcsh
+@section tcsh
+
+@strong{--env} is supported to export only the variable, alias, or
+array with the given name. Multiple @strong{--env}s can be given.
+
+@strong{env_parallel} for @strong{tcsh} breaks @strong{$PARALLEL}, so do not use
+@strong{$PARALLEL}.
+
+Installation
+
+Put this in $HOME/.tcshrc:
+
+@verbatim
+  source `which env_parallel.tcsh`
+@end verbatim
+
+E.g. by doing:
+
+@verbatim
+  echo 'source `which env_parallel.tcsh`' >> $HOME/.tcshrc
+@end verbatim
+
+@table @asis
+@item aliases
+@anchor{aliases 8}
+
+@verbatim
+  alias myecho 'echo aliases'
+  env_parallel myecho ::: work
+  env_parallel -S server myecho ::: work
+  env_parallel --env myecho myecho ::: work
+  env_parallel --env myecho -S server myecho ::: work
+@end verbatim
+
+@item functions
+@anchor{functions 8}
+
+Not supported by @strong{tcsh}.
+
+@item variables
+@anchor{variables 8}
+
+@verbatim
+  set myvar=variables
+  env_parallel echo '$myvar' ::: work
+  env_parallel -S server echo '$myvar' ::: work
+  env_parallel --env myvar echo '$myvar' ::: work
+  env_parallel --env myvar -S server echo '$myvar' ::: work
+@end verbatim
+
+@item arrays with no special chars
+@anchor{arrays with no special chars 1}
+
+@verbatim
+  set myarray=(arrays work, too)
+  env_parallel -k echo \$'{myarray[{}]}' ::: 1 2 3
+  env_parallel -k -S server echo \$'{myarray[{}]}' ::: 1 2 3
+  env_parallel -k --env myarray echo \$'{myarray[{}]}' ::: 1 2 3
+  env_parallel -k --env myarray -S server echo \$'{myarray[{}]}' ::: 1 2 3
+@end verbatim
+
+@end table
+
+@node Zsh
+@section Zsh
+
+@strong{--env} is supported to export only the variable, alias, function, or
+array with the given name. Multiple @strong{--env}s can be given.
+
+Installation
+
+Put this in $HOME/.zshrc:
+
+@verbatim
+  . `which env_parallel.zsh`
+@end verbatim
+
+E.g. by doing:
+
+@verbatim
+  echo '. `which env_parallel.zsh`' >> $HOME/.zshenv
+@end verbatim
+
+@table @asis
+@item aliases
+@anchor{aliases 9}
+
+@verbatim
+  alias myecho='echo aliases'
+  env_parallel myecho ::: work
+  env_parallel -S server myecho ::: work
+  env_parallel --env myecho myecho ::: work
+  env_parallel --env myecho -S server myecho ::: work
+@end verbatim
+
+@item functions
+@anchor{functions 9}
+
+@verbatim
+  myfunc() { echo functions $*; }
+  env_parallel myfunc ::: work
+  env_parallel -S server myfunc ::: work
+  env_parallel --env myfunc myfunc ::: work
+  env_parallel --env myfunc -S server myfunc ::: work
+@end verbatim
+
+@item variables
+@anchor{variables 9}
+
+@verbatim
+  myvar=variables
+  env_parallel echo '$myvar' ::: work
+  env_parallel -S server echo '$myvar' ::: work
+  env_parallel --env myvar echo '$myvar' ::: work
+  env_parallel --env myvar -S server echo '$myvar' ::: work
+@end verbatim
+
+@item arrays
+@anchor{arrays 7}
+
+@verbatim
+  myarray=(arrays work, too)
+  env_parallel -k echo '${myarray[{}]}' ::: 1 2 3
+  env_parallel -k -S server echo '${myarray[{}]}' ::: 1 2 3
+  env_parallel -k --env myarray echo '${myarray[{}]}' ::: 1 2 3
+  env_parallel -k --env myarray -S server echo '${myarray[{}]}' ::: 1 2 3
+@end verbatim
+
+@end table
+
+@node EXIT STATUS
+@chapter EXIT STATUS
+
+Same as GNU @strong{parallel}.
+
+@node AUTHOR
+@chapter AUTHOR
+
+When using GNU @strong{parallel} for a publication please cite:
+
+O. Tange (2011): GNU Parallel - The Command-Line Power Tool, ;login:
+The USENIX Magazine, February 2011:42-47.
+
+This helps funding further development; and it won't cost you a cent.
+If you pay 10000 EUR you should feel free to use GNU Parallel without citing.
+
+Copyright (C) 2007-10-18 Ole Tange, http://ole.tange.dk
+
+Copyright (C) 2008,2009,2010 Ole Tange, http://ole.tange.dk
+
+Copyright (C) 2010,2011,2012,2013,2014,2015,2016,2017 Ole Tange,
+http://ole.tange.dk and Free Software Foundation, Inc.
+
+Parts of the manual concerning @strong{xargs} compatibility is inspired by
+the manual of @strong{xargs} from GNU findutils 4.4.2.
+
+@node LICENSE
+@chapter LICENSE
+
+Copyright (C) 2016
+Ole Tange and Free Software Foundation, Inc.
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+at your option any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+@menu
+* Documentation license I::
+* Documentation license II::
+@end menu
+
+@node Documentation license I
+@section Documentation license I
+
+Permission is granted to copy, distribute and/or modify this documentation
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the file fdl.txt.
+
+@node Documentation license II
+@section Documentation license II
+
+You are free:
+
+@table @asis
+@item @strong{to Share}
+@anchor{@strong{to Share}}
+
+to copy, distribute and transmit the work
+
+@item @strong{to Remix}
+@anchor{@strong{to Remix}}
+
+to adapt the work
+
+@end table
+
+Under the following conditions:
+
+@table @asis
+@item @strong{Attribution}
+@anchor{@strong{Attribution}}
+
+You must attribute the work in the manner specified by the author or
+licensor (but not in any way that suggests that they endorse you or
+your use of the work).
+
+@item @strong{Share Alike}
+@anchor{@strong{Share Alike}}
+
+If you alter, transform, or build upon this work, you may distribute
+the resulting work only under the same, similar or a compatible
+license.
+
+@end table
+
+With the understanding that:
+
+@table @asis
+@item @strong{Waiver}
+@anchor{@strong{Waiver}}
+
+Any of the above conditions can be waived if you get permission from
+the copyright holder.
+
+@item @strong{Public Domain}
+@anchor{@strong{Public Domain}}
+
+Where the work or any of its elements is in the public domain under
+applicable law, that status is in no way affected by the license.
+
+@item @strong{Other Rights}
+@anchor{@strong{Other Rights}}
+
+In no way are any of the following rights affected by the license:
+
+@itemize
+@item Your fair dealing or fair use rights, or other applicable
+copyright exceptions and limitations;
+
+@item The author's moral rights;
+
+@item Rights other persons may have either in the work itself or in
+how the work is used, such as publicity or privacy rights.
+
+@end itemize
+
+@end table
+
+@table @asis
+@item @strong{Notice}
+@anchor{@strong{Notice}}
+
+For any reuse or distribution, you must make clear to others the
+license terms of this work.
+
+@end table
+
+A copy of the full license is included in the file as cc-by-sa.txt.
+
+@node DEPENDENCIES
+@chapter DEPENDENCIES
+
+@strong{env_parallel} uses GNU @strong{parallel}.
+
+@node SEE ALSO
+@chapter SEE ALSO
+
+@strong{parallel}(1), 
+
+@strong{bash}(1), @strong{csh}(1), @strong{fish}(1), @strong{ksh}(1), @strong{pdksh}(1) @strong{tcsh}(1),
+@strong{zsh}(1).
+
+@bye

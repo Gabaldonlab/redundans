@@ -14,6 +14,10 @@ echo " === You can find log in: $log === "
 cores=`grep -c ^processor /proc/cpuinfo | awk '{if($1>1){print $1-1} else {print 1}}'`
 echo " I'll use $cores thread(s) for compiling"
 
+echo `date` " GNU parallel"
+(cd bin/parallel && make clean && ./configure && make -j $cores)  >> $log 2>&1 
+retcode=$?; if [ $retcode -gt 0 ]; then exit $retcode; fi
+
 echo `date` " BWA"
 (cd bin/bwa && make clean && make -j $cores) >> $log 2>&1 
 retcode=$?; if [ $retcode -gt 0 ]; then exit $retcode; fi

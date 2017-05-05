@@ -1,0 +1,429 @@
+\input texinfo
+@setfilename sem.info
+
+@documentencoding utf-8
+
+@settitle sem - semaphore for executing shell command lines in parallel
+
+@node Top
+@top sem
+
+@menu
+* NAME::
+* SYNOPSIS::
+* DESCRIPTION::
+* OPTIONS::
+* UNDERSTANDING A SEMAPHORE::
+* EXAMPLE@asis{:} Gzipping *.log::
+* EXAMPLE@asis{:} Protecting pod2html from itself::
+* BUGS::
+* REPORTING BUGS::
+* AUTHOR::
+* LICENSE::
+* DEPENDENCIES::
+* SEE ALSO::
+@end menu
+
+@node NAME
+@chapter NAME
+
+sem - semaphore for executing shell command lines in parallel
+
+@node SYNOPSIS
+@chapter SYNOPSIS
+
+@strong{sem} [--fg] [--id <id>] [--semaphoretimeout <secs>] [-j <num>] [--wait] command
+
+@node DESCRIPTION
+@chapter DESCRIPTION
+
+GNU @strong{sem} is an alias for GNU @strong{parallel --semaphore}.
+
+GNU @strong{sem} acts as a counting semaphore. When GNU @strong{sem} is called
+with command it starts the command in the background. When @emph{num}
+number of commands are running in the background, GNU @strong{sem} waits for
+one of these to complete before starting the command.
+
+GNU @strong{sem} does not read any arguments to build the command (no -a,
+:::, and ::::). It simply waits for a semaphore to become available
+and then runs the command given.
+
+Before looking at the options you may want to check out the examples
+after the list of options. That will give you an idea of what GNU
+@strong{sem} is capable of.
+
+@node OPTIONS
+@chapter OPTIONS
+
+@table @asis
+@item @emph{command}
+@anchor{@emph{command}}
+
+Command to execute. The command may be followed by arguments for the
+command.
+
+@item @strong{--bg}
+@anchor{@strong{--bg}}
+
+Run command in background thus GNU @strong{sem} will not wait for
+completion of the command before exiting. This is the default.
+
+In toilet analogy: GNU @strong{sem} waits for a toilet to be available,
+gives the toilet to a person, and exits immediately.
+
+See also: @strong{--fg}
+
+@item @strong{--jobs} @emph{N}
+@anchor{@strong{--jobs} @emph{N}}
+
+@item @strong{-j} @emph{N}
+@anchor{@strong{-j} @emph{N}}
+
+@item @strong{--max-procs} @emph{N}
+@anchor{@strong{--max-procs} @emph{N}}
+
+@item @strong{-P} @emph{N}
+@anchor{@strong{-P} @emph{N}}
+
+Run up to N commands in parallel. Default is 1 thus acting like a
+mutex.
+
+In toilet analogy: @strong{-j} is the number of toilets.
+
+@item @strong{--jobs} @emph{+N}
+@anchor{@strong{--jobs} @emph{+N}}
+
+@item @strong{-j} @emph{+N}
+@anchor{@strong{-j} @emph{+N}}
+
+@item @strong{--max-procs} @emph{+N}
+@anchor{@strong{--max-procs} @emph{+N}}
+
+@item @strong{-P} @emph{+N}
+@anchor{@strong{-P} @emph{+N}}
+
+Add N to the number of CPU cores.  Run up to this many jobs in
+parallel. For compute intensive jobs @strong{-j} +0 is useful as it will run
+number-of-cpu-cores jobs simultaneously.
+
+@item @strong{--jobs} @emph{-N}
+@anchor{@strong{--jobs} @emph{-N}}
+
+@item @strong{-j} @emph{-N}
+@anchor{@strong{-j} @emph{-N}}
+
+@item @strong{--max-procs} @emph{-N}
+@anchor{@strong{--max-procs} @emph{-N}}
+
+@item @strong{-P} @emph{-N}
+@anchor{@strong{-P} @emph{-N}}
+
+Subtract N from the number of CPU cores.  Run up to this many jobs in
+parallel.  If the evaluated number is less than 1 then 1 will be used.
+See also @strong{--use-cpus-instead-of-cores}.
+
+@item @strong{--jobs} @emph{N}%
+@anchor{@strong{--jobs} @emph{N}%}
+
+@item @strong{-j} @emph{N}%
+@anchor{@strong{-j} @emph{N}%}
+
+@item @strong{--max-procs} @emph{N}%
+@anchor{@strong{--max-procs} @emph{N}%}
+
+@item @strong{-P} @emph{N}%
+@anchor{@strong{-P} @emph{N}%}
+
+Multiply N% with the number of CPU cores.  Run up to this many jobs in
+parallel.  If the evaluated number is less than 1 then 1 will be used.
+See also @strong{--use-cpus-instead-of-cores}.
+
+@item @strong{--jobs} @emph{procfile}
+@anchor{@strong{--jobs} @emph{procfile}}
+
+@item @strong{-j} @emph{procfile}
+@anchor{@strong{-j} @emph{procfile}}
+
+@item @strong{--max-procs} @emph{procfile}
+@anchor{@strong{--max-procs} @emph{procfile}}
+
+@item @strong{-P} @emph{procfile}
+@anchor{@strong{-P} @emph{procfile}}
+
+Read parameter from file. Use the content of @emph{procfile} as parameter
+for @emph{-j}. E.g. @emph{procfile} could contain the string 100% or +2 or
+10.
+
+@item @strong{--semaphorename} @emph{name}
+@anchor{@strong{--semaphorename} @emph{name}}
+
+@item @strong{--id} @emph{name}
+@anchor{@strong{--id} @emph{name}}
+
+Use @strong{name} as the name of the semaphore. Default is the name of the
+controlling tty (output from @strong{tty}).
+
+The default normally works as expected when used interactively, but
+when used in a script @emph{name} should be set. @emph{$$} or @emph{my_task_name}
+are often a good value.
+
+The semaphore is stored in ~/.parallel/semaphores/
+
+In toilet analogy the name corresponds to different types of toilets:
+e.g. male, female, customer, staff.
+
+@item @strong{--fg}
+@anchor{@strong{--fg}}
+
+Do not put command in background.
+
+In toilet analogy: GNU @strong{sem} waits for a toilet to be available,
+takes a person to the toilet, waits for the person to finish, and
+exits.
+
+@item @strong{--semaphoretimeout} @emph{secs}
+@anchor{@strong{--semaphoretimeout} @emph{secs}}
+
+@item @strong{--st} @emph{secs}
+@anchor{@strong{--st} @emph{secs}}
+
+If @emph{secs} > 0: If the semaphore is not released within @emph{secs}
+seconds, take it anyway.
+
+If @emph{secs} < 0: If the semaphore is not released within @emph{secs}
+seconds, exit.
+
+In toilet analogy: @emph{secs} > 0: If no toilet becomes available within
+@emph{secs} seconds, pee on the floor. @emph{secs} < 0: If no toilet becomes
+available within @emph{secs} seconds, exit without doing anything.
+
+@item @strong{--wait}
+@anchor{@strong{--wait}}
+
+Wait for all commands to complete.
+
+In toilet analogy: Wait until all toilets are empty, then exit.
+
+@end table
+
+@node UNDERSTANDING A SEMAPHORE
+@chapter UNDERSTANDING A SEMAPHORE
+
+Try the following example:
+
+@verbatim
+  sem -j 2 'sleep 1;echo 1 finished';   echo sem 1 exited
+  sem -j 2 'sleep 2;echo 2 finished';   echo sem 2 exited
+  sem -j 2 'sleep 3;echo 3 finished';   echo sem 3 exited
+  sem -j 2 'sleep 4;echo 4 finished';   echo sem 4 exited
+  sem --wait; echo sem --wait done
+@end verbatim
+
+In toilet analogy this uses 2 toilets (@strong{-j 2}). GNU @strong{sem} takes '1'
+to a toilet, and exits immediately. While '1' is sleeping, another GNU
+@strong{sem} takes '2' to a toilet, and exits immediately.
+
+While '1' and '2' are sleeping, another GNU @strong{sem} waits for a free
+toilet. When '1' finishes, a toilet becomes available, and this GNU
+@strong{sem} stops waiting, and takes '3' to a toilet, and exits
+immediately.
+
+While '2' and '3' are sleeping, another GNU @strong{sem} waits for a free
+toilet.  When '2' finishes, a toilet becomes available, and this GNU
+@strong{sem} stops waiting, and takes '4' to a toilet, and exits
+immediately.
+
+Finally another GNU @strong{sem} waits for all toilets to become free.
+
+@node EXAMPLE: Gzipping *.log
+@chapter EXAMPLE: Gzipping *.log
+
+Run one gzip process per CPU core. Block until a CPU core becomes
+available.
+
+@verbatim
+  for i in *.log ; do
+    echo $i
+    sem -j+0 gzip $i ";" echo done
+  done
+  sem --wait
+@end verbatim
+
+@node EXAMPLE: Protecting pod2html from itself
+@chapter EXAMPLE: Protecting pod2html from itself
+
+pod2html creates two files: pod2htmd.tmp and pod2htmi.tmp which it
+does not clean up. It uses these two files for a short time. But if
+you run multiple pod2html in parallel (e.g. in a Makefile with make
+-j) there is a risk that two different instances of pod2html will
+write to the files at the same time:
+
+@verbatim
+  # This may fail due to shared pod2htmd.tmp/pod2htmi.tmp files
+  foo.html:
+          pod2html foo.pod --outfile foo.html
+
+  bar.html:
+          pod2html bar.pod --outfile bar.html
+
+  $ make -j foo.html bar.html
+@end verbatim
+
+You need to protect pod2html from running twice at the same time.
+@strong{sem} running as a mutex will make sure only one runs:
+
+@verbatim
+  foo.html:
+          sem --id pod2html pod2html foo.pod --outfile foo.html
+
+  bar.html:
+          sem --id pod2html pod2html bar.pod --outfile bar.html
+
+  clean: foo.html bar.html
+          sem --id pod2html --wait
+          rm -f pod2htmd.tmp pod2htmi.tmp
+
+  $ make -j foo.html bar.html clean
+@end verbatim
+
+@node BUGS
+@chapter BUGS
+
+None known.
+
+@node REPORTING BUGS
+@chapter REPORTING BUGS
+
+Report bugs to <bug-parallel@@gnu.org>.
+
+@node AUTHOR
+@chapter AUTHOR
+
+Copyright (C) 2010,2011,2012,2013,2014,2015,2016,2017 Ole Tange,
+http://ole.tange.dk and Free Software Foundation, Inc.
+
+@node LICENSE
+@chapter LICENSE
+
+Copyright (C) 2010,2011,2012,2013 Free Software Foundation, Inc.
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+at your option any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+@menu
+* Documentation license I::
+* Documentation license II::
+@end menu
+
+@node Documentation license I
+@section Documentation license I
+
+Permission is granted to copy, distribute and/or modify this documentation
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the file fdl.txt.
+
+@node Documentation license II
+@section Documentation license II
+
+You are free:
+
+@table @asis
+@item @strong{to Share}
+@anchor{@strong{to Share}}
+
+to copy, distribute and transmit the work
+
+@item @strong{to Remix}
+@anchor{@strong{to Remix}}
+
+to adapt the work
+
+@end table
+
+Under the following conditions:
+
+@table @asis
+@item @strong{Attribution}
+@anchor{@strong{Attribution}}
+
+You must attribute the work in the manner specified by the author or
+licensor (but not in any way that suggests that they endorse you or
+your use of the work).
+
+@item @strong{Share Alike}
+@anchor{@strong{Share Alike}}
+
+If you alter, transform, or build upon this work, you may distribute
+the resulting work only under the same, similar or a compatible
+license.
+
+@end table
+
+With the understanding that:
+
+@table @asis
+@item @strong{Waiver}
+@anchor{@strong{Waiver}}
+
+Any of the above conditions can be waived if you get permission from
+the copyright holder.
+
+@item @strong{Public Domain}
+@anchor{@strong{Public Domain}}
+
+Where the work or any of its elements is in the public domain under
+applicable law, that status is in no way affected by the license.
+
+@item @strong{Other Rights}
+@anchor{@strong{Other Rights}}
+
+In no way are any of the following rights affected by the license:
+
+@itemize
+@item Your fair dealing or fair use rights, or other applicable
+copyright exceptions and limitations;
+
+@item The author's moral rights;
+
+@item Rights other persons may have either in the work itself or in
+how the work is used, such as publicity or privacy rights.
+
+@end itemize
+
+@end table
+
+@table @asis
+@item @strong{Notice}
+@anchor{@strong{Notice}}
+
+For any reuse or distribution, you must make clear to others the
+license terms of this work.
+
+@end table
+
+A copy of the full license is included in the file as cc-by-sa.txt.
+
+@node DEPENDENCIES
+@chapter DEPENDENCIES
+
+GNU @strong{sem} uses Perl, and the Perl modules Getopt::Long,
+Symbol, Fcntl.
+
+@node SEE ALSO
+@chapter SEE ALSO
+
+@strong{parallel}(1)
+
+@bye

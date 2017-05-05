@@ -7,10 +7,10 @@ l.p.pryszcz+git@gmail.com
 19/06/2012 Dublin/Warsaw
 """
 
-import commands, os, subprocess, sys
+import commands, os, subprocess, sys, tempfile
 from datetime import datetime
 def _unload_sam(sam):
-    return sam[0], int(sam[1]), sam[2], int(sam[3]), int(sam[4]), len(sam[9])
+    return sam[0], int(sam[1]), sam[2], int(sam[3]), int(sam[4]), sam[9], sam[10]
 
 def parse_sam(handle):
     """Return tuple representing entries from SAM."""
@@ -25,37 +25,51 @@ def parse_sam(handle):
             # skip multiple matches
             if sam[0] == q1:
                 continue
-            q1, flag1, ref1, start1, mapq1, len1 = _unload_sam(sam)
+            q1, flag1, ref1, start1, mapq1, seq1, qual1 = _unload_sam(sam)
         else:
             # skip multiple matches
             if sam[0] == q2:
                 continue
-            q2, flag2, ref2, start2, mapq2, len2 = _unload_sam(sam)
+            q2, flag2, ref2, start2, mapq2, seq2, qual2 = _unload_sam(sam)
         # report
         if q1 == q2:
-            yield q1, flag1, ref1, start1, mapq1, len1, q2, flag2, ref2, start2, mapq2, len2
+            yield q1, flag1, ref1, start1, mapq1, seq1, qual1, q2, flag2, ref2, start2, mapq2, seq2, qual2
 
 def get_start_stop(start, length, flag):
     """Return start-end read boundaries.
     Return end-start if reverse aligned (flag & 16)."""
     if flag & 16:
-        end    = start
+        end = start
         start += length
     else:
-        end    = start + length
+        end = start + length
     return start, end
 
-def sam2sspace_tab(inhandle, outhandle, mapqTh=0, upto=float('inf'), verbose=False, log=sys.stderr):
+base2rc = {"A": "T", "T": "A", "C": "G", "G": "C", "a": "t", "t": "a", "c": "g", "g": "c", "N": "N", "n": "n"}
+def sam2fastq(name, seq, qual, flag):
+    """Return FastQ"""
+    if flag & 16:
+        seq = "".join(reversed([base2rc[s] for s in seq]))
+        qual = "".join(reversed(qual))
+    return "@%s\n%s\n+\n%s\n"%(name, seq, qual)
+    
+def sam2sspace_tab(inhandle, outhandle, mapqTh=0, upto=float('inf'), verbose=False, log=sys.stderr, ref="", cores=4):
     """Convert SAM to SSPACE TAB file."""
     i = j = k = pq1 = 0
-    for q1, flag1, ref1, start1, mapq1, len1, q2, flag2, ref2, start2, mapq2, len2 in parse_sam(inhandle):
+    if ref:
+        _tmpfile = tempfile.NamedTemporaryFile(delete=False)
+    else:
+        _tmpfile = ""
+    for q1, flag1, ref1, start1, mapq1, seq1, qual1, q2, flag2, ref2, start2, mapq2, seq2, qual2 in parse_sam(inhandle):
         i   += 1
         if upto and i>upto:
             break        
         #skip 0 quality pair
         if mapqTh:
             if mapq1 < mapqTh or mapq2 < mapqTh:
-                continue  
+                if _tmpfile:
+                    _tmpfile.write(sam2fastq("%s/1"%i, seq1, qual1, flag1)+sam2fastq("%s/2"%i, seq2, qual2, flag2))
+                continue
         if q1!=q2:
             log.write("[Warning] Queries have different names: %s vs %s\n" % (q1, q2))
             continue
@@ -65,8 +79,8 @@ def sam2sspace_tab(inhandle, outhandle, mapqTh=0, upto=float('inf'), verbose=Fal
             continue
         k += 1
         #define start-stop ranges
-        start1, end1 = get_start_stop(start1, len1, flag1)
-        start2, end2 = get_start_stop(start2, len2, flag2)
+        start1, end1 = get_start_stop(start1, len(seq1), flag1)
+        start2, end2 = get_start_stop(start2, len(seq2), flag2)
         #print output
         outhandle.write("%s\t%s\t%s\t%s\t%s\t%s\n" % (ref1, start1, end1, ref2, start2, end2))
     if i:
@@ -74,6 +88,12 @@ def sam2sspace_tab(inhandle, outhandle, mapqTh=0, upto=float('inf'), verbose=Fal
     else:
         info = "   No pairs were aligned!\n"
     log.write(info)
+    # run last
+    if _tmpfile:
+        _tmpfile.close()
+        lastproc = _get_last_proc0(_tmpfile.name, ref, cores)
+        last_tab2sspace_tab(lastproc.stdout, outhandle, mapqTh, upto, verbose, log)
+        os.unlink(_tmpfile.name)
     
 def _get_bwamem_proc(fn1, fn2, ref, cores, verbose, log=sys.stderr):
     """Return bwamem subprocess.
@@ -110,26 +130,37 @@ def _get_snap_proc(fn1, fn2, ref, cores, verbose, log=sys.stderr):
     args = ['snap-aligner', 'paired', idxfn, fn1, fn2, '--b', '-t', str(cores), '-o', '-sam', '-']
     if verbose:
         log.write( "  %s\n" % " ".join(args))
-    #select ids
     proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=log)
     return proc
 
-def _get_last_proc(fn1, fn2, ref, cores, verbose, log=sys.stderr, tmpdir=""):
+def _get_last_proc(fn1, fn2, ref, cores, verbose, log=sys.stderr):
     """Run last process"""
     # create genome index
-    #idx = os.path.join(tmpdir, ref)
-    #if not os.path.isdir(os.path.dirname(idx)): os.makedirs(os.path.dirname(idx))
     if not os.path.isdir(ref+".suf"):
         os.system("lastdb -uNEAR -W 11 %s %s" % (ref, ref))
     # skip mate rescue
-    args1 = ["fastq2shuffled.py", fn1, fn2]
-    args2 = ['lastal', '-P', str(cores), '-j1', '-Q1', '-fTAB', ref]
+    args1 = ['fastq2shuffled.py', fn1, fn2]
+    args2 = ['parallel', '--no-notice', '--pipe', '-L8', '-j', str(cores), 'lastal', '-j1', '-Q1', '-fTAB', ref] # '-m10', '-P', str(cores), 
     if verbose:
-        log.write( "  %s\n" % " ".join(args1))
-        log.write( "  %s\n" % " ".join(args2))
+        log.write("  %s | %s\n"%(" ".join(args1), " ".join(args2)))
     #select ids
     proc1 = subprocess.Popen(args1, stdout=subprocess.PIPE, stderr=log)
-    proc2 = subprocess.Popen(args2, stdout=subprocess.PIPE, stdin=proc1.stdout, stderr=log)
+    proc2 = subprocess.Popen(args2, stdout=subprocess.PIPE, stdin=proc1.stdout, stderr=log) #, preexec_fn=os.setpgrp)
+    return proc2
+
+def _get_last_proc0(fqfname, ref, cores, verbose=0, log=sys.stderr):
+    """Run last process"""
+    # create genome index
+    if not os.path.isdir(ref+".suf"):
+        os.system("lastdb -uNEAR -W 11 %s %s" % (ref, ref))
+    # skip mate rescue 
+    args1 = ['cat', fqfname]
+    args2 = ['parallel', '--no-notice', '--pipe', '-L8', '-j', str(cores), 'lastal', '-j1', '-Q1', '-fTAB', ref]  
+    if verbose:
+        log.write("  %s\n"%(" ".join(args1),))
+    #select ids
+    proc1 = subprocess.Popen(args1, stdout=subprocess.PIPE, stderr=log)
+    proc2 = subprocess.Popen(args2, stdout=subprocess.PIPE, stdin=proc1.stdout, stderr=log) #, preexec_fn=os.setpgrp)
     return proc2
 
 def _last2pairs(handle):
@@ -166,7 +197,7 @@ def _last2pairs(handle):
     if map(len, hits) == [1, 1] and hits[0][0][-1][:-1] == hits[1][0][-1][:-1]:
         yield hits[0][0][1:4], hits[1][0][1:4]
     
-def last_tab2sspace_tab(handle, out, mapqTh, upto, verbose, log):
+def last_tab2sspace_tab(handle, out, mapqTh, upto, verbose, log, proc=""):
     """Generate TAB based on LASTal alignments"""
     i = k = 0
     for i, ((ref1, start1, end1), (ref2, start2, end2)) in enumerate(_last2pairs(handle), 1):
@@ -187,12 +218,9 @@ def get_tab_files(outdir, reffile, libNames, fReadsFnames, rReadsFnames, inserts
     """Prepare genome index, align all libs and save TAB file"""
     ref = reffile.name
     tabFnames = []
-    _get_aligner_proc = _get_bwamem_proc    
-    if max(libreadlen)<=500 and min(libreadlen)>40:
-        _get_aligner_proc = _get_snap_proc    
-    # use last
-    _get_aligner_proc = _get_last_proc
-    algs2sspace_tab = last_tab2sspace_tab
+    #_get_aligner_proc = _get_bwamem_proc
+    #if max(libreadlen)<=500 and min(libreadlen)>40:
+    _get_aligner_proc = _get_snap_proc
     # process all libs
     for libName, f1, f2, iSize, iFrac in zip(libNames, fReadsFnames, rReadsFnames, inserts, iBounds):
         if verbose:
@@ -204,16 +232,16 @@ def get_tab_files(outdir, reffile, libNames, fReadsFnames, rReadsFnames, inserts
             log.write("  File exists: %s\n" % outfn)
             tabFnames.append(outfn)
             continue
-        # run alignment for all libs        
+        # run alignment for all libs
         out = open(outfn, "w")
         bwalog = open(outfn+".log", "w")
         proc = _get_aligner_proc(f1.name, f2.name, ref, cores, verbose, bwalog)
         # parse botwie output
-        algs2sspace_tab(proc.stdout, out, mapqTh, upto, verbose, log)
+        sam2sspace_tab(proc.stdout, out, mapqTh, upto, verbose, log, ref, cores)
         # close file & terminate subprocess
         out.close()
         tabFnames.append(outfn)
-        proc.terminate()
+        proc.kill()
     return tabFnames
     
 def get_libs(outdir, libFn, libNames, tabFnames, inserts, iBounds, orientations, libreadlen, verbose, log=sys.stderr):

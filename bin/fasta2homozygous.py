@@ -22,17 +22,16 @@ import numpy as np
 root = os.path.dirname(os.path.abspath(sys.argv[0]))
 os.environ["PATH"] = "%s:%s"%(root, os.environ["PATH"])
 
-def run_last(fasta, identity, threads, minLength=200, verbose=1, tmpdir=""):
+def run_last(fasta, identity, threads, minLength=200, verbose=1):
     """Start LAST with multi-threads"""
     if verbose:
         sys.stderr.write(" Running LAST...\n")
     # build db
-    ref = fasta #os.path.join(tmpdir, fasta)
-    #if not os.path.isdir(os.path.dirname(idx)): os.makedirs(os.path.dirname(idx))
+    ref = fasta
     if not os.path.isfile(ref+".suf"):
         os.system("lastdb -W 11 %s %s" % (ref, fasta))
     # run LAST
-    args1 = ["lastal", "-f", "TAB", "-P", str(threads), ref, fasta]
+    args1 = [ "lastal", "-P", str(threads), "-f", "TAB", ref, fasta] 
     proc1 = subprocess.Popen(args1, stdout=subprocess.PIPE, stderr=sys.stderr)
     return proc1
 
@@ -85,7 +84,7 @@ def fasta2hits(fasta, threads, identityTh, overlapTh, minLength, verbose):
             continue
         matches[t][0] += score
         matches[t][1][s:e] += 1
-        
+  
     # yield last bit
     if get_best_match(matches, pq, pqsize, identityTh, overlapTh): 
         yield get_best_match(matches, pq, pqsize, identityTh, overlapTh)

@@ -1,0 +1,477 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>GNU niceload</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:root@localhost" />
+</head>
+
+<body>
+
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#SYNOPSIS">SYNOPSIS</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+  <li><a href="#OPTIONS">OPTIONS</a></li>
+  <li><a href="#EXAMPLE:-See-niceload-in-action">EXAMPLE: See niceload in action</a></li>
+  <li><a href="#EXAMPLE:-Run-updatedb">EXAMPLE: Run updatedb</a></li>
+  <li><a href="#EXAMPLE:-Run-rsync">EXAMPLE: Run rsync</a></li>
+  <li><a href="#EXAMPLE:-Ensure-enough-disk-cache">EXAMPLE: Ensure enough disk cache</a></li>
+  <li><a href="#ENVIRONMENT-VARIABLES">ENVIRONMENT VARIABLES</a></li>
+  <li><a href="#EXIT-STATUS">EXIT STATUS</a></li>
+  <li><a href="#REPORTING-BUGS">REPORTING BUGS</a></li>
+  <li><a href="#AUTHOR">AUTHOR</a></li>
+  <li><a href="#LICENSE">LICENSE</a>
+    <ul>
+      <li><a href="#Documentation-license-I">Documentation license I</a></li>
+      <li><a href="#Documentation-license-II">Documentation license II</a></li>
+    </ul>
+  </li>
+  <li><a href="#DEPENDENCIES">DEPENDENCIES</a></li>
+  <li><a href="#SEE-ALSO">SEE ALSO</a></li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
+
+<p>niceload - slow down a program when the load average is above a certain limit</p>
+
+<h1 id="SYNOPSIS">SYNOPSIS</h1>
+
+<p><b>niceload</b> [-v] [-h] [-n nice] [-I io] [-L load] [-M mem] [-N] [--sensor program] [-t time] [-s time|-f factor] ( command | -p PID [-p PID ...] | --prg program )</p>
+
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
+
+<p>GNU <b>niceload</b> will slow down a program when the load average (or other system activity) is above a certain limit. When the limit is reached the program will be suspended for some time. Then resumed again for some time. Then the load average is checked again and we start over.</p>
+
+<p>Instead of load average <b>niceload</b> can also look at disk I/O, amount of free memory, or swapping activity.</p>
+
+<p>If the load is 3.00 then the default settings will run a program like this:</p>
+
+<p>run 1 second, suspend (3.00-1.00) seconds, run 1 second, suspend (3.00-1.00) seconds, run 1 second, ...</p>
+
+<h1 id="OPTIONS">OPTIONS</h1>
+
+<dl>
+
+<dt id="B"><b>-B</b></dt>
+<dd>
+
+</dd>
+<dt id="battery"><b>--battery</b></dt>
+<dd>
+
+<p>Suspend if the system is running on battery. Shorthand for: -l -1 --sensor &#39;cat /sys/class/power_supply/BAT0/status /proc/acpi/battery/BAT0/state 2&gt;/dev/null |grep -i -q discharging; echo $?&#39;</p>
+
+</dd>
+<dt id="f-FACTOR"><b>-f</b> <i>FACTOR</i></dt>
+<dd>
+
+</dd>
+<dt id="factor-FACTOR"><b>--factor</b> <i>FACTOR</i></dt>
+<dd>
+
+<p>Suspend time factor. Dynamically set <b>-s</b> as amount over limit * factor. Default is 1.</p>
+
+</dd>
+<dt id="H"><b>-H</b></dt>
+<dd>
+
+</dd>
+<dt id="hard"><b>--hard</b></dt>
+<dd>
+
+<p>Hard limit. <b>--hard</b> will suspend the process until the system is under the limits. The default is <b>--soft</b>.</p>
+
+</dd>
+<dt id="io-iolimit"><b>--io</b> <i>iolimit</i></dt>
+<dd>
+
+</dd>
+<dt id="I-iolimit"><b>-I</b> <i>iolimit</i></dt>
+<dd>
+
+<p>Limit for I/O. The amount of disk I/O will be computed as a value 0 - 10, where 0 is no I/O and 10 is at least one disk is 100% saturated.</p>
+
+<p><b>--io</b> will set both <b>--start-io</b> and <b>run-io</b>.</p>
+
+</dd>
+<dt id="load-loadlimit"><b>--load</b> <i>loadlimit</i></dt>
+<dd>
+
+</dd>
+<dt id="L-loadlimit"><b>-L</b> <i>loadlimit</i></dt>
+<dd>
+
+<p>Limit for load average.</p>
+
+<p><b>--load</b> will set both <b>--start-load</b> and <b>run-load</b>.</p>
+
+</dd>
+<dt id="mem-memlimit"><b>--mem</b> <i>memlimit</i></dt>
+<dd>
+
+</dd>
+<dt id="M-memlimit"><b>-M</b> <i>memlimit</i></dt>
+<dd>
+
+<p>Limit for free memory. This is the amount of bytes available as free + cache. This limit is treated opposite other limits: If the system is above the limit the program will run, if it is below the limit the program will stop</p>
+
+<p><i>memlimit</i> can be postfixed with K, M, G, T, or P which would multiply the size with 1024, 1048576, 1073741824, or 1099511627776 respectively.</p>
+
+<p><b>--mem</b> will set both <b>--start-mem</b> and <b>run-mem</b>.</p>
+
+</dd>
+<dt id="noswap"><b>--noswap</b></dt>
+<dd>
+
+</dd>
+<dt id="N"><b>-N</b></dt>
+<dd>
+
+<p>No swapping. If the system is swapping both in and out it is a good indication that the system is memory stressed.</p>
+
+<p><b>--noswap</b> is over limit if the system is swapping both in and out.</p>
+
+<p><b>--noswap</b> will set both <b>--start-noswap</b> and <b>run-noswap</b>.</p>
+
+</dd>
+<dt id="net"><b>--net</b></dt>
+<dd>
+
+<p>Shorthand for <b>--nethops 3</b>.</p>
+
+</dd>
+<dt id="nethops-h"><b>--nethops</b> <i>h</i></dt>
+<dd>
+
+<p>Network nice. Pause if the internet connection is overloaded.</p>
+
+<p><b>niceload</b> finds a router <i>h</i> hops closer to the internet. It <b>ping</b>s this every second. If the latency is more than 50% bigger than the median, it is regarded as being over the limit.</p>
+
+<p><b>--nethops</b> can be combined with <b>--hard</b>. Without <b>--hard</b> the program may be able to queue up so much traffic that it will take longer than the <b>--suspend</b> time to clear it. <b>--hard</b> is useful for traffic that does not break by being suspended for a longer time.</p>
+
+<p><b>--nethops</b> can be combined with a high <b>--suspend</b>. This way a program can be allowed to do a bit of traffic now and then. This is useful to keep the connection alive.</p>
+
+</dd>
+<dt id="n-niceness"><b>-n</b> <i>niceness</i></dt>
+<dd>
+
+</dd>
+<dt id="nice-niceness"><b>--nice</b> <i>niceness</i></dt>
+<dd>
+
+<p>Sets niceness. See <b>nice</b>(1).</p>
+
+</dd>
+<dt id="p-PID"><b>-p</b> <i>PID</i></dt>
+<dd>
+
+</dd>
+<dt id="pid-PID"><b>--pid</b> <i>PID</i></dt>
+<dd>
+
+<p>Process ID of process to suspend. You can specify multiple process IDs with multiple <b>-p</b> <i>PID</i>.</p>
+
+</dd>
+<dt id="prg-program"><b>--prg</b> <i>program</i></dt>
+<dd>
+
+</dd>
+<dt id="program-program"><b>--program</b> <i>program</i></dt>
+<dd>
+
+<p>Name of running program to suspend. You can specify multiple programs with multiple <b>--prg</b> <i>program</i>. If no processes with the name <i>program</i> is found, <b>niceload</b> with search for substrings containing <i>program</i>.</p>
+
+</dd>
+<dt id="quote"><b>--quote</b></dt>
+<dd>
+
+</dd>
+<dt id="q"><b>-q</b></dt>
+<dd>
+
+<p>Quote the command line. Useful if the command contains chars like *, $, &gt;, and &quot; that should not be interpreted by the shell.</p>
+
+</dd>
+<dt id="run-io-iolimit"><b>--run-io</b> <i>iolimit</i></dt>
+<dd>
+
+</dd>
+<dt id="ri-iolimit"><b>--ri</b> <i>iolimit</i></dt>
+<dd>
+
+</dd>
+<dt id="run-load-loadlimit"><b>--run-load</b> <i>loadlimit</i></dt>
+<dd>
+
+</dd>
+<dt id="rl-loadlimit"><b>--rl</b> <i>loadlimit</i></dt>
+<dd>
+
+</dd>
+<dt id="run-mem-memlimit"><b>--run-mem</b> <i>memlimit</i></dt>
+<dd>
+
+</dd>
+<dt id="rm-memlimit"><b>--rm</b> <i>memlimit</i></dt>
+<dd>
+
+<p>Run limit. The running program will be slowed down if the system is above the limit. See: <b>--io</b>, <b>--load</b>, <b>--mem</b>, <b>--noswap</b>.</p>
+
+</dd>
+<dt id="sensor-sensor-program"><b>--sensor</b> <i>sensor program</i></dt>
+<dd>
+
+<p>Read sensor. Use <i>sensor program</i> to read a sensor.</p>
+
+<p>This will keep the CPU temperature below 80 deg C on GNU/Linux:</p>
+
+<pre><code>  niceload -l 80000 -f 0.001 --sensor &#39;sort -n /sys/devices/platform/coretemp*/temp*_input&#39; gzip *</code></pre>
+
+<p>This will stop if the disk space &lt; 100000.</p>
+
+<pre><code>  niceload -H -l -100000 --sensor &quot;df . | awk &#39;{ print \$4 }&#39;&quot; echo</code></pre>
+
+</dd>
+<dt id="start-io-iolimit"><b>--start-io</b> <i>iolimit</i></dt>
+<dd>
+
+</dd>
+<dt id="si-iolimit"><b>--si</b> <i>iolimit</i></dt>
+<dd>
+
+</dd>
+<dt id="start-load-loadlimit"><b>--start-load</b> <i>loadlimit</i></dt>
+<dd>
+
+</dd>
+<dt id="sl-loadlimit"><b>--sl</b> <i>loadlimit</i></dt>
+<dd>
+
+</dd>
+<dt id="start-mem-memlimit"><b>--start-mem</b> <i>memlimit</i></dt>
+<dd>
+
+</dd>
+<dt id="sm-memlimit"><b>--sm</b> <i>memlimit</i></dt>
+<dd>
+
+<p>Start limit. The program will not start until the system is below the limit. See: <b>--io</b>, <b>--load</b>, <b>--mem</b>, <b>--noswap</b>.</p>
+
+</dd>
+<dt id="soft"><b>--soft</b></dt>
+<dd>
+
+</dd>
+<dt id="S"><b>-S</b></dt>
+<dd>
+
+<p>Soft limit. <b>niceload</b> will suspend a process for a while and then let it run for a second thus only slowing down a process while the system is over one of the given limits. This is the default.</p>
+
+</dd>
+<dt id="suspend-SEC"><b>--suspend</b> <i>SEC</i></dt>
+<dd>
+
+</dd>
+<dt id="s-SEC"><b>-s</b> <i>SEC</i></dt>
+<dd>
+
+<p>Suspend time. Suspend the command this many seconds when the max load average is reached.</p>
+
+</dd>
+<dt id="recheck-SEC"><b>--recheck</b> <i>SEC</i></dt>
+<dd>
+
+</dd>
+<dt id="t-SEC"><b>-t</b> <i>SEC</i></dt>
+<dd>
+
+<p>Recheck load time. Sleep SEC seconds before checking load again. Default is 1 second.</p>
+
+</dd>
+<dt id="verbose"><b>--verbose</b></dt>
+<dd>
+
+</dd>
+<dt id="v"><b>-v</b></dt>
+<dd>
+
+<p>Verbose. Print some extra output on what is happening. Use <b>-v</b> until you know what your are doing.</p>
+
+</dd>
+</dl>
+
+<h1 id="EXAMPLE:-See-niceload-in-action">EXAMPLE: See niceload in action</h1>
+
+<p>In terminal 1 run: top</p>
+
+<p>In terminal 2 run:</p>
+
+<p><b>niceload -q perl -e &#39;$|=1;do{$l==$r or print &quot;.&quot;; $l=$r}until(($r=time-$^T)</b>&gt;<b>50)&#39;</b></p>
+
+<p>This will print a &#39;.&#39; every second for 50 seconds and eat a lot of CPU. When the load rises to 1.0 the process is suspended.</p>
+
+<h1 id="EXAMPLE:-Run-updatedb">EXAMPLE: Run updatedb</h1>
+
+<p>Running updatedb can often starve the system for disk I/O and thus result in a high load.</p>
+
+<p>Run updatedb but suspend updatedb if the load is above 2.00:</p>
+
+<p><b>niceload -L 2 updatedb</b></p>
+
+<h1 id="EXAMPLE:-Run-rsync">EXAMPLE: Run rsync</h1>
+
+<p>rsync can just like updatedb starve the system for disk I/O and thus result in a high load.</p>
+
+<p>Run rsync but keep load below 3.4. If load reaches 7 sleep for (7-3.4)*12 seconds:</p>
+
+<p><b>niceload -L 3.4 -f 12 rsync -Ha /home/ /backup/home/</b></p>
+
+<h1 id="EXAMPLE:-Ensure-enough-disk-cache">EXAMPLE: Ensure enough disk cache</h1>
+
+<p>Assume the program <b>foo</b> uses 2 GB files intensively. <b>foo</b> will run fast if the files are in disk cache and be slow as a crawl if they are not in the cache.</p>
+
+<p>To ensure 2 GB are reserved for disk cache run:</p>
+
+<p><b>niceload --hard --run-mem 2g foo</b></p>
+
+<p>This will not guarantee that the 2 GB memory will be used for the files for <b>foo</b>, but it will stop <b>foo</b> if the memory for disk cache is too low.</p>
+
+<h1 id="ENVIRONMENT-VARIABLES">ENVIRONMENT VARIABLES</h1>
+
+<p>None. In future versions $NICELOAD will be able to contain default settings.</p>
+
+<h1 id="EXIT-STATUS">EXIT STATUS</h1>
+
+<p>Exit status should be the same as the command being run (untested).</p>
+
+<h1 id="REPORTING-BUGS">REPORTING BUGS</h1>
+
+<p>Report bugs to &lt;bug-parallel@gnu.org&gt;.</p>
+
+<h1 id="AUTHOR">AUTHOR</h1>
+
+<p>Copyright (C) 2004-11-19 Ole Tange, http://ole.tange.dk</p>
+
+<p>Copyright (C) 2005,2006,2006,2008,2009,2010 Ole Tange, http://ole.tange.dk</p>
+
+<p>Copyright (C) 2010,2011,2012,2013,2014,2015,2016,2017 Ole Tange, http://ole.tange.dk and Free Software Foundation, Inc.</p>
+
+<h1 id="LICENSE">LICENSE</h1>
+
+<p>Copyright (C) 2010,2011,2012,2013,2014,2015,2016,2017 Free Software Foundation, Inc.</p>
+
+<p>This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 3 of the License, or at your option any later version.</p>
+
+<p>This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.</p>
+
+<p>You should have received a copy of the GNU General Public License along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.</p>
+
+<h2 id="Documentation-license-I">Documentation license I</h2>
+
+<p>Permission is granted to copy, distribute and/or modify this documentation under the terms of the GNU Free Documentation License, Version 1.3 or any later version published by the Free Software Foundation; with no Invariant Sections, with no Front-Cover Texts, and with no Back-Cover Texts. A copy of the license is included in the file fdl.txt.</p>
+
+<h2 id="Documentation-license-II">Documentation license II</h2>
+
+<p>You are free:</p>
+
+<dl>
+
+<dt id="to-Share"><b>to Share</b></dt>
+<dd>
+
+<p>to copy, distribute and transmit the work</p>
+
+</dd>
+<dt id="to-Remix"><b>to Remix</b></dt>
+<dd>
+
+<p>to adapt the work</p>
+
+</dd>
+</dl>
+
+<p>Under the following conditions:</p>
+
+<dl>
+
+<dt id="Attribution"><b>Attribution</b></dt>
+<dd>
+
+<p>You must attribute the work in the manner specified by the author or licensor (but not in any way that suggests that they endorse you or your use of the work).</p>
+
+</dd>
+<dt id="Share-Alike"><b>Share Alike</b></dt>
+<dd>
+
+<p>If you alter, transform, or build upon this work, you may distribute the resulting work only under the same, similar or a compatible license.</p>
+
+</dd>
+</dl>
+
+<p>With the understanding that:</p>
+
+<dl>
+
+<dt id="Waiver"><b>Waiver</b></dt>
+<dd>
+
+<p>Any of the above conditions can be waived if you get permission from the copyright holder.</p>
+
+</dd>
+<dt id="Public-Domain"><b>Public Domain</b></dt>
+<dd>
+
+<p>Where the work or any of its elements is in the public domain under applicable law, that status is in no way affected by the license.</p>
+
+</dd>
+<dt id="Other-Rights"><b>Other Rights</b></dt>
+<dd>
+
+<p>In no way are any of the following rights affected by the license:</p>
+
+<ul>
+
+<li><p>Your fair dealing or fair use rights, or other applicable copyright exceptions and limitations;</p>
+
+</li>
+<li><p>The author&#39;s moral rights;</p>
+
+</li>
+<li><p>Rights other persons may have either in the work itself or in how the work is used, such as publicity or privacy rights.</p>
+
+</li>
+</ul>
+
+</dd>
+</dl>
+
+<dl>
+
+<dt id="Notice"><b>Notice</b></dt>
+<dd>
+
+<p>For any reuse or distribution, you must make clear to others the license terms of this work.</p>
+
+</dd>
+</dl>
+
+<p>A copy of the full license is included in the file as cc-by-sa.txt.</p>
+
+<h1 id="DEPENDENCIES">DEPENDENCIES</h1>
+
+<p>GNU <b>niceload</b> uses Perl, and the Perl modules POSIX, and Getopt::Long.</p>
+
+<h1 id="SEE-ALSO">SEE ALSO</h1>
+
+<p><b>parallel</b>(1), <b>nice</b>(1), <b>uptime</b>(1)</p>
+
+
+</body>
+
+</html>
+
+

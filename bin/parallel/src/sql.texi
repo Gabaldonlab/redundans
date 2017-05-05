@@ -1,0 +1,540 @@
+\input texinfo
+@setfilename sql.info
+
+@documentencoding utf-8
+
+@settitle sql - execute a command on a database determined by a dburl
+
+@node Top
+@top sql
+
+@menu
+* NAME::
+* SYNOPSIS::
+* DESCRIPTION::
+* DBURL::
+* EXAMPLES::
+* REPORTING BUGS::
+* AUTHOR::
+* LICENSE::
+* DEPENDENCIES::
+* FILES::
+* SEE ALSO::
+@end menu
+
+@node NAME
+@chapter NAME
+
+sql - execute a command on a database determined by a dburl
+
+@node SYNOPSIS
+@chapter SYNOPSIS
+
+@strong{sql} [options] @emph{dburl} [@emph{commands}]
+
+@strong{sql} [options] @emph{dburl} < commandfile
+
+@strong{#!/usr/bin/sql} @strong{--shebang} [options] @emph{dburl}
+
+@node DESCRIPTION
+@chapter DESCRIPTION
+
+GNU @strong{sql} aims to give a simple, unified interface for accessing
+databases through all the different databases' command line
+clients. So far the focus has been on giving a common way to specify
+login information (protocol, username, password, hostname, and port
+number), size (database and table size), and running queries.
+
+The database is addressed using a DBURL. If @emph{commands} are left out
+you will get that database's interactive shell.
+
+GNU @strong{sql} is often used in combination with GNU @strong{parallel}.
+
+@table @asis
+@item @emph{dburl}
+@anchor{@emph{dburl}}
+
+A DBURL has the following syntax:
+[sql:]vendor://
+[[user][:password]@@][host][:port]/[database][?sqlquery]
+
+See the section DBURL below.
+
+@item @emph{commands}
+@anchor{@emph{commands}}
+
+The SQL commands to run. Each argument will have a newline
+appended.
+
+Example: "SELECT * FROM foo;" "SELECT * FROM bar;"
+
+If the arguments contain '\n' or '\x0a' this will be replaced with a
+newline:
+
+Example: "SELECT * FROM foo;\n SELECT * FROM bar;"
+
+If no commands are given SQL is read from the keyboard or STDIN.
+
+Example: echo 'SELECT * FROM foo;' | sql mysql:///
+
+@item @strong{--db-size}
+@anchor{@strong{--db-size}}
+
+@item @strong{--dbsize}
+@anchor{@strong{--dbsize}}
+
+Size of database. Show the size of the database on disk. For Oracle
+this requires access to read the table @emph{dba_data_files} - the user
+@emph{system} has that.
+
+@item @strong{--help}
+@anchor{@strong{--help}}
+
+@item @strong{-h}
+@anchor{@strong{-h}}
+
+Print a summary of the options to GNU @strong{sql} and exit.
+
+@item @strong{--html}
+@anchor{@strong{--html}}
+
+HTML output. Turn on HTML tabular output.
+
+@item @strong{--show-processlist}
+@anchor{@strong{--show-processlist}}
+
+@item @strong{--proclist}
+@anchor{@strong{--proclist}}
+
+@item @strong{--listproc}
+@anchor{@strong{--listproc}}
+
+Show the list of running queries.
+
+@item @strong{--show-databases}
+@anchor{@strong{--show-databases}}
+
+@item @strong{--showdbs}
+@anchor{@strong{--showdbs}}
+
+@item @strong{--list-databases}
+@anchor{@strong{--list-databases}}
+
+@item @strong{--listdbs}
+@anchor{@strong{--listdbs}}
+
+List the databases (table spaces) in the database.
+
+@item @strong{--show-tables}
+@anchor{@strong{--show-tables}}
+
+@item @strong{--list-tables}
+@anchor{@strong{--list-tables}}
+
+@item @strong{--table-list}
+@anchor{@strong{--table-list}}
+
+List the tables in the database.
+
+@item @strong{--noheaders}
+@anchor{@strong{--noheaders}}
+
+@item @strong{--no-headers}
+@anchor{@strong{--no-headers}}
+
+@item @strong{-n}
+@anchor{@strong{-n}}
+
+Remove headers and footers and print only tuples. Bug in Oracle: it
+still prints number of rows found.
+
+@item @strong{-p} @emph{pass-through}
+@anchor{@strong{-p} @emph{pass-through}}
+
+The string following -p will be given to the database connection
+program as arguments. Multiple -p's will be joined with
+space. Example: pass '-U' and the user name to the program:
+
+@emph{-p "-U scott"} can also be written @emph{-p -U -p scott}.
+
+@item @strong{-r}
+@anchor{@strong{-r}}
+
+Try 3 times. Short version of @emph{--retries 3}.
+
+@item @strong{--retries} @emph{ntimes}
+@anchor{@strong{--retries} @emph{ntimes}}
+
+Try @emph{ntimes} times. If the client program returns with an error,
+retry the command. Default is @emph{--retries 1}.
+
+@item @strong{--sep} @emph{string}
+@anchor{@strong{--sep} @emph{string}}
+
+@item @strong{-s} @emph{string}
+@anchor{@strong{-s} @emph{string}}
+
+Field separator. Use @emph{string} as separator between columns.
+
+@item @strong{--skip-first-line}
+@anchor{@strong{--skip-first-line}}
+
+Do not use the first line of input (used by GNU @strong{sql} itself
+when called with @strong{--shebang}).
+
+@item @strong{--table-size}
+@anchor{@strong{--table-size}}
+
+@item @strong{--tablesize}
+@anchor{@strong{--tablesize}}
+
+Size of tables. Show the size of the tables in the database.
+
+@item @strong{--verbose}
+@anchor{@strong{--verbose}}
+
+@item @strong{-v}
+@anchor{@strong{-v}}
+
+Print which command is sent.
+
+@item @strong{--version}
+@anchor{@strong{--version}}
+
+@item @strong{-V}
+@anchor{@strong{-V}}
+
+Print the version GNU @strong{sql} and exit.
+
+@item @strong{--shebang}
+@anchor{@strong{--shebang}}
+
+@item @strong{-Y}
+@anchor{@strong{-Y}}
+
+GNU @strong{sql} can be called as a shebang (#!) command as the first line of a script. Like this:
+
+@verbatim
+  #!/usr/bin/sql -Y mysql:///
+
+  SELECT * FROM foo;
+@end verbatim
+
+For this to work @strong{--shebang} or @strong{-Y} must be set as the first option.
+
+@end table
+
+@node DBURL
+@chapter DBURL
+
+A DBURL has the following syntax:
+[sql:]vendor://
+[[user][:password]@@][host][:port]/[database][?sqlquery]
+
+To quote special characters use %-encoding specified in
+http://tools.ietf.org/html/rfc3986#section-2.1 (E.g. a password
+containing '/' would contain '%2F').
+
+Examples:
+ mysql://scott:tiger@@my.example.com/mydb
+ sql:oracle://scott:tiger@@ora.example.com/xe
+ postgresql://scott:tiger@@pg.example.com/pgdb
+ pg:///
+ postgresqlssl://scott@@pg.example.com:3333/pgdb
+ sql:sqlite2:////tmp/db.sqlite?SELECT * FROM foo;
+ sqlite3:///../db.sqlite3?SELECT%20*%20FROM%20foo;
+
+Currently supported vendors: MySQL (mysql), MySQL with SSL (mysqls,
+mysqlssl), Oracle (oracle, ora), PostgreSQL (postgresql, pg, pgsql,
+postgres), PostgreSQL with SSL (postgresqlssl, pgs, pgsqlssl,
+postgresssl, pgssl, postgresqls, pgsqls, postgress), SQLite2 (sqlite,
+sqlite2), SQLite3 (sqlite3).
+
+Aliases must start with ':' and are read from
+/etc/sql/aliases and ~/.sql/aliases. The user's own
+~/.sql/aliases should only be readable by the user.
+
+Example of aliases:
+
+@verbatim
+ :myalias1 pg://scott:tiger@pg.example.com/pgdb
+ :myalias2 ora://scott:tiger@ora.example.com/xe
+ # Short form of mysql://`whoami`:nopassword@localhost:3306/`whoami`
+ :myalias3 mysql:///
+ # Short form of mysql://`whoami`:nopassword@localhost:33333/mydb
+ :myalias4 mysql://:33333/mydb
+ # Alias for an alias
+ :m      :myalias4
+ # the sortest alias possible
+ :       sqlite2:////tmp/db.sqlite
+ # Including an SQL query
+ :query  sqlite:////tmp/db.sqlite?SELECT * FROM foo;
+@end verbatim
+
+@node EXAMPLES
+@chapter EXAMPLES
+
+@menu
+* Get an interactive prompt::
+* Run a query::
+* Copy a PostgreSQL database::
+* Empty all tables in a MySQL database::
+* Drop all tables in a PostgreSQL database::
+* Run as a script::
+* Use --colsep to process multiple columns::
+* Retry if the connection fails::
+* Get info about the running database system::
+@end menu
+
+@node Get an interactive prompt
+@section Get an interactive prompt
+
+The most basic use of GNU @strong{sql} is to get an interactive prompt:
+
+@strong{sql sql:oracle://scott:tiger@@ora.example.com/xe}
+
+If you have setup an alias you can do:
+
+@strong{sql :myora}
+
+@node Run a query
+@section Run a query
+
+To run a query directly from the command line:
+
+@strong{sql :myalias "SELECT * FROM foo;"}
+
+Oracle requires newlines after each statement. This can be done like
+this:
+
+@strong{sql :myora "SELECT * FROM foo;" "SELECT * FROM bar;"}
+
+Or this:
+
+@strong{sql :myora "SELECT * FROM foo;\nSELECT * FROM bar;"}
+
+@node Copy a PostgreSQL database
+@section Copy a PostgreSQL database
+
+To copy a PostgreSQL database use pg_dump to generate the dump and GNU
+@strong{sql} to import it:
+
+@strong{pg_dump pg_database | sql pg://scott:tiger@@pg.example.com/pgdb}
+
+@node Empty all tables in a MySQL database
+@section Empty all tables in a MySQL database
+
+Using GNU @strong{parallel} it is easy to empty all tables without dropping them:
+
+@strong{sql -n mysql:/// 'show tables' | parallel sql mysql:/// DELETE FROM @{@};}
+
+@node Drop all tables in a PostgreSQL database
+@section Drop all tables in a PostgreSQL database
+
+To drop all tables in a PostgreSQL database do:
+
+@strong{sql -n pg:/// '\dt' | parallel --colsep '\|' -r sql pg:/// DROP TABLE @{2@};}
+
+@node Run as a script
+@section Run as a script
+
+Instead of doing:
+
+@strong{sql mysql:/// < sqlfile}
+
+you can combine the sqlfile with the DBURL to make a
+UNIX-script. Create a script called @emph{demosql}:
+
+@strong{#!/usr/bin/sql -Y mysql:///}
+
+@strong{SELECT * FROM foo;}
+
+Then do:
+
+@strong{chmod +x demosql; ./demosql}
+
+@node Use --colsep to process multiple columns
+@section Use --colsep to process multiple columns
+
+Use GNU @strong{parallel}'s @strong{--colsep} to separate columns:
+
+@strong{sql -s '\t' :myalias 'SELECT * FROM foo;' | parallel --colsep '\t' do_stuff @{4@} @{1@}}
+
+@node Retry if the connection fails
+@section Retry if the connection fails
+
+If the access to the database fails occasionally @strong{--retries} can help
+make sure the query succeeds:
+
+@strong{sql --retries 5 :myalias 'SELECT * FROM really_big_foo;'}
+
+@node Get info about the running database system
+@section Get info about the running database system
+
+Show how big the database is:
+
+@strong{sql --db-size :myalias}
+
+List the tables:
+
+@strong{sql --list-tables :myalias}
+
+List the size of the tables:
+
+@strong{sql --table-size :myalias}
+
+List the running processes:
+
+@strong{sql --show-processlist :myalias}
+
+@node REPORTING BUGS
+@chapter REPORTING BUGS
+
+GNU @strong{sql} is part of GNU @strong{parallel}. Report bugs to <bug-parallel@@gnu.org>.
+
+@node AUTHOR
+@chapter AUTHOR
+
+When using GNU @strong{sql} for a publication please cite:
+
+O. Tange (2011): GNU SQL - A Command Line Tool for Accessing Different
+Databases Using DBURLs, ;login: The USENIX Magazine, April 2011:29-32.
+
+Copyright (C) 2008,2009,2010 Ole Tange http://ole.tange.dk
+
+Copyright (C) 2010,2011,2012,2013,2014,2015,2016,2017 Ole Tange,
+http://ole.tange.dk and Free Software Foundation, Inc.
+
+@node LICENSE
+@chapter LICENSE
+
+Copyright (C) 2007,2008,2009,2010,2011 Free Software Foundation, Inc.
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+at your option any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+@menu
+* Documentation license I::
+* Documentation license II::
+@end menu
+
+@node Documentation license I
+@section Documentation license I
+
+Permission is granted to copy, distribute and/or modify this documentation
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the file fdl.txt.
+
+@node Documentation license II
+@section Documentation license II
+
+You are free:
+
+@table @asis
+@item @strong{to Share}
+@anchor{@strong{to Share}}
+
+to copy, distribute and transmit the work
+
+@item @strong{to Remix}
+@anchor{@strong{to Remix}}
+
+to adapt the work
+
+@end table
+
+Under the following conditions:
+
+@table @asis
+@item @strong{Attribution}
+@anchor{@strong{Attribution}}
+
+You must attribute the work in the manner specified by the author or
+licensor (but not in any way that suggests that they endorse you or
+your use of the work).
+
+@item @strong{Share Alike}
+@anchor{@strong{Share Alike}}
+
+If you alter, transform, or build upon this work, you may distribute
+the resulting work only under the same, similar or a compatible
+license.
+
+@end table
+
+With the understanding that:
+
+@table @asis
+@item @strong{Waiver}
+@anchor{@strong{Waiver}}
+
+Any of the above conditions can be waived if you get permission from
+the copyright holder.
+
+@item @strong{Public Domain}
+@anchor{@strong{Public Domain}}
+
+Where the work or any of its elements is in the public domain under
+applicable law, that status is in no way affected by the license.
+
+@item @strong{Other Rights}
+@anchor{@strong{Other Rights}}
+
+In no way are any of the following rights affected by the license:
+
+@itemize
+@item Your fair dealing or fair use rights, or other applicable
+copyright exceptions and limitations;
+
+@item The author's moral rights;
+
+@item Rights other persons may have either in the work itself or in
+how the work is used, such as publicity or privacy rights.
+
+@end itemize
+
+@item @strong{Notice}
+@anchor{@strong{Notice}}
+
+For any reuse or distribution, you must make clear to others the
+license terms of this work.
+
+@end table
+
+A copy of the full license is included in the file as cc-by-sa.txt.
+
+@node DEPENDENCIES
+@chapter DEPENDENCIES
+
+GNU @strong{sql} uses Perl. If @strong{mysql} is installed, MySQL dburls will
+work. If @strong{psql} is installed, PostgreSQL dburls will work.  If
+@strong{sqlite} is installed, SQLite2 dburls will work.  If @strong{sqlite3} is
+installed, SQLite3 dburls will work. If @strong{sqlplus} is installed,
+Oracle dburls will work. If @strong{rlwrap} is installed, GNU @strong{sql} will
+have a command history for Oracle.
+
+@node FILES
+@chapter FILES
+
+~/.sql/aliases - user's own aliases with DBURLs
+
+/etc/sql/aliases - common aliases with DBURLs
+
+@node SEE ALSO
+@chapter SEE ALSO
+
+@strong{mysql}(1), @strong{psql}(1), @strong{rlwrap}(1), @strong{sqlite}(1), @strong{sqlite3}(1), @strong{sqlplus}(1)
+
+@bye

@@ -1,0 +1,733 @@
+#!/usr/bin/perl -w
+
+=encoding utf8
+
+=head1 NAME
+
+env_parallel - export environment to GNU parallel
+
+
+=head1 SYNOPSIS
+
+B<env_parallel> [options for GNU Parallel]
+
+
+=head1 DESCRIPTION
+
+B<env_parallel> is a shell function that exports the current
+environment to GNU B<parallel>.
+
+If the shell function is not loaded, a dummy script will be run
+instead that explains how to install the function.
+
+B<env_parallel> is beta quality and not production ready, but please
+use it for everyday use and report bugs.
+
+B<env_parallel> is 0.1 sec slower at startup than pure GNU
+B<parallel>, and takes up to 15 ms to start a job.
+
+Due to the problem with environment space (see below) the recommended
+usage is:
+
+  # Record the "clean" environment (this only needs to be run once)
+  env_parallel --record-env
+
+  # Optionally edit ~/.parallel/ignored_vars (only needed once)
+
+  # Define whatever you want to use
+  alias myalias=echo
+  myvar=it
+  myfunc() { myalias $1 $myvar works.; }
+
+  # Use --env _ to only transfer the names not in the "empty" environment
+  env_parallel --env _ -S localhost myfunc ::: Yay,
+
+In B<csh>:
+
+  # Record the "clean" environment (this only needs to be run once)
+  env_parallel --record-env
+
+  # Optionally edit ~/.parallel/ignored_vars (only needed once)
+
+  # Define whatever you want to use
+  alias myalias 'echo \!* $myvar works.'
+  set myvar=it
+
+  # Use --env _ to only transfer the names not in the "empty" environment
+  env_parallel --env _ -S localhost myalias ::: Yay,
+
+
+=head2 Environment space
+
+By default B<env_parallel> will export all environment variables,
+arrays, aliases, functions and shell options (see details for the
+individual shells below).
+
+But this only works if the size of the current environment is smaller
+than the maximal length of a command and smaller than half of the max
+if running remotely. E.g. The max size of Bash's command is 128 KB, so
+B<env_parallel> will fail if 'B<set | wc -c>' is bigger than 128
+KB. Technically the limit is in execve(1) which IPC::open3 uses.
+
+Bash completion functions are well-known for taking up well over 128
+KB of environment space and the primary reason for causing
+B<env_parallel> to fail.
+
+Instead you can use B<--env> to specify which variables, arrays,
+aliases and functions to export as this will only export those with
+the given name. Or follow the recommended usage in shown in
+DESCRIPTION.
+
+
+=head1 OPTIONS
+
+Same as GNU B<parallel>.
+
+
+=head1 SUPPORTED SHELLS
+
+=head2 Ash
+
+B<--env> is supported to export only the variable, or alias with the
+given name. Multiple B<--env>s can be given.
+
+Installation
+
+Put this in $HOME/.profile:
+
+  . `which env_parallel.ash`
+
+E.g. by doing:
+
+  echo '. `which env_parallel.ash`' >> $HOME/.profile
+
+=over 8
+
+=item aliases
+
+  alias myecho='echo aliases'
+  env_parallel myecho ::: work
+  env_parallel -S server myecho ::: work
+  env_parallel --env myecho myecho ::: work
+  env_parallel --env myecho -S server myecho ::: work
+
+=item functions
+
+  ash cannot list defined functions - thus is not supported.
+
+=item variables
+
+  myvar=variables
+  env_parallel echo '$myvar' ::: work
+  env_parallel -S server echo '$myvar' ::: work
+  env_parallel --env myvar echo '$myvar' ::: work
+  env_parallel --env myvar -S server echo '$myvar' ::: work
+
+=item arrays
+
+Arrays are not supported by Ash.
+
+=back
+
+=head2 Bash
+
+B<--env> is supported to export only the variable, alias, function, or
+array with the given name. Multiple B<--env>s can be given.
+
+Installation
+
+Put this in $HOME/.bashrc:
+
+  . `which env_parallel.bash`
+
+E.g. by doing:
+
+  echo '. `which env_parallel.bash`' >> $HOME/.bashrc
+
+=over 8
+
+=item aliases
+
+  alias myecho='echo aliases'
+  env_parallel myecho ::: work
+  env_parallel -S server myecho ::: work
+  env_parallel --env myecho myecho ::: work
+  env_parallel --env myecho -S server myecho ::: work
+
+=item functions
+
+  myfunc() { echo functions $*; }
+  env_parallel myfunc ::: work
+  env_parallel -S server myfunc ::: work
+  env_parallel --env myfunc myfunc ::: work
+  env_parallel --env myfunc -S server myfunc ::: work
+
+=item variables
+
+  myvar=variables
+  env_parallel echo '$myvar' ::: work
+  env_parallel -S server echo '$myvar' ::: work
+  env_parallel --env myvar echo '$myvar' ::: work
+  env_parallel --env myvar -S server echo '$myvar' ::: work
+
+=item arrays
+
+  myarray=(arrays work, too)
+  env_parallel -k echo '${myarray[{}]}' ::: 0 1 2
+  env_parallel -k -S server echo '${myarray[{}]}' ::: 0 1 2
+  env_parallel -k --env myarray echo '${myarray[{}]}' ::: 0 1 2
+  env_parallel -k --env myarray -S server echo '${myarray[{}]}' ::: 0 1 2
+
+=back
+
+
+=head2 csh
+
+B<--env> is supported to export only the variable, alias, or
+array with the given name. Multiple B<--env>s can be given.
+
+B<env_parallel> for B<csh> breaks B<$PARALLEL>, so do not use
+B<$PARALLEL>.
+
+Installation
+
+Put this in $HOME/.cshrc:
+
+  source `which env_parallel.csh`
+
+E.g. by doing:
+
+  echo 'source `which env_parallel.csh`' >> $HOME/.cshrc
+
+=over 8
+
+=item aliases
+
+  alias myecho 'echo aliases'
+  env_parallel myecho ::: work
+  env_parallel -S server myecho ::: work
+  env_parallel --env myecho myecho ::: work
+  env_parallel --env myecho -S server myecho ::: work
+
+=item functions
+
+Not supported by B<csh>.
+
+=item variables
+
+  set myvar=variables
+  env_parallel echo '$myvar' ::: work
+  env_parallel -S server echo '$myvar' ::: work
+  env_parallel --env myvar echo '$myvar' ::: work
+  env_parallel --env myvar -S server echo '$myvar' ::: work
+
+=item arrays with no special chars
+
+  set myarray=(arrays work, too)
+  env_parallel -k echo \$'{myarray[{}]}' ::: 1 2 3
+  env_parallel -k -S server echo \$'{myarray[{}]}' ::: 1 2 3
+  env_parallel -k --env myarray echo \$'{myarray[{}]}' ::: 1 2 3
+  env_parallel -k --env myarray -S server echo \$'{myarray[{}]}' ::: 1 2 3
+
+=back
+
+
+=head2 Dash
+
+B<--env> is supported to export only the variable, or alias with the
+given name. Multiple B<--env>s can be given.
+
+Installation
+
+Put this in $HOME/.profile:
+
+  . `which env_parallel.dash`
+
+E.g. by doing:
+
+  echo '. `which env_parallel.dash`' >> $HOME/.profile
+
+=over 8
+
+=item aliases
+
+  alias myecho='echo aliases'
+  env_parallel myecho ::: work
+  env_parallel -S server myecho ::: work
+  env_parallel --env myecho myecho ::: work
+  env_parallel --env myecho -S server myecho ::: work
+
+=item functions
+
+  dash cannot list defined functions - thus is not supported.
+
+=item variables
+
+  myvar=variables
+  env_parallel echo '$myvar' ::: work
+  env_parallel -S server echo '$myvar' ::: work
+  env_parallel --env myvar echo '$myvar' ::: work
+  env_parallel --env myvar -S server echo '$myvar' ::: work
+
+=item arrays
+
+  dash does not support arrays.
+
+=back
+
+
+=head2 fish
+
+B<--env> is supported to export only the variable, alias, function, or
+array with the given name. Multiple B<--env>s can be given.
+
+Installation
+
+Put this in $HOME/.config/fish/config.fish:
+
+  source (which env_parallel.fish)
+
+E.g. by doing:
+
+  echo 'source (which env_parallel.fish)' >> $HOME/.config/fish/config.fish
+
+=over 8
+
+=item aliases
+
+  alias myecho 'echo aliases'
+  env_parallel myecho ::: work
+  env_parallel -S server myecho ::: work
+  env_parallel --env myecho myecho ::: work
+  env_parallel --env myecho -S server myecho ::: work
+
+=item functions
+
+  function myfunc
+    echo functions $argv
+  end
+  env_parallel myfunc ::: work
+  env_parallel -S server myfunc ::: work
+  env_parallel --env myfunc myfunc ::: work
+  env_parallel --env myfunc -S server myfunc ::: work
+
+=item variables
+
+  set myvar variables
+  env_parallel echo '$myvar' ::: work
+  env_parallel -S server echo '$myvar' ::: work
+  env_parallel --env myvar echo '$myvar' ::: work
+  env_parallel --env myvar -S server echo '$myvar' ::: work
+
+=item arrays
+
+  set myarray arrays work, too
+  env_parallel -k echo '$myarray[{}]' ::: 1 2 3
+  env_parallel -k -S server echo '$myarray[{}]' ::: 1 2 3
+  env_parallel -k --env myarray echo '$myarray[{}]' ::: 1 2 3
+  env_parallel -k --env myarray -S server echo '$myarray[{}]' ::: 1 2 3
+
+=back
+
+
+=head2 ksh
+
+B<--env> is supported to export only the variable, alias, function, or
+array with the given name. Multiple B<--env>s can be given.
+
+Installation
+
+Put this in $HOME/.kshrc:
+
+  source `which env_parallel.ksh`
+
+E.g. by doing:
+
+  echo 'source `which env_parallel.ksh`' >> $HOME/.kshrc
+
+=over 8
+
+=item aliases
+
+  alias myecho='echo aliases'
+  env_parallel myecho ::: work
+  env_parallel -S server myecho ::: work
+  env_parallel --env myecho myecho ::: work
+  env_parallel --env myecho -S server myecho ::: work
+
+=item functions
+
+  myfunc() { echo functions $*; }
+  env_parallel myfunc ::: work
+  env_parallel -S server myfunc ::: work
+  env_parallel --env myfunc myfunc ::: work
+  env_parallel --env myfunc -S server myfunc ::: work
+
+=item variables
+
+  myvar=variables
+  env_parallel echo '$myvar' ::: work
+  env_parallel -S server echo '$myvar' ::: work
+  env_parallel --env myvar echo '$myvar' ::: work
+  env_parallel --env myvar -S server echo '$myvar' ::: work
+
+=item arrays
+
+  myarray=(arrays work, too)
+  env_parallel -k echo '${myarray[{}]}' ::: 0 1 2
+  env_parallel -k -S server echo '${myarray[{}]}' ::: 0 1 2
+  env_parallel -k --env myarray echo '${myarray[{}]}' ::: 0 1 2
+  env_parallel -k --env myarray -S server echo '${myarray[{}]}' ::: 0 1 2
+
+=back
+
+
+=head2 pdksh
+
+B<--env> is supported to export only the variable, alias, function, or
+array with the given name. Multiple B<--env>s can be given.
+
+Installation
+
+Put this in $HOME/.profile:
+
+  source `which env_parallel.pdksh`
+
+E.g. by doing:
+
+  echo 'source `which env_parallel.pdksh`' >> $HOME/.profile
+
+=over 8
+
+=item aliases
+
+  alias myecho="echo aliases";
+  env_parallel myecho ::: work;
+  env_parallel -S server myecho ::: work;
+  env_parallel --env myecho myecho ::: work;
+  env_parallel --env myecho -S server myecho ::: work
+
+=item functions
+
+  myfunc() { echo functions $*; };
+  env_parallel myfunc ::: work;
+  env_parallel -S server myfunc ::: work;
+  env_parallel --env myfunc myfunc ::: work;
+  env_parallel --env myfunc -S server myfunc ::: work
+
+=item variables
+
+  myvar=variables;
+  env_parallel echo "\$myvar" ::: work;
+  env_parallel -S server echo "\$myvar" ::: work;
+  env_parallel --env myvar echo "\$myvar" ::: work;
+  env_parallel --env myvar -S server echo "\$myvar" ::: work
+
+=item arrays
+
+  myarray=(arrays work, too);
+  env_parallel -k echo "\${myarray[{}]}" ::: 0 1 2;
+  env_parallel -k -S server echo "\${myarray[{}]}" ::: 0 1 2;
+  env_parallel -k --env myarray echo "\${myarray[{}]}" ::: 0 1 2;
+  env_parallel -k --env myarray -S server echo "\${myarray[{}]}" ::: 0 1 2
+
+=back
+
+
+=head2 sh
+
+B<--env> is supported to export only the variable, or alias with the
+given name. Multiple B<--env>s can be given.
+
+Installation
+
+Put this in $HOME/.profile:
+
+  . `which env_parallel.sh`
+
+E.g. by doing:
+
+  echo '. `which env_parallel.sh`' >> $HOME/.profile
+
+=over 8
+
+=item aliases
+
+  sh does not support aliases.
+
+=item functions
+
+  myfunc() { echo functions $*; }
+  env_parallel myfunc ::: work
+  env_parallel -S server myfunc ::: work
+  env_parallel --env myfunc myfunc ::: work
+  env_parallel --env myfunc -S server myfunc ::: work
+
+=item variables
+
+  myvar=variables
+  env_parallel echo '$myvar' ::: work
+  env_parallel -S server echo '$myvar' ::: work
+  env_parallel --env myvar echo '$myvar' ::: work
+  env_parallel --env myvar -S server echo '$myvar' ::: work
+
+=item arrays
+
+  sh does not support arrays.
+
+=back
+
+
+=head2 tcsh
+
+B<--env> is supported to export only the variable, alias, or
+array with the given name. Multiple B<--env>s can be given.
+
+B<env_parallel> for B<tcsh> breaks B<$PARALLEL>, so do not use
+B<$PARALLEL>.
+
+Installation
+
+Put this in $HOME/.tcshrc:
+
+  source `which env_parallel.tcsh`
+
+E.g. by doing:
+
+  echo 'source `which env_parallel.tcsh`' >> $HOME/.tcshrc
+
+=over 8
+
+=item aliases
+
+  alias myecho 'echo aliases'
+  env_parallel myecho ::: work
+  env_parallel -S server myecho ::: work
+  env_parallel --env myecho myecho ::: work
+  env_parallel --env myecho -S server myecho ::: work
+
+=item functions
+
+Not supported by B<tcsh>.
+
+=item variables
+
+  set myvar=variables
+  env_parallel echo '$myvar' ::: work
+  env_parallel -S server echo '$myvar' ::: work
+  env_parallel --env myvar echo '$myvar' ::: work
+  env_parallel --env myvar -S server echo '$myvar' ::: work
+
+=item arrays with no special chars
+
+  set myarray=(arrays work, too)
+  env_parallel -k echo \$'{myarray[{}]}' ::: 1 2 3
+  env_parallel -k -S server echo \$'{myarray[{}]}' ::: 1 2 3
+  env_parallel -k --env myarray echo \$'{myarray[{}]}' ::: 1 2 3
+  env_parallel -k --env myarray -S server echo \$'{myarray[{}]}' ::: 1 2 3
+
+=back
+
+
+=head2 Zsh
+
+B<--env> is supported to export only the variable, alias, function, or
+array with the given name. Multiple B<--env>s can be given.
+
+Installation
+
+Put this in $HOME/.zshrc:
+
+  . `which env_parallel.zsh`
+
+E.g. by doing:
+
+  echo '. `which env_parallel.zsh`' >> $HOME/.zshenv
+
+=over 8
+
+=item aliases
+
+  alias myecho='echo aliases'
+  env_parallel myecho ::: work
+  env_parallel -S server myecho ::: work
+  env_parallel --env myecho myecho ::: work
+  env_parallel --env myecho -S server myecho ::: work
+
+=item functions
+
+  myfunc() { echo functions $*; }
+  env_parallel myfunc ::: work
+  env_parallel -S server myfunc ::: work
+  env_parallel --env myfunc myfunc ::: work
+  env_parallel --env myfunc -S server myfunc ::: work
+
+=item variables
+
+  myvar=variables
+  env_parallel echo '$myvar' ::: work
+  env_parallel -S server echo '$myvar' ::: work
+  env_parallel --env myvar echo '$myvar' ::: work
+  env_parallel --env myvar -S server echo '$myvar' ::: work
+
+=item arrays
+
+  myarray=(arrays work, too)
+  env_parallel -k echo '${myarray[{}]}' ::: 1 2 3
+  env_parallel -k -S server echo '${myarray[{}]}' ::: 1 2 3
+  env_parallel -k --env myarray echo '${myarray[{}]}' ::: 1 2 3
+  env_parallel -k --env myarray -S server echo '${myarray[{}]}' ::: 1 2 3
+
+=back
+
+
+=head1 EXIT STATUS
+
+Same as GNU B<parallel>.
+
+
+=head1 AUTHOR
+
+When using GNU B<parallel> for a publication please cite:
+
+O. Tange (2011): GNU Parallel - The Command-Line Power Tool, ;login:
+The USENIX Magazine, February 2011:42-47.
+
+This helps funding further development; and it won't cost you a cent.
+If you pay 10000 EUR you should feel free to use GNU Parallel without citing.
+
+Copyright (C) 2007-10-18 Ole Tange, http://ole.tange.dk
+
+Copyright (C) 2008,2009,2010 Ole Tange, http://ole.tange.dk
+
+Copyright (C) 2010,2011,2012,2013,2014,2015,2016,2017 Ole Tange,
+http://ole.tange.dk and Free Software Foundation, Inc.
+
+Parts of the manual concerning B<xargs> compatibility is inspired by
+the manual of B<xargs> from GNU findutils 4.4.2.
+
+
+=head1 LICENSE
+
+Copyright (C) 2016
+Ole Tange and Free Software Foundation, Inc.
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+at your option any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+=head2 Documentation license I
+
+Permission is granted to copy, distribute and/or modify this documentation
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the file fdl.txt.
+
+=head2 Documentation license II
+
+You are free:
+
+=over 9
+
+=item B<to Share>
+
+to copy, distribute and transmit the work
+
+=item B<to Remix>
+
+to adapt the work
+
+=back
+
+Under the following conditions:
+
+=over 9
+
+=item B<Attribution>
+
+You must attribute the work in the manner specified by the author or
+licensor (but not in any way that suggests that they endorse you or
+your use of the work).
+
+=item B<Share Alike>
+
+If you alter, transform, or build upon this work, you may distribute
+the resulting work only under the same, similar or a compatible
+license.
+
+=back
+
+With the understanding that:
+
+=over 9
+
+=item B<Waiver>
+
+Any of the above conditions can be waived if you get permission from
+the copyright holder.
+
+=item B<Public Domain>
+
+Where the work or any of its elements is in the public domain under
+applicable law, that status is in no way affected by the license.
+
+=item B<Other Rights>
+
+In no way are any of the following rights affected by the license:
+
+=over 2
+
+=item *
+
+Your fair dealing or fair use rights, or other applicable
+copyright exceptions and limitations;
+
+=item *
+
+The author's moral rights;
+
+=item *
+
+Rights other persons may have either in the work itself or in
+how the work is used, such as publicity or privacy rights.
+
+=back
+
+=back
+
+=over 9
+
+=item B<Notice>
+
+For any reuse or distribution, you must make clear to others the
+license terms of this work.
+
+=back
+
+A copy of the full license is included in the file as cc-by-sa.txt.
+
+
+=head1 DEPENDENCIES
+
+B<env_parallel> uses GNU B<parallel>.
+
+
+=head1 SEE ALSO
+
+B<parallel>(1), 
+
+B<bash>(1), B<csh>(1), B<fish>(1), B<ksh>(1), B<pdksh>(1) B<tcsh>(1),
+B<zsh>(1).
+
+
+=cut

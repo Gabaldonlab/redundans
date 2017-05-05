@@ -1,0 +1,425 @@
+#!/usr/bin/perl -w
+
+=head1 NAME
+
+niceload - slow down a program when the load average is above a certain limit
+
+=head1 SYNOPSIS
+
+B<niceload> [-v] [-h] [-n nice] [-I io] [-L load] [-M mem] [-N]
+[--sensor program] [-t time] [-s time|-f factor]
+( command | -p PID [-p PID ...] | --prg program )
+
+
+=head1 DESCRIPTION
+
+GNU B<niceload> will slow down a program when the load average (or
+other system activity) is above a certain limit. When the limit is
+reached the program will be suspended for some time. Then resumed
+again for some time.  Then the load average is checked again and we
+start over.
+
+Instead of load average B<niceload> can also look at disk I/O, amount
+of free memory, or swapping activity.
+
+If the load is 3.00 then the default settings will run a program
+like this:
+
+run 1 second, suspend (3.00-1.00) seconds, run 1 second, suspend
+(3.00-1.00) seconds, run 1 second, ...
+
+=head1 OPTIONS
+
+=over 9
+
+=item B<-B>
+
+=item B<--battery>
+
+Suspend if the system is running on battery. Shorthand for: -l -1 --sensor 'cat /sys/class/power_supply/BAT0/status /proc/acpi/battery/BAT0/state 2>/dev/null |grep -i -q discharging; echo $?'
+
+
+=item B<-f> I<FACTOR>
+
+=item B<--factor> I<FACTOR>
+
+Suspend time factor. Dynamically set B<-s> as amount over limit *
+factor. Default is 1.
+
+
+=item B<-H>
+
+=item B<--hard>
+
+Hard limit. B<--hard> will suspend the process until the system is
+under the limits. The default is B<--soft>.
+
+
+=item B<--io> I<iolimit>
+
+=item B<-I> I<iolimit>
+
+Limit for I/O. The amount of disk I/O will be computed as a value 0 -
+10, where 0 is no I/O and 10 is at least one disk is 100% saturated.
+
+B<--io> will set both B<--start-io> and B<run-io>.
+
+
+=item B<--load> I<loadlimit>
+
+=item B<-L> I<loadlimit>
+
+Limit for load average.
+
+B<--load> will set both B<--start-load> and B<run-load>.
+
+
+=item B<--mem> I<memlimit>
+
+=item B<-M> I<memlimit>
+
+Limit for free memory. This is the amount of bytes available as free
++ cache. This limit is treated opposite other limits: If the system
+is above the limit the program will run, if it is below the limit the
+program will stop
+
+I<memlimit> can be postfixed with K, M, G, T, or P which would
+multiply the size with 1024, 1048576, 1073741824, or 1099511627776
+respectively.
+
+B<--mem> will set both B<--start-mem> and B<run-mem>.
+
+
+=item B<--noswap>
+
+=item B<-N>
+
+No swapping. If the system is swapping both in and out it is a good
+indication that the system is memory stressed.
+
+B<--noswap> is over limit if the system is swapping both in and out.
+
+B<--noswap> will set both B<--start-noswap> and B<run-noswap>.
+
+
+=item B<--net>
+
+Shorthand for B<--nethops 3>.
+
+
+=item B<--nethops> I<h>
+
+Network nice. Pause if the internet connection is overloaded.
+
+B<niceload> finds a router I<h> hops closer to the internet. It
+B<ping>s this every second. If the latency is more than 50% bigger
+than the median, it is regarded as being over the limit.
+
+B<--nethops> can be combined with B<--hard>. Without B<--hard> the
+program may be able to queue up so much traffic that it will take
+longer than the B<--suspend> time to clear it. B<--hard> is useful for
+traffic that does not break by being suspended for a longer time.
+
+B<--nethops> can be combined with a high B<--suspend>. This way a
+program can be allowed to do a bit of traffic now and then. This is
+useful to keep the connection alive.
+
+
+=item B<-n> I<niceness>
+
+=item B<--nice> I<niceness>
+
+Sets niceness. See B<nice>(1).
+
+
+=item B<-p> I<PID>
+
+=item B<--pid> I<PID>
+
+Process ID of process to suspend. You can specify multiple process IDs
+with multiple B<-p> I<PID>.
+
+
+=item B<--prg> I<program>
+
+=item B<--program> I<program>
+
+Name of running program to suspend. You can specify multiple programs
+with multiple B<--prg> I<program>. If no processes with the name
+I<program> is found, B<niceload> with search for substrings containing
+I<program>.
+
+
+=item B<--quote>
+
+=item B<-q>
+
+Quote the command line. Useful if the command contains chars like *,
+$, >, and " that should not be interpreted by the shell.
+
+
+=item B<--run-io> I<iolimit>
+
+=item B<--ri> I<iolimit>
+
+=item B<--run-load> I<loadlimit>
+
+=item B<--rl> I<loadlimit>
+
+=item B<--run-mem> I<memlimit>
+
+=item B<--rm> I<memlimit>
+
+Run limit. The running program will be slowed down if the system is
+above the limit. See: B<--io>, B<--load>, B<--mem>, B<--noswap>.
+
+
+=item B<--sensor> I<sensor program>
+
+Read sensor. Use I<sensor program> to read a sensor.
+
+This will keep the CPU temperature below 80 deg C on GNU/Linux:
+
+  niceload -l 80000 -f 0.001 --sensor 'sort -n /sys/devices/platform/coretemp*/temp*_input' gzip *
+
+This will stop if the disk space < 100000.
+
+  niceload -H -l -100000 --sensor "df . | awk '{ print \$4 }'" echo
+
+
+=item B<--start-io> I<iolimit>
+
+=item B<--si> I<iolimit>
+
+=item B<--start-load> I<loadlimit>
+
+=item B<--sl> I<loadlimit>
+
+=item B<--start-mem> I<memlimit>
+
+=item B<--sm> I<memlimit>
+
+Start limit. The program will not start until the system is below the
+limit. See: B<--io>, B<--load>, B<--mem>, B<--noswap>.
+
+
+=item B<--soft>
+
+=item B<-S>
+
+Soft limit. B<niceload> will suspend a process for a while and then
+let it run for a second thus only slowing down a process while the
+system is over one of the given limits. This is the default.
+
+
+=item B<--suspend> I<SEC>
+
+=item B<-s> I<SEC>
+
+Suspend time. Suspend the command this many seconds when the max load
+average is reached.
+
+
+=item B<--recheck> I<SEC>
+
+=item B<-t> I<SEC>
+
+Recheck load time. Sleep SEC seconds before checking load
+again. Default is 1 second.
+
+
+=item B<--verbose>
+
+=item B<-v>
+
+Verbose. Print some extra output on what is happening. Use B<-v> until
+you know what your are doing.
+
+=back
+
+=head1 EXAMPLE: See niceload in action
+
+In terminal 1 run: top
+
+In terminal 2 run:
+
+B<niceload -q perl -e '$|=1;do{$l==$r or print "."; $l=$r}until(($r=time-$^T)>>B<50)'>
+
+This will print a '.' every second for 50 seconds and eat a lot of
+CPU. When the load rises to 1.0 the process is suspended.
+
+
+=head1 EXAMPLE: Run updatedb
+
+Running updatedb can often starve the system for disk I/O and thus result in a high load.
+
+Run updatedb but suspend updatedb if the load is above 2.00:
+
+B<niceload -L 2 updatedb>
+
+
+=head1 EXAMPLE: Run rsync
+
+rsync can just like updatedb starve the system for disk I/O and thus result in a high load.
+
+Run rsync but keep load below 3.4. If load reaches 7 sleep for
+(7-3.4)*12 seconds:
+
+B<niceload -L 3.4 -f 12 rsync -Ha /home/ /backup/home/>
+
+
+=head1 EXAMPLE: Ensure enough disk cache
+
+Assume the program B<foo> uses 2 GB files intensively. B<foo> will run
+fast if the files are in disk cache and be slow as a crawl if they are
+not in the cache.
+
+To ensure 2 GB are reserved for disk cache run:
+
+B<niceload --hard --run-mem 2g foo>
+
+This will not guarantee that the 2 GB memory will be used for the
+files for B<foo>, but it will stop B<foo> if the memory for disk cache
+is too low.
+
+
+=head1 ENVIRONMENT VARIABLES
+
+None. In future versions $NICELOAD will be able to contain default settings.
+
+=head1 EXIT STATUS
+
+Exit status should be the same as the command being run (untested).
+
+=head1 REPORTING BUGS
+
+Report bugs to <bug-parallel@gnu.org>.
+
+=head1 AUTHOR
+
+Copyright (C) 2004-11-19 Ole Tange, http://ole.tange.dk
+
+Copyright (C) 2005,2006,2006,2008,2009,2010 Ole Tange, http://ole.tange.dk
+
+Copyright (C) 2010,2011,2012,2013,2014,2015,2016,2017 Ole Tange, http://ole.tange.dk and Free
+Software Foundation, Inc.
+
+=head1 LICENSE
+
+Copyright (C) 2010,2011,2012,2013,2014,2015,2016,2017 Free Software
+Foundation, Inc.
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+at your option any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+=head2 Documentation license I
+
+Permission is granted to copy, distribute and/or modify this documentation
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the file fdl.txt.
+
+=head2 Documentation license II
+
+You are free:
+
+=over 9
+
+=item B<to Share>
+
+to copy, distribute and transmit the work
+
+=item B<to Remix>
+
+to adapt the work
+
+=back
+
+Under the following conditions:
+
+=over 9
+
+=item B<Attribution>
+
+You must attribute the work in the manner specified by the author or
+licensor (but not in any way that suggests that they endorse you or
+your use of the work).
+
+=item B<Share Alike>
+
+If you alter, transform, or build upon this work, you may distribute
+the resulting work only under the same, similar or a compatible
+license.
+
+=back
+
+With the understanding that:
+
+=over 9
+
+=item B<Waiver>
+
+Any of the above conditions can be waived if you get permission from
+the copyright holder.
+
+=item B<Public Domain>
+
+Where the work or any of its elements is in the public domain under
+applicable law, that status is in no way affected by the license.
+
+=item B<Other Rights>
+
+In no way are any of the following rights affected by the license:
+
+=over 2
+
+=item *
+
+Your fair dealing or fair use rights, or other applicable
+copyright exceptions and limitations;
+
+=item *
+
+The author's moral rights;
+
+=item *
+
+Rights other persons may have either in the work itself or in
+how the work is used, such as publicity or privacy rights.
+
+=back
+
+=back
+
+=over 9
+
+=item B<Notice>
+
+For any reuse or distribution, you must make clear to others the
+license terms of this work.
+
+=back
+
+A copy of the full license is included in the file as cc-by-sa.txt.
+
+=head1 DEPENDENCIES
+
+GNU B<niceload> uses Perl, and the Perl modules POSIX, and
+Getopt::Long.
+
+=head1 SEE ALSO
+
+B<parallel>(1), B<nice>(1), B<uptime>(1)
+
+=cut

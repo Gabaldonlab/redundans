@@ -1,0 +1,494 @@
+\input texinfo
+@setfilename niceload.info
+
+@documentencoding utf-8
+
+@settitle niceload - slow down a program when the load average is above a certain limit
+
+@node Top
+@top niceload
+
+@menu
+* NAME::
+* SYNOPSIS::
+* DESCRIPTION::
+* OPTIONS::
+* EXAMPLE@asis{:} See niceload in action::
+* EXAMPLE@asis{:} Run updatedb::
+* EXAMPLE@asis{:} Run rsync::
+* EXAMPLE@asis{:} Ensure enough disk cache::
+* ENVIRONMENT VARIABLES::
+* EXIT STATUS::
+* REPORTING BUGS::
+* AUTHOR::
+* LICENSE::
+* DEPENDENCIES::
+* SEE ALSO::
+@end menu
+
+@node NAME
+@chapter NAME
+
+niceload - slow down a program when the load average is above a certain limit
+
+@node SYNOPSIS
+@chapter SYNOPSIS
+
+@strong{niceload} [-v] [-h] [-n nice] [-I io] [-L load] [-M mem] [-N]
+[--sensor program] [-t time] [-s time|-f factor]
+( command | -p PID [-p PID ...] | --prg program )
+
+@node DESCRIPTION
+@chapter DESCRIPTION
+
+GNU @strong{niceload} will slow down a program when the load average (or
+other system activity) is above a certain limit. When the limit is
+reached the program will be suspended for some time. Then resumed
+again for some time.  Then the load average is checked again and we
+start over.
+
+Instead of load average @strong{niceload} can also look at disk I/O, amount
+of free memory, or swapping activity.
+
+If the load is 3.00 then the default settings will run a program
+like this:
+
+run 1 second, suspend (3.00-1.00) seconds, run 1 second, suspend
+(3.00-1.00) seconds, run 1 second, ...
+
+@node OPTIONS
+@chapter OPTIONS
+
+@table @asis
+@item @strong{-B}
+@anchor{@strong{-B}}
+
+@item @strong{--battery}
+@anchor{@strong{--battery}}
+
+Suspend if the system is running on battery. Shorthand for: -l -1 --sensor 'cat /sys/class/power_supply/BAT0/status /proc/acpi/battery/BAT0/state 2>/dev/null |grep -i -q discharging; echo $?'
+
+@item @strong{-f} @emph{FACTOR}
+@anchor{@strong{-f} @emph{FACTOR}}
+
+@item @strong{--factor} @emph{FACTOR}
+@anchor{@strong{--factor} @emph{FACTOR}}
+
+Suspend time factor. Dynamically set @strong{-s} as amount over limit *
+factor. Default is 1.
+
+@item @strong{-H}
+@anchor{@strong{-H}}
+
+@item @strong{--hard}
+@anchor{@strong{--hard}}
+
+Hard limit. @strong{--hard} will suspend the process until the system is
+under the limits. The default is @strong{--soft}.
+
+@item @strong{--io} @emph{iolimit}
+@anchor{@strong{--io} @emph{iolimit}}
+
+@item @strong{-I} @emph{iolimit}
+@anchor{@strong{-I} @emph{iolimit}}
+
+Limit for I/O. The amount of disk I/O will be computed as a value 0 -
+10, where 0 is no I/O and 10 is at least one disk is 100% saturated.
+
+@strong{--io} will set both @strong{--start-io} and @strong{run-io}.
+
+@item @strong{--load} @emph{loadlimit}
+@anchor{@strong{--load} @emph{loadlimit}}
+
+@item @strong{-L} @emph{loadlimit}
+@anchor{@strong{-L} @emph{loadlimit}}
+
+Limit for load average.
+
+@strong{--load} will set both @strong{--start-load} and @strong{run-load}.
+
+@item @strong{--mem} @emph{memlimit}
+@anchor{@strong{--mem} @emph{memlimit}}
+
+@item @strong{-M} @emph{memlimit}
+@anchor{@strong{-M} @emph{memlimit}}
+
+Limit for free memory. This is the amount of bytes available as free
++ cache. This limit is treated opposite other limits: If the system
+is above the limit the program will run, if it is below the limit the
+program will stop
+
+@emph{memlimit} can be postfixed with K, M, G, T, or P which would
+multiply the size with 1024, 1048576, 1073741824, or 1099511627776
+respectively.
+
+@strong{--mem} will set both @strong{--start-mem} and @strong{run-mem}.
+
+@item @strong{--noswap}
+@anchor{@strong{--noswap}}
+
+@item @strong{-N}
+@anchor{@strong{-N}}
+
+No swapping. If the system is swapping both in and out it is a good
+indication that the system is memory stressed.
+
+@strong{--noswap} is over limit if the system is swapping both in and out.
+
+@strong{--noswap} will set both @strong{--start-noswap} and @strong{run-noswap}.
+
+@item @strong{--net}
+@anchor{@strong{--net}}
+
+Shorthand for @strong{--nethops 3}.
+
+@item @strong{--nethops} @emph{h}
+@anchor{@strong{--nethops} @emph{h}}
+
+Network nice. Pause if the internet connection is overloaded.
+
+@strong{niceload} finds a router @emph{h} hops closer to the internet. It
+@strong{ping}s this every second. If the latency is more than 50% bigger
+than the median, it is regarded as being over the limit.
+
+@strong{--nethops} can be combined with @strong{--hard}. Without @strong{--hard} the
+program may be able to queue up so much traffic that it will take
+longer than the @strong{--suspend} time to clear it. @strong{--hard} is useful for
+traffic that does not break by being suspended for a longer time.
+
+@strong{--nethops} can be combined with a high @strong{--suspend}. This way a
+program can be allowed to do a bit of traffic now and then. This is
+useful to keep the connection alive.
+
+@item @strong{-n} @emph{niceness}
+@anchor{@strong{-n} @emph{niceness}}
+
+@item @strong{--nice} @emph{niceness}
+@anchor{@strong{--nice} @emph{niceness}}
+
+Sets niceness. See @strong{nice}(1).
+
+@item @strong{-p} @emph{PID}
+@anchor{@strong{-p} @emph{PID}}
+
+@item @strong{--pid} @emph{PID}
+@anchor{@strong{--pid} @emph{PID}}
+
+Process ID of process to suspend. You can specify multiple process IDs
+with multiple @strong{-p} @emph{PID}.
+
+@item @strong{--prg} @emph{program}
+@anchor{@strong{--prg} @emph{program}}
+
+@item @strong{--program} @emph{program}
+@anchor{@strong{--program} @emph{program}}
+
+Name of running program to suspend. You can specify multiple programs
+with multiple @strong{--prg} @emph{program}. If no processes with the name
+@emph{program} is found, @strong{niceload} with search for substrings containing
+@emph{program}.
+
+@item @strong{--quote}
+@anchor{@strong{--quote}}
+
+@item @strong{-q}
+@anchor{@strong{-q}}
+
+Quote the command line. Useful if the command contains chars like *,
+$, >, and " that should not be interpreted by the shell.
+
+@item @strong{--run-io} @emph{iolimit}
+@anchor{@strong{--run-io} @emph{iolimit}}
+
+@item @strong{--ri} @emph{iolimit}
+@anchor{@strong{--ri} @emph{iolimit}}
+
+@item @strong{--run-load} @emph{loadlimit}
+@anchor{@strong{--run-load} @emph{loadlimit}}
+
+@item @strong{--rl} @emph{loadlimit}
+@anchor{@strong{--rl} @emph{loadlimit}}
+
+@item @strong{--run-mem} @emph{memlimit}
+@anchor{@strong{--run-mem} @emph{memlimit}}
+
+@item @strong{--rm} @emph{memlimit}
+@anchor{@strong{--rm} @emph{memlimit}}
+
+Run limit. The running program will be slowed down if the system is
+above the limit. See: @strong{--io}, @strong{--load}, @strong{--mem}, @strong{--noswap}.
+
+@item @strong{--sensor} @emph{sensor program}
+@anchor{@strong{--sensor} @emph{sensor program}}
+
+Read sensor. Use @emph{sensor program} to read a sensor.
+
+This will keep the CPU temperature below 80 deg C on GNU/Linux:
+
+@verbatim
+  niceload -l 80000 -f 0.001 --sensor 'sort -n /sys/devices/platform/coretemp*/temp*_input' gzip *
+@end verbatim
+
+This will stop if the disk space < 100000.
+
+@verbatim
+  niceload -H -l -100000 --sensor "df . | awk '{ print \$4 }'" echo
+@end verbatim
+
+@item @strong{--start-io} @emph{iolimit}
+@anchor{@strong{--start-io} @emph{iolimit}}
+
+@item @strong{--si} @emph{iolimit}
+@anchor{@strong{--si} @emph{iolimit}}
+
+@item @strong{--start-load} @emph{loadlimit}
+@anchor{@strong{--start-load} @emph{loadlimit}}
+
+@item @strong{--sl} @emph{loadlimit}
+@anchor{@strong{--sl} @emph{loadlimit}}
+
+@item @strong{--start-mem} @emph{memlimit}
+@anchor{@strong{--start-mem} @emph{memlimit}}
+
+@item @strong{--sm} @emph{memlimit}
+@anchor{@strong{--sm} @emph{memlimit}}
+
+Start limit. The program will not start until the system is below the
+limit. See: @strong{--io}, @strong{--load}, @strong{--mem}, @strong{--noswap}.
+
+@item @strong{--soft}
+@anchor{@strong{--soft}}
+
+@item @strong{-S}
+@anchor{@strong{-S}}
+
+Soft limit. @strong{niceload} will suspend a process for a while and then
+let it run for a second thus only slowing down a process while the
+system is over one of the given limits. This is the default.
+
+@item @strong{--suspend} @emph{SEC}
+@anchor{@strong{--suspend} @emph{SEC}}
+
+@item @strong{-s} @emph{SEC}
+@anchor{@strong{-s} @emph{SEC}}
+
+Suspend time. Suspend the command this many seconds when the max load
+average is reached.
+
+@item @strong{--recheck} @emph{SEC}
+@anchor{@strong{--recheck} @emph{SEC}}
+
+@item @strong{-t} @emph{SEC}
+@anchor{@strong{-t} @emph{SEC}}
+
+Recheck load time. Sleep SEC seconds before checking load
+again. Default is 1 second.
+
+@item @strong{--verbose}
+@anchor{@strong{--verbose}}
+
+@item @strong{-v}
+@anchor{@strong{-v}}
+
+Verbose. Print some extra output on what is happening. Use @strong{-v} until
+you know what your are doing.
+
+@end table
+
+@node EXAMPLE: See niceload in action
+@chapter EXAMPLE: See niceload in action
+
+In terminal 1 run: top
+
+In terminal 2 run:
+
+@strong{niceload -q perl -e '$|=1;do@{$l==$r or print "."; $l=$r@}until(($r=time-$^T)}>@strong{50)'}
+
+This will print a '.' every second for 50 seconds and eat a lot of
+CPU. When the load rises to 1.0 the process is suspended.
+
+@node EXAMPLE: Run updatedb
+@chapter EXAMPLE: Run updatedb
+
+Running updatedb can often starve the system for disk I/O and thus result in a high load.
+
+Run updatedb but suspend updatedb if the load is above 2.00:
+
+@strong{niceload -L 2 updatedb}
+
+@node EXAMPLE: Run rsync
+@chapter EXAMPLE: Run rsync
+
+rsync can just like updatedb starve the system for disk I/O and thus result in a high load.
+
+Run rsync but keep load below 3.4. If load reaches 7 sleep for
+(7-3.4)*12 seconds:
+
+@strong{niceload -L 3.4 -f 12 rsync -Ha /home/ /backup/home/}
+
+@node EXAMPLE: Ensure enough disk cache
+@chapter EXAMPLE: Ensure enough disk cache
+
+Assume the program @strong{foo} uses 2 GB files intensively. @strong{foo} will run
+fast if the files are in disk cache and be slow as a crawl if they are
+not in the cache.
+
+To ensure 2 GB are reserved for disk cache run:
+
+@strong{niceload --hard --run-mem 2g foo}
+
+This will not guarantee that the 2 GB memory will be used for the
+files for @strong{foo}, but it will stop @strong{foo} if the memory for disk cache
+is too low.
+
+@node ENVIRONMENT VARIABLES
+@chapter ENVIRONMENT VARIABLES
+
+None. In future versions $NICELOAD will be able to contain default settings.
+
+@node EXIT STATUS
+@chapter EXIT STATUS
+
+Exit status should be the same as the command being run (untested).
+
+@node REPORTING BUGS
+@chapter REPORTING BUGS
+
+Report bugs to <bug-parallel@@gnu.org>.
+
+@node AUTHOR
+@chapter AUTHOR
+
+Copyright (C) 2004-11-19 Ole Tange, http://ole.tange.dk
+
+Copyright (C) 2005,2006,2006,2008,2009,2010 Ole Tange, http://ole.tange.dk
+
+Copyright (C) 2010,2011,2012,2013,2014,2015,2016,2017 Ole Tange, http://ole.tange.dk and Free
+Software Foundation, Inc.
+
+@node LICENSE
+@chapter LICENSE
+
+Copyright (C) 2010,2011,2012,2013,2014,2015,2016,2017 Free Software
+Foundation, Inc.
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or
+at your option any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+@menu
+* Documentation license I::
+* Documentation license II::
+@end menu
+
+@node Documentation license I
+@section Documentation license I
+
+Permission is granted to copy, distribute and/or modify this documentation
+under the terms of the GNU Free Documentation License, Version 1.3 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the file fdl.txt.
+
+@node Documentation license II
+@section Documentation license II
+
+You are free:
+
+@table @asis
+@item @strong{to Share}
+@anchor{@strong{to Share}}
+
+to copy, distribute and transmit the work
+
+@item @strong{to Remix}
+@anchor{@strong{to Remix}}
+
+to adapt the work
+
+@end table
+
+Under the following conditions:
+
+@table @asis
+@item @strong{Attribution}
+@anchor{@strong{Attribution}}
+
+You must attribute the work in the manner specified by the author or
+licensor (but not in any way that suggests that they endorse you or
+your use of the work).
+
+@item @strong{Share Alike}
+@anchor{@strong{Share Alike}}
+
+If you alter, transform, or build upon this work, you may distribute
+the resulting work only under the same, similar or a compatible
+license.
+
+@end table
+
+With the understanding that:
+
+@table @asis
+@item @strong{Waiver}
+@anchor{@strong{Waiver}}
+
+Any of the above conditions can be waived if you get permission from
+the copyright holder.
+
+@item @strong{Public Domain}
+@anchor{@strong{Public Domain}}
+
+Where the work or any of its elements is in the public domain under
+applicable law, that status is in no way affected by the license.
+
+@item @strong{Other Rights}
+@anchor{@strong{Other Rights}}
+
+In no way are any of the following rights affected by the license:
+
+@itemize
+@item Your fair dealing or fair use rights, or other applicable
+copyright exceptions and limitations;
+
+@item The author's moral rights;
+
+@item Rights other persons may have either in the work itself or in
+how the work is used, such as publicity or privacy rights.
+
+@end itemize
+
+@end table
+
+@table @asis
+@item @strong{Notice}
+@anchor{@strong{Notice}}
+
+For any reuse or distribution, you must make clear to others the
+license terms of this work.
+
+@end table
+
+A copy of the full license is included in the file as cc-by-sa.txt.
+
+@node DEPENDENCIES
+@chapter DEPENDENCIES
+
+GNU @strong{niceload} uses Perl, and the Perl modules POSIX, and
+Getopt::Long.
+
+@node SEE ALSO
+@chapter SEE ALSO
+
+@strong{parallel}(1), @strong{nice}(1), @strong{uptime}(1)
+
+@bye

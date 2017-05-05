@@ -1,0 +1,121 @@
+#!/bin/bash
+
+# Copyright (C) 2016,2017
+# Ole Tange and Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, see <http://www.gnu.org/licenses/>
+# or write to the Free Software Foundation, Inc., 51 Franklin St,
+# Fifth Floor, Boston, MA 02110-1301 USA
+
+grepq() {
+    # grep -q for systems without -q
+    grep >/dev/null 2>/dev/null "$@"
+}
+
+installer() {
+    source="$1"
+    script="$2"
+    into="$3"
+    if grepq $script $into; then
+	true already installed
+    else
+	echo $source \`which $script\` >> $into
+    fi
+}
+
+while test $# -gt 0; do
+  key="$1"
+
+  case $key in
+      -i|--install)
+	  installer . env_parallel.bash  $HOME/.bashrc
+	  installer . env_parallel.zsh   $HOME/.zshenv
+	  installer source env_parallel.ksh $HOME/.kshrc
+	  echo $SHELL | grepq /pdksh &&
+	      installer . env_parallel.pdksh $HOME/.profile
+	  echo $SHELL | grepq /ash &&
+	      installer . env_parallel.ash $HOME/.profile
+	  echo $SHELL | grepq /dash &&
+	      installer . env_parallel.dash $HOME/.profile
+	  installer source env_parallel.csh $HOME/.cshrc
+	  installer source env_parallel.tcsh $HOME/.tcshrc
+	  mkdir -p $HOME/.config/fish
+	  grepq env_parallel.fish $HOME/.config/fish/config.fish ||
+  	    echo '. (which env_parallel.fish)' >> $HOME/.config/fish/config.fish
+  	  echo 'Installed env_parallel in: '
+  	  echo "    " $HOME/.bashrc
+  	  echo "    " $HOME/.zshenv
+  	  echo "    " $HOME/.config/fish/config.fish
+  	  echo "    " $HOME/.kshrc
+  	  echo "    " $HOME/.profile
+  	  echo "    " $HOME/.cshrc
+  	  echo "    " $HOME/.tcshrc
+  	  exit
+      ;;
+      *)
+  	echo "Unknown option: $key"
+      ;;
+  esac
+  shift # past argument or value
+done
+
+
+cat <<_EOS
+env_parallel only works if it is a function. Do the below and restart your shell.
+
+bash:  Put this in $HOME/.bashrc:  . `which env_parallel.bash`
+       E.g. by doing:  echo '. `which env_parallel.bash`' >> $HOME/.bashrc
+       Supports: aliases, functions, variables, arrays
+
+zsh:   Put this in $HOME/.zshrc:  . `which env_parallel.zsh`
+       E.g. by doing:  echo '. `which env_parallel.zsh`' >> $HOME/.zshenv
+       Supports: functions, variables, arrays
+
+fish:  Put this in $HOME/.config/fish/config.fish:
+         . (which env_parallel.fish)
+       E.g. by doing:
+         echo '. (which env_parallel.fish)' >> $HOME/.config/fish/config.fish
+       Supports: aliases, functions, variables, arrays
+
+ksh:   Put this in $HOME/.kshrc:  source `which env_parallel.ksh`
+       E.g. by doing:  echo 'source `which env_parallel.ksh`' >> $HOME/.kshrc
+       Supports: aliases, functions, variables, arrays
+
+pdksh: Put this in $HOME/.profile:  source `which env_parallel.pdksh`
+       E.g. by doing:  echo '. `which env_parallel.pdksh`' >> $HOME/.profile
+       Supports: aliases, functions, variables, arrays
+
+ash:   Put this in $HOME/.profile:  . `which env_parallel.ash`
+       E.g. by doing:  echo '. `which env_parallel.ash`' >> $HOME/.profile
+       Supports: aliases, variables
+
+dash:  Put this in $HOME/.profile:  . `which env_parallel.dash`
+       E.g. by doing:  echo '. `which env_parallel.dash`' >> $HOME/.profile
+       Supports: aliases, variables
+
+csh:   Put this in $HOME/.cshrc:  source `which env_parallel.csh`
+       E.g. by doing:  echo 'source `which env_parallel.csh`' >> $HOME/.cshrc
+       Supports: aliases, variables, arrays with no special chars
+
+tcsh:  Put this in $HOME/.tcshrc:  source `which env_parallel.tcsh`
+       E.g. by doing:  echo 'source `which env_parallel.tcsh`' >> $HOME/.tcshrc
+       Supports: aliases, variables, arrays with no special chars
+
+To install in all shells run:
+
+  env_parallel --install
+
+For details: see  man env_parallel
+
+_EOS

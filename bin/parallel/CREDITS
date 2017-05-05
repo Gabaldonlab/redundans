@@ -1,0 +1,32 @@
+FrithMartin: Bug patch for orphan blocks.
+Rasmus Villemoes: Code snips for signal processing.
+Martin d'Anjou: Code snips for signal processing.
+rici@stackoverflow.com: Documentation on exporting arrays using --env.
+Malcolm Cook: The idea to use a general perl expression as replacement strings.
+Ævar Arnfjörð Bjarmason: Reading the whole code.
+Christian Netrwal: CPU detection code for AIX.
+alpinelinux.org/users/ncopa: Maintaining GNU Parallel for Alpine GNU/Linux.
+Ondřej Surý: Maintaining GNU Parallel for Debian GNU/Linux.
+Rogério Brito: Maintaining GNU Parallel for Ubuntu GNU/Linux.
+Tim Harder: Maintaining GNU Parallel for Gentoo GNU/Linux.
+Chris Howey: Maintaining GNU Parallel for FreeBSD.
+cheusov: Maintaining GNU Parallel for NetBSD.
+https://fedoraproject.org/wiki/User:Golfu: Maintaining GNU Parallel for Fedora GNU/Linux.
+Pascal Stumpf: Maintaining GNU Parallel for OpenBSD.
+Sandro Cazzaniga: Maintaining GNU Parallel for Mandriva/Mageia.
+Alan Coopersmith: Maintaining GNU Parallel for Solaris.
+jengelh@inai.de: Maintaining GNU Parallel for openSUSE.
+Timothy Redaelli: Maintaining GNU Parallel for Arch GNU/Linux.
+Michael Shigorin: Maintaining GNU Parallel for Alt GNU/Linux.
+Jesse Alama: Maintaining GNU Parallel for Fink.
+jacknagel: Maintaining GNU Parallel for Homebrew.
+Jonathan Palardy: Maintaining GNU Parallel for Homebrew.
+Tim Cuthbertson: Maintaining GNU Parallel for 0install.
+Michael Perzl: Maintaining GNU Parallel for AIX.
+Peter Simons: Maintaining GNU Parallel for Arch GNU/Linux.
+Fethican Coşkuner: Maintaining GNU Parallel for Pardus.
+Wayne E. Seguin: CPU detection improvement for Mac OSX.
+Michał Markowski: OpenBSD CPU detection.
+Drew Frank: Work on --results.
+Javier Tarradas: HPUX CPU/core detection.
+Anders F Björklund: niceload: Darwin version of --io --mem --swap.
