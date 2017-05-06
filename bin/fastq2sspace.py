@@ -126,8 +126,8 @@ def _get_snap_proc(fn1, fn2, ref, cores, verbose, log=sys.stderr):
             log.write(" Creating index...\n  %s\n" % idxcmd)
         idxmessage = commands.getoutput(idxcmd)
         log.write(idxmessage)
-    # skip mate rescue
-    args = ['snap-aligner', 'paired', idxfn, fn1, fn2, '--b', '-t', str(cores), '-o', '-sam', '-']
+    # -d maxEditDist should be set based on readlen and expected divergence
+    args = ['snap-aligner', 'paired', idxfn, fn1, fn2, '-d', '30', '--b', '-t', str(cores), '-o', '-sam', '-']
     if verbose:
         log.write( "  %s\n" % " ".join(args))
     proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=log)
@@ -237,7 +237,7 @@ def get_tab_files(outdir, reffile, libNames, fReadsFnames, rReadsFnames, inserts
         bwalog = open(outfn+".log", "w")
         proc = _get_aligner_proc(f1.name, f2.name, ref, cores, verbose, bwalog)
         # parse botwie output
-        sam2sspace_tab(proc.stdout, out, mapqTh, upto, verbose, log, ref, cores)
+        sam2sspace_tab(proc.stdout, out, mapqTh, upto, verbose, log, ref, cores) #
         # close file & terminate subprocess
         out.close()
         tabFnames.append(outfn)

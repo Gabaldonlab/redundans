@@ -116,45 +116,7 @@ def fasta2hits(fasta, threads, identityTh, overlapTh, minLength, verbose):
                 hits[t][2].append((s, e, score))
         for d in hits2valid(hits, q, qsize, identityTh, overlapTh):
             yield d
-        
-def fasta2hits0(fasta, threads, identityTh, overlapTh, minLength, verbose):
-    """Return LASTal hits passing identity and overlap thresholds"""
-    # execute last
-    last = run_last(fasta.name, identityTh, threads, verbose) #_q2best
-    pq, pqsize = '', 0
-    hits = {}
-    for l in last.stdout: 
-        if l.startswith('#'): 
-            continue
-        # unpack
-        (score, t, tstart, talg, tstrand, tsize, q, qstart, qalg, qstrand, qsize, blocks) = l.split()[:12]
-        (score, qstart, qalg, qsize, tstart, talg, tsize) = map(int, (score, qstart, qalg, qsize, tstart, talg, tsize))
-        # skip reverse matches
-        if t==q or tsize<qsize or qsize<minLength or tsize==qsize and t<q: 
-            continue
-        # report previous query
-        if pq != q:
-            for d in hits2valid(hits, pq, pqsize, identityTh, overlapTh): yield d
-            # reset
-            pq, pqsize = q, qsize 
-            hits = {}
-        if t not in hits:
-            hits[t] = [0, 0, []]
-        # get qstart & qend
-        if qstrand=="+":
-            s = qstart
-            e = s + qalg
-        else:
-            e = qsize - qstart
-            s = qsize - qstart - qalg
-        if _overlap(s, e, score, hits[t][2]):
-            continue
-        hits[t][0] += score
-        hits[t][1] += qalg
-        hits[t][2].append((s, e, score))
-    # yield last bit #get_best_match get_valid 
-    for d in hits2valid(hits, pq, pqsize, identityTh, overlapTh): yield d
-       
+               
 def fasta2skip(out, fasta, faidx, threads, identityTh, overlapTh, minLength, verbose):
     """Return dictionary with redundant contigs and their best alignments"""
     # get hits generator

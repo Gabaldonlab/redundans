@@ -131,9 +131,8 @@ def run_scaffolding(outdir, scaffoldsFname, fastq, libraries, reducedFname, mapq
         stats     = FastaIndex(pout).stats()
         fastaSize = int(stats.split('\t')[2])
         gapSize   = int(stats.split('\t')[-2])
-        if i<len(libraries) and gapclosing and 1.0 * gapSize / fastaSize > 0.1:
+        if i<len(libraries) and gapclosing and 1.0 * gapSize / fastaSize > 0.02:
             nogapsFname = ".".join(pout.split(".")[:-1]) + ".filled.fa"
-            reducedFname = ".".join(pout.split(".")[:-1]) + ".reduced.fa"
             if resume>1 or _corrupted_file(nogapsFname):
                 resume += 1
                 # close gaps & reduce
@@ -142,6 +141,8 @@ def run_scaffolding(outdir, scaffoldsFname, fastq, libraries, reducedFname, mapq
                 basename    = "_sspace.%s.%s._gapcloser"%(i, j)
                 run_gapclosing(outdir, [libraries[i-1],], nogapsFname, pout, threads, limit, \
                                iters=1, resume=resume, verbose=0, log=log, basename=basename)
+            reducedFname = ".".join(pout.split(".")[:-1]) + ".reduced.fa"
+            if resume>1 or _corrupted_file(reducedFname):
                 if verbose:
                     log.write("  reducing ...\n")
                 with open(reducedFname, "w") as out:
@@ -209,7 +210,7 @@ def run_gapclosing(outdir, libraries, nogapsFname, scaffoldsFname,  threads, lim
                    resume, verbose, log, basename="_gapcloser", overlap=25, minReadLen=40):
     """Execute gapclosing step."""
     pout = scaffoldsFname
-    
+    stop = 1
     for i, (libnames, libFs, libRs, orientations, libIS, libISStDev, libreadlen) in enumerate(libraries, 1):
         # prepare config file and filter reads
         configFn = os.path.join(outdir, "%s.%s.conf"%(basename, i))
@@ -235,6 +236,15 @@ def run_gapclosing(outdir, libraries, nogapsFname, scaffoldsFname,  threads, lim
                     GapCloser.wait()
             # store out info
             pout = out
+            # skip if number of gaps smaller than 0.1%
+            stats     = FastaIndex(pout).stats()
+            fastaSize = int(stats.split('\t')[2])
+            gapSize   = int(stats.split('\t')[-2])
+            if 1.0 * gapSize / fastaSize < 0.001:
+                stop = 1
+                break
+        if stop:
+            break
     # create symlink to final scaffolds or pout
     symlink(os.path.basename(pout), nogapsFname)
     symlink(os.path.basename(pout+".fai"), nogapsFname+".fai")

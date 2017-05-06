@@ -3,8 +3,6 @@
  - more accurate libs stats estimation (using 5% of the genome in the longest contigs)
 - reduction:
  - improved speed and accuracy
- - multiple rounds of reduction
- - only best query to target hits
 - scaffolding:
  - using combination of snap+lastal - very fast and super sensitive!
  - no gap closing during scaffolding?
