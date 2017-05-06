@@ -7,6 +7,8 @@ More info at: http://bit.ly/Redundans
 TBA:
 - add exception if lastdb or lastal doesn't finish successfully
 - pyScaf short reads
+- fastq2sspace.py - maybe prefilter reads that are not worth to be aligned?
+ - create sparse index for snap?
 """
 epilog="""Author:
 l.p.pryszcz@gmail.com
@@ -125,9 +127,28 @@ def run_scaffolding(outdir, scaffoldsFname, fastq, libraries, reducedFname, mapq
             # link output ie out/_sspace.1.1/_sspace.1.1.scaffolds.fasta --> out/_sspace.1.1.scaffolds.fasta
             targetout = os.path.join(os.path.basename(out), os.path.basename(out+".final.scaffolds.fasta"))
             symlink(targetout, pout)
+        # if number of gaps larger than 1%, run gap closer & reduction
+        stats     = FastaIndex(pout).stats()
+        fastaSize = int(stats.split('\t')[2])
+        gapSize   = int(stats.split('\t')[-2])
+        if i<len(libraries) and gapclosing and 1.0 * gapSize / fastaSize > 0.1:
+            nogapsFname = ".".join(pout.split(".")[:-1]) + ".filled.fa"
+            reducedFname = ".".join(pout.split(".")[:-1]) + ".reduced.fa"
+            if resume>1 or _corrupted_file(nogapsFname):
+                resume += 1
+                # close gaps & reduce
+                if verbose:
+                    log.write("  closing gaps ...\n")
+                basename    = "_sspace.%s.%s._gapcloser"%(i, j)
+                run_gapclosing(outdir, [libraries[i-1],], nogapsFname, pout, threads, limit, \
+                               iters=1, resume=resume, verbose=0, log=log, basename=basename)
+                if verbose:
+                    log.write("  reducing ...\n")
+                with open(reducedFname, "w") as out:
+                    info = fasta2homozygous(out, open(nogapsFname), identity, overlap, minLength, threads, verbose=0, log=log)
+            pout = reducedFname            
         # update library insert size estimation, especially for mate-pairs
-        libraries = get_libraries(fastq, pout, mapq, threads, verbose=0,log=log,
-                                  libraries=libraries)
+        libraries = get_libraries(fastq, pout, mapq, threads, verbose=0,log=log, libraries=libraries)
     # create symlink to final scaffolds or pout
     symlink(os.path.basename(pout), scaffoldsFname)
     symlink(os.path.basename(pout+".fai"), scaffoldsFname+".fai")
@@ -257,9 +278,15 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
         if verbose:
             log.write("%sReduction...\n"%timestamp())
             log.write("#file name\tgenome size\tcontigs\theterozygous size\t[%]\theterozygous contigs\t[%]\tidentity [%]\tpossible joins\thomozygous size\t[%]\thomozygous contigs\t[%]\n")
-        # reduce
+        '''for i in range(iters):
+            # reduce
+            _outfn = os.path.join(outdir, "_contigs.%s.fa"%(i+1, ))
+            with open(_outfn, "w") as out:
+                info = fasta2homozygous(out, open(fastas[-1]), identity, overlap, minLength, threads, verbose=0, log=log)
+            fastas.append(_outfn)
+        symlink(fastas[-1], outfn)'''
         with open(outfn, "w") as out:
-            info = fasta2homozygous(out, open(lastOutFn), identity, overlap, minLength, threads, verbose=0, log=log)
+            info = fasta2homozygous(out, open(fastas[-1]), identity, overlap, minLength, threads, verbose=0, log=log)
         # update fasta list
         lastOutFn = outfn
         fastas.append(lastOutFn)

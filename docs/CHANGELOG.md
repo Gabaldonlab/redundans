@@ -1,6 +1,24 @@
+####0.13c
+- preprocessing
+ - more accurate libs stats estimation (using 5% of the genome in the longest contigs)
+- reduction:
+ - improved speed and accuracy
+ - multiple rounds of reduction
+ - only best query to target hits
+- scaffolding:
+ - using combination of snap+lastal - very fast and super sensitive!
+ - no gap closing during scaffolding?
+
+TBD
+- check if something need recompilation and try to recompile
+- instead of processing 100M reads for 4 libs with similar IS, split it by 25M each
+- bioconda
+- speed-up gap closing - so far the slowest step! (5/7 of the run!)
+
 ####0.13b
 - reduction:
  - improved sensitivity of reduciton (local alignment mode)
+ - no need for assembly sorting
 - scaffolding:
  - bwa mem is way more sensitive, so it's used by default instead of snap
 
@@ -25,13 +43,6 @@
   - reporting heterozygous contigs statistics in `contigs.reduced.fa.hetero.tsv`
 - scaffolding:
   - added [SNAP aligner](https://github.com/amplab/snap), faster mapping alternative to BWA MEM
-
-TBD
-- check if something need recompilation and try to recompile
-- instead of processing 100M reads for 4 libs with similar IS, split it by 25M each
-- estimated libs on subset of largest contigs
-- sort reads by increasing read length
-- bioconda
 
 ####0.12c
 - added `--resume` option

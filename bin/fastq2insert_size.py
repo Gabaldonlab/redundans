@@ -13,6 +13,7 @@ Mizerow, 10/04/2015
 import math, os, sys, commands, subprocess
 from datetime import datetime
 from FastaIndex import FastaIndex
+from fastq2sspace import _get_bwamem_proc, _get_snap_proc
 
 def flag2orientation(flag):
     """Return orientation of read pair: 
@@ -35,20 +36,6 @@ def flag2orientation(flag):
     # FF
     else:
         return 0
-        
-def get_bwa_subprocess(fq1, fq2, fasta, threads, verbose):
-    """Return bwa subprocess"""
-    # generate index if missing
-    if not os.path.isfile(fasta+".bwt"):
-        cmd = "bwa index %s"%fasta
-        #if verbose: sys.stderr.write(" %s\n"%cmd)
-        bwtmessage = commands.getoutput(cmd)
-    # start BWA alignment stream
-    ## -S skips mate rescue (faster)
-    cmd = ["bwa", "mem", "-S", "-t %s"%threads, fasta, fq1, fq2]
-    #if verbose: sys.stderr.write(" %s\n"%" ".join(cmd))
-    bwa = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    return bwa
 
 def percentile(N, percent, key=lambda x:x):
     """
@@ -118,13 +105,15 @@ def get_isize_stats(fq1, fq2, fasta, mapqTh=10, threads=1, limit=1e5, verbose=0,
             # skip insert size estimation only if satisfactory previous estimate
             if isstd / ismean < stdfracTh and reads > maxcfracTh * sum(pairs): 
                 return int(readlen), ismedian, ismean, isstd, pairs, orientation
-    # run bwa
-    bwa = get_bwa_subprocess(fq1, fq2, fasta, threads, verbose)
+    # run aligner
+    alignerlog = open(fasta+".log", "w")
+    #aligner = _get_bwamem_proc(fq1, fq2, fasta, threads, verbose)
+    aligner = _get_snap_proc(fq1, fq2, fasta, threads, verbose, alignerlog)            
     # parse alignments
-    isizes = [[], [], [], []] #0, 0, 0, 0]
+    isizes = [[], [], [], []] 
     readlen = 0
     #read from stdin
-    for i, sam in enumerate(bwa.stdout, 1):
+    for i, sam in enumerate(aligner.stdout, 1):
         if sam.startswith("@"):
             continue
         if verbose and not i%1000:
@@ -134,7 +123,7 @@ def get_isize_stats(fq1, fq2, fasta, mapqTh=10, threads=1, limit=1e5, verbose=0,
         flag, pos, mapq, mpos, isize = map(int, (flag, pos, mapq, mpos, isize))
         # take only reads with good alg quality and one read per pair
         # ignore not primary and supplementary alignments
-        if mapq < mapqTh or isize < 1 or flag&256 or flag&2048: # or not flag&2:
+        if mapq < mapqTh or isize < 1 or flag&256 or flag&2048: 
             continue
         #store isize
         isizes[flag2orientation(flag)].append(isize)
@@ -143,7 +132,8 @@ def get_isize_stats(fq1, fq2, fasta, mapqTh=10, threads=1, limit=1e5, verbose=0,
         if sum(map(len, isizes)) >= limit:
             break
     # terminate subprocess
-    bwa.terminate()
+    aligner.terminate()
+    alignerlog.close()        
     # catch cases with very few reads aligned
     pairs = map(len, isizes)
     if sum(pairs) < 100:

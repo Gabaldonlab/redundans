@@ -208,13 +208,13 @@ def last_tab2sspace_tab(handle, out, mapqTh, upto, verbose, log, proc=""):
         k += 1
         out.write("%s\t%s\t%s\t%s\t%s\t%s\n" % (ref1, start1, end1, ref2, start2, end2))
     if i:
-        info = "   %s pairs. %s in different contigs [%.2f%s].\n" % (i, k, k*100.0/i, '%')
+        info = "    %s pairs. %s in different contigs [%.2f%s].\n" % (i, k, k*100.0/i, '%')
     else:
-        info = "   No pairs were aligned!\n"
+        info = "    No pairs were aligned!\n"
     log.write(info)
     
 def get_tab_files(outdir, reffile, libNames, fReadsFnames, rReadsFnames, inserts, iBounds, libreadlen, \
-                  cores, mapqTh, upto, verbose,  log=sys.stderr):
+                  cores, mapqTh, upto, verbose, log=sys.stderr):
     """Prepare genome index, align all libs and save TAB file"""
     ref = reffile.name
     tabFnames = []
@@ -282,7 +282,7 @@ def fastq2sspace(out, fasta, lib, libnames, libFs, libRs, orientations,  \
         log.write("[%s] Generating TAB file(s) for %s library/ies...\n" % (datetime.ctime(datetime.now()),len(libnames)) )
     tabFnames = get_tab_files(out, fasta, libnames, libFs, libRs, libIS, libISStDev, libreadlen, \
                               cores, mapq, upto, verbose, log)
-
+    
     # generate lib file
     if  verbose:
         log.write("[%s] Generating library file(s)...\n" % datetime.ctime(datetime.now()))
