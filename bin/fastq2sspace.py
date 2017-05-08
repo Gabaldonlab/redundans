@@ -139,8 +139,8 @@ def _get_last_proc(fn1, fn2, ref, cores, verbose, log=sys.stderr):
     if not os.path.isdir(ref+".suf"):
         os.system("lastdb -uNEAR -W 11 %s %s" % (ref, ref))
     # skip mate rescue
-    args1 = ['fastq2shuffled.py', fn1, fn2]
-    args2 = ['parallel', '--no-notice', '--pipe', '-L8', '-j', str(cores), 'lastal', '-j1', '-Q1', '-fTAB', ref] # '-m10', '-P', str(cores), 
+    args1 = ['fastq2shuffled.py', fn1, fn2] 
+    args2 = ['parallel', '--no-notice', '--pipe', '-L8', '-j', str(cores), 'lastal', '-T1', '-Q1', '-fTAB', ref] # '-m10', '-P', str(cores), '-j1', 
     if verbose:
         log.write("  %s | %s\n"%(" ".join(args1), " ".join(args2)))
     #select ids
@@ -155,7 +155,7 @@ def _get_last_proc0(fqfname, ref, cores, verbose=0, log=sys.stderr):
         os.system("lastdb -uNEAR -W 11 %s %s" % (ref, ref))
     # skip mate rescue 
     args1 = ['cat', fqfname]
-    args2 = ['parallel', '--no-notice', '--pipe', '-L8', '-j', str(cores), 'lastal', '-j1', '-Q1', '-fTAB', ref]  
+    args2 = ['parallel', '--no-notice', '--pipe', '-L8', '-j', str(cores), 'lastal', '-T1', '-Q1', '-fTAB', ref] #'-j1', 
     if verbose:
         log.write("  %s\n"%(" ".join(args1),))
     #select ids
@@ -188,7 +188,7 @@ def _last2pairs(handle):
         if qstrand=="-":
             s, e = e, s
         data = (score, t, s, e, q)
-        if not hits[-1] or score>hits[-1][0][0]:
+        if not hits[-1]: # or score>hits[-1][0][0]:
             hits[-1] = [data]
         elif score==hits[-1][0][0]:
             hits[-1].append(data)

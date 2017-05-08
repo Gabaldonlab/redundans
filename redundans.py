@@ -5,10 +5,13 @@ reduction, scaffolding and gap closing.
 More info at: http://bit.ly/Redundans
 
 TBA:
-- add exception if lastdb or lastal doesn't finish successfully
+- reduction
+ - split contigs on likely problems (fasta2qc.py)
+ - add exception if lastdb or lastal doesn't finish successfully
 - pyScaf short reads
 - fastq2sspace.py - maybe prefilter reads that are not worth to be aligned?
  - create sparse index for snap?
+ - filter last hits by e-value?
 """
 epilog="""Author:
 l.p.pryszcz@gmail.com
