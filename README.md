@@ -44,11 +44,7 @@ Redundans uses several programs (all provided within this repository):
 On most Linux distros, the installation should be as easy as:
 ```
 git clone --recursive https://github.com/lpryszcz/redundans.git
-cd redundans
-(cd bin/parallel && make clean && ./configure && make)
-(cd bin/bwa && make clean && make)
-(cd bin/last && make clean && make)
-(cd bin/snap && make clean && make)
+cd redundans && bin/.compile.sh
 ```
 
 If it fails, make sure you have below dependencies installed: 

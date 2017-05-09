@@ -15,7 +15,8 @@ cores=`grep -c ^processor /proc/cpuinfo | awk '{if($1>1){print $1-1} else {print
 echo " I'll use $cores thread(s) for compiling"
 
 echo `date` " GNU parallel"
-(cd bin/parallel && make clean && ./configure && make -j $cores)  >> $log 2>&1 
+#wget http://ftp.gnu.org/gnu/parallel/parallel-latest.tar.bz2 && tar xpfj parallel-latest.tar.bz2 && rm parallel-latest.tar.bz2 && mv parallel bin/parallel
+(cd bin/parallel && ./configure && make clean && make -j $cores)  >> $log 2>&1 
 retcode=$?; if [ $retcode -gt 0 ]; then exit $retcode; fi
 
 echo `date` " BWA"
