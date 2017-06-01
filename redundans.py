@@ -259,16 +259,20 @@ def _corrupted_file(fname):
        not os.path.isfile(fname+".fai") or not os.path.getsize(fname+".fai"):
         return True
 
+def _check_fasta(lastOutFn, minSize=1000, log=sys.stderr):
+    """Exit if empty FastA file"""
+    faidx = FastaIndex(open(lastOutFn))
+    if not len(faidx) or faidx.genomeSize<minSize:
+        log.write("[ERROR] Empty FastA file encountered: %s !\n"%lastOutFn)
+        sys.exit(1)
+        
 def redundans(fastq, longreads, fasta, reference, outdir, mapq, 
               threads, resume, identity, overlap, minLength, \
               joins, linkratio, readLimit, iters, sspacebin, \
               reduction=1, scaffolding=1, gapclosing=1, cleaning=1, \
               norearrangements=0, verbose=1, log=sys.stderr):
     """Launch redundans pipeline."""
-    fastas = [fasta, ]
-    # update fasta list
-    lastOutFn = os.path.join(outdir, "contigs.fa")
-    fastas.append(lastOutFn)
+    fastas = [fasta, ]; _check_fasta(fasta)
     # check resume
     orgresume = resume
     if resume:
@@ -284,25 +288,21 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
         os.makedirs(outdir)
     
     # REDUCTION
+    lastOutFn = os.path.join(outdir, "contigs.fa")
     symlink(fasta, lastOutFn)
+    fastas.append(lastOutFn); _check_fasta(lastOutFn)
+    # update fasta list
     outfn = os.path.join(outdir, "contigs.reduced.fa")
     if reduction and _corrupted_file(outfn):
         resume += 1
         if verbose:
             log.write("%sReduction...\n"%timestamp())
             log.write("#file name\tgenome size\tcontigs\theterozygous size\t[%]\theterozygous contigs\t[%]\tidentity [%]\tpossible joins\thomozygous size\t[%]\thomozygous contigs\t[%]\n")
-        '''for i in range(iters):
-            # reduce
-            _outfn = os.path.join(outdir, "_contigs.%s.fa"%(i+1, ))
-            with open(_outfn, "w") as out:
-                info = fasta2homozygous(out, open(fastas[-1]), identity, overlap, minLength, threads, verbose=0, log=log)
-            fastas.append(_outfn)
-        symlink(fastas[-1], outfn)'''
         with open(outfn, "w") as out:
             info = fasta2homozygous(out, open(fastas[-1]), identity, overlap, minLength, threads, verbose=0, log=log)
         # update fasta list
         lastOutFn = outfn
-        fastas.append(lastOutFn)
+        fastas.append(lastOutFn); _check_fasta(lastOutFn)
 
     # get read limit & libraries
     if fastq:
@@ -322,7 +322,7 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
         # update fasta list
         fastas += filter(lambda x: "_gapcloser" not in x, sorted(glob.glob(os.path.join(outdir, "_sspace.*.fa"))))
         lastOutFn = outfn
-        fastas.append(lastOutFn)
+        fastas.append(lastOutFn); _check_fasta(lastOutFn)
 
     # SCAFFOLDING WITH LONG READS
     outfn = os.path.join(outdir, "scaffolds.longreads.fa")
@@ -348,7 +348,7 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
         symlink(poutfn, outfn)
         # update fasta list
         lastOutFn = outfn
-        fastas.append(lastOutFn)
+        fastas.append(lastOutFn); _check_fasta(lastOutFn)
 
     # REFERENCE-BASED SCAFFOLDING
     outfn = os.path.join(outdir, "scaffolds.ref.fa")
@@ -363,7 +363,7 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
             s.save(out)
         # update fasta list
         lastOutFn = outfn
-        fastas.append(lastOutFn)
+        fastas.append(lastOutFn); _check_fasta(lastOutFn)
         
     # GAP CLOSING
     outfn = os.path.join(outdir, "scaffolds.filled.fa")
@@ -374,7 +374,7 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
         # update fasta list
         fastas += sorted(glob.glob(os.path.join(outdir, "_gap*.fa")))
         lastOutFn = outfn
-        fastas.append(lastOutFn)
+        fastas.append(lastOutFn); _check_fasta(lastOutFn)
 
     # FINAL REDUCTION
     outfn = os.path.join(outdir, "scaffolds.reduced.fa")
@@ -388,7 +388,7 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
             info = fasta2homozygous(out, open(lastOutFn), identity, overlap,  minLength, threads, verbose=0, log=log)
         # update fasta list
         lastOutFn = outfn
-        fastas.append(lastOutFn)
+        fastas.append(lastOutFn); _check_fasta(lastOutFn)
         
     # FASTA STATS
     if verbose:
