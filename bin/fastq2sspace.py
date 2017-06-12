@@ -136,7 +136,7 @@ def _get_snap_proc(fn1, fn2, ref, cores, verbose, log=sys.stderr):
 def _get_last_proc(fn1, fn2, ref, cores, verbose, log=sys.stderr):
     """Run last process"""
     # create genome index
-    if not os.path.isdir(ref+".suf"):
+    if not os.path.isfile(ref+".suf"):
         os.system("lastdb -uNEAR -W 11 %s %s" % (ref, ref))
     # skip mate rescue
     args1 = ['fastq2shuffled.py', fn1, fn2] 
@@ -151,7 +151,7 @@ def _get_last_proc(fn1, fn2, ref, cores, verbose, log=sys.stderr):
 def _get_last_proc0(fqfname, ref, cores, verbose=0, log=sys.stderr):
     """Run last process"""
     # create genome index
-    if not os.path.isdir(ref+".suf"):
+    if not os.path.isfile(ref+".suf"):
         os.system("lastdb -uNEAR -W 11 %s %s" % (ref, ref))
     # skip mate rescue 
     args1 = ['cat', fqfname]
