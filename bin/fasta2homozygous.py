@@ -126,7 +126,7 @@ def fasta2skip(out, fasta, faidx, threads, identityTh, overlapTh, minLength, ver
     contig2skip = {c: 0 for c in faidx} 
     for i, (score, t, q, algLen, identity, overlap) in enumerate(hits, 1):
         # store first match or update best match
-        if not contig2skip[q] or score > contig2skip[q][0]:
+        if q not in contig2skip or not contig2skip[q] or score > contig2skip[q][0]:
             contig2skip[q] = (score, t, algLen, identity, overlap)
         # store identity and alignment for plotting
         identities.append(identity)
