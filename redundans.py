@@ -31,6 +31,9 @@ paths = [os.path.join(root, p) for p in src]
 sys.path = paths + sys.path
 os.environ["PATH"] = "%s:%s"%(':'.join(paths), os.environ["PATH"])
 
+# make sure using Python 2.7
+assert sys.version_info >= (2, 7) and sys.version_info < (3,), "Only Python 2.7 is supported!"
+
 from fasta2homozygous import fasta2homozygous
 from fastq2sspace import fastq2sspace
 from fastq2insert_size import fastq2insert_size
@@ -420,6 +423,7 @@ def _check_executable(cmd):
 def _check_dependencies(dependencies):
     """Return error if wrong software version"""
     warning = 0
+    # check dependencies
     info = "[WARNING] Old version of %s: %s. Update to version %s+!\n"
     for cmd, version in dependencies.iteritems():
         out = _check_executable(cmd)
