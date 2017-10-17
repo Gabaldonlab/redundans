@@ -31,7 +31,7 @@ def run_last(fasta, identity, threads, verbose=1):
     if not os.path.isfile(ref+".suf"):
         os.system("lastdb -W 11 %s %s" % (ref, fasta))
     # run LAST
-    args1 = ["lastal", "-P", str(threads), "-f", "TAB", ref, fasta]
+    args1 = ["lastal", "-P", str(threads), "-f", "TAB", ref, fasta]#; print " ".join(args1)
     proc1 = subprocess.Popen(args1, stdout=subprocess.PIPE, stderr=sys.stderr)
     return proc1
     
@@ -79,7 +79,8 @@ def _qhits_generator(handle, minLength):
             e = qsize - qstart
             s = qsize - qstart - qalg
         hits[t].append((score, t, s, e))
-    if pq != q:
+    # make sure to report last bit
+    if hits:
         yield pq, pqsize, hits
         
 def _overlap(s, e, score, hits, maxfrac=0.1):
