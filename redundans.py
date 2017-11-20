@@ -26,7 +26,7 @@ from datetime import datetime
 # update sys.path & environmental PATH
 root = os.path.dirname(os.path.abspath(sys.argv[0]))
 src = ["bin", "bin/bwa", "bin/snap", "bin/parallel/src", "bin/pyScaf", \
-       "bin/last/build", "bin/last/scripts", "bin/last/src", ]
+       "bin/last/build", "bin/last/scripts", "bin/last/src", "bin/idba/bin", ]
 paths = [os.path.join(root, p) for p in src]
 sys.path = paths + sys.path
 os.environ["PATH"] = "%s:%s"%(':'.join(paths), os.environ["PATH"])
@@ -40,6 +40,7 @@ from fastq2insert_size import fastq2insert_size
 from filterReads import filter_paired
 from FastaIndex import FastaIndex, symlink
 from pyScaf import LongReadGraph, SyntenyGraph
+from denovo import denovo
 
 def timestamp():
     """Return formatted date-time string"""
@@ -258,7 +259,7 @@ def run_gapclosing(outdir, libraries, nogapsFname, scaffoldsFname,  threads, lim
 
 def _corrupted_file(fname):
     """Return True if output file doesn't exists or is corrupted."""
-    if not os.path.isfile(fname)        or not os.path.getsize(fname) or \
+    if not os.path.isfile(fname) or not os.path.getsize(fname) or \
        not os.path.isfile(fname+".fai") or not os.path.getsize(fname+".fai"):
         return True
 
@@ -275,7 +276,7 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
               reduction=1, scaffolding=1, gapclosing=1, cleaning=1, \
               norearrangements=0, verbose=1, log=sys.stderr):
     """Launch redundans pipeline."""
-    fastas = [fasta, ]; _check_fasta(fasta)
+    fastas = [fasta, ]
     # check resume
     orgresume = resume
     if resume:
@@ -289,7 +290,18 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
         sys.exit(1)
     else:
         os.makedirs(outdir)
-    
+
+    # DE NOVO CONTIGS
+    outfn = os.path.join(outdir, "denovo", "contig.fa")
+    if not fasta or _corrupted_file(outfn):
+        resume += 1
+        if verbose:
+            log.write("%sDe novo assembly...\n"%timestamp())        
+        denovo(os.path.dirname(outfn), fastq, threads, verbose, log)
+        fasta = outfn
+    else:
+        _check_fasta(fasta)
+
     # REDUCTION
     lastOutFn = os.path.join(outdir, "contigs.fa")
     symlink(fasta, lastOutFn)
@@ -453,12 +465,13 @@ def main():
     parser.add_argument("-v", "--verbose",  action="store_true", help="verbose")    
     parser.add_argument('--version', action='version', version='0.13c')
     parser.add_argument("-i", "--fastq", nargs="*", default=[], help="FASTQ PE / MP files")
-    parser.add_argument("-f", "--fasta", required=1, help="FASTA file with contigs / scaffolds")
+    parser.add_argument("-f", "--fasta", default="", help="FASTA file with contigs / scaffolds")
     parser.add_argument("-o", "--outdir", default="redundans", help="output directory [%(default)s]")
     parser.add_argument("-t", "--threads", default=4, type=int, help="max threads to run [%(default)s]")
     parser.add_argument("--resume",  default=False, action="store_true", help="resume previous run")
     parser.add_argument("--log", default=sys.stderr, type=argparse.FileType('w'), help="output log to [stderr]")
     parser.add_argument('--nocleaning', action='store_false', help="keep intermediate files")   
+    parser.add_argument('--tmp', default='/tmp', help="TMP directory [%(default)s]")
     
     redu = parser.add_argument_group('Reduction options')
     redu.add_argument("--identity", default=0.51, type=float, help="min. identity [%(default)s]")
@@ -495,8 +508,13 @@ def main():
     if o.verbose:
         o.log.write("Options: %s\n"%str(o))
 
-    # check if input files exists
-    for fn in [o.fasta,] + o.fastq + o.longreads: 
+    # need contigs or at least PE or MP libs to compute those
+    if not o.fasta and not o.fastq:
+        sys.stderr.write("Provide contigs and/or paired-end/mate pairs libraries\n")
+        sys.exit(1)
+        
+    # check if input files exists [o.fasta,] +
+    for fn in o.fastq + o.longreads: 
         if not os.path.isfile(fn):
             sys.stderr.write("No such file: %s\n"%fn)
             sys.exit(1)
@@ -505,7 +523,7 @@ def main():
     sspacebin = os.path.join(root, "bin/SSPACE/SSPACE_Standard_v3.0.pl")
 
     # check if all executables exists & in correct versions
-    dependencies = {'lastal': 800, 'lastdb': 800, 'GapCloser': 0, 'paste': 0, 'tr': 0, 'zcat': 0}
+    dependencies = {'lastal': 800, 'lastdb': 800, 'GapCloser': 0, 'paste': 0, 'tr': 0, 'zcat': 0, 'idba_ud': 0}
     _check_dependencies(dependencies)
     
     # initialise pipeline

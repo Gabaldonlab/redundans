@@ -19,6 +19,10 @@ echo `date` " GNU parallel"
 (cd bin/parallel && ./configure && make clean && make -j $cores)  >> $log 2>&1 
 retcode=$?; if [ $retcode -gt 0 ]; then exit $retcode; fi
 
+echo `date` " idba"
+(cd bin/idba && ./build.sh && ./configure && make -j $cores) >> $log 2>&1 
+retcode=$?; if [ $retcode -gt 0 ]; then exit $retcode; fi
+
 echo `date` " BWA"
 (cd bin/bwa && make clean && make -j $cores) >> $log 2>&1 
 retcode=$?; if [ $retcode -gt 0 ]; then exit $retcode; fi
