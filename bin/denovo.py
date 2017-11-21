@@ -31,6 +31,8 @@ def get_readlen_and_seqsize(fastq, limit=1000):
         if not l: continue
         if i%4==2:
             seqlen += len(l)
+    # stop handle
+    handle.close()
     # mean read len    
     readlen = int(round(1.*seqlen/limit))
     # estimate size
@@ -64,7 +66,7 @@ def denovo(outdir, fastq, threads, verbose, log, tmp='/tmp'):
     if verbose:    
         log.write("  %s libs (~%.2f Mbases) selected for assembly: %s\n"%(len(fastq), seqsize, ", ".join(fastq)))
     # SPAdes <5 Gb sequence
-    if seqsize < 5*1e5:
+    if seqsize < 5*1e3:
         cmd = "spades.py --only-assembler -t %s -o %s -s %s"%(threads, outdir, " -s ".join(fastq))
         if verbose:
             log.write(" %s\n"%cmd)
