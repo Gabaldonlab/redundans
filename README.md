@@ -16,7 +16,7 @@ Program takes [as input](#parameters) **assembled contigs**, **sequencing librar
 
 <img align="right" src="/docs/redundans_flowchart.png">
 
-The pipeline consists of several steps (modules): 
+The pipeline consists of several steps (modules):  
 0. **de novo contig assembly** (optional if no contigs are given)
 1. **redundancy reduction**: detection and selective removal of redundant contigs from an initial *de novo* assembly 
 2. **scaffolding**: joining of genome fragments using paired-end reads, mate-pairs, long reads and/or reference chromosomes 
