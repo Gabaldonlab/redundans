@@ -14,6 +14,7 @@ To run the test example, execute:
   - [*De novo* genome assembly](#de-novo-genome-assembly)
   - [Redundans pipeline](#redundans-pipeline)
     - [Run statistics](#run-statistics)
+      - [De novo assembly](#de-novo-assembly)
       - [Parameters estimation](#parameters-estimation)
       - [Reduction](#reduction)
       - [Scaffolding](#scaffolding)
@@ -86,6 +87,15 @@ Finally, heterozygous genome assembly pipeline can be applied to simulated heter
 ```
 
 #### Run statistics
+##### De novo assembly
+This is optional step performed only if no contigs (`-f`) are given. 
+Redundans uses [SPAdes](http://cab.spbu.ru/software/spades/) for short-read libraries below 5 Gbases and
+[Platanus](http://platanus.bio.titech.ac.jp/?page_id=14) for larger datasets.
+In first order, Redundans uses libraries with reads between 70-150 bp. If no such libraries are available, 
+libraries with other read lenghts are used, but only libraries with cummulative sequence length of
+at least 2/3 of the largest library will be used.
+Note, assembly is be performed in single-end mode and only resulting contigs (not scaffolds) are going to be used. 
+
 ##### Parameters estimation
 At the beginning, Redundans estimates number of parameters:
 - number of reads that it's going to align (based on `-l/--limit` parameter) 

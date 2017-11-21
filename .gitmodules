@@ -1,7 +1,3 @@
-[submodule "bin/idba"]
-	path = bin/idba
-	url = https://github.com/loneknightpy/idba
-    
 [submodule "bin/bwa"]
     path = bin/bwa
     url = https://github.com/lh3/bwa

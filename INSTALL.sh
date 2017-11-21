@@ -94,7 +94,7 @@ fi
 echo `date` "Installation finished!"
 echo ""
 echo "To try redundans, execute:"
-echo "./redundans.py -v -i test/*.fq.gz -f test/contigs.fa -o test/run1"
+echo "cd redundans; ./redundans.py -v -i test/*.fq.gz -f test/contigs.fa -o test/run1"
 echo ""
 echo "To uninstall execute:"
 echo "rm -rI `pwd`"
