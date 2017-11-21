@@ -26,7 +26,7 @@ from datetime import datetime
 # update sys.path & environmental PATH
 root = os.path.dirname(os.path.abspath(sys.argv[0]))
 src = ["bin", "bin/bwa", "bin/snap", "bin/parallel/src", "bin/pyScaf", \
-       "bin/last/build", "bin/last/scripts", "bin/last/src", "bin/idba/bin", "SPAdes/bin/"]
+       "bin/last/build", "bin/last/scripts", "bin/last/src", "bin/idba/bin", "bin/SPAdes/bin/"]
 paths = [os.path.join(root, p) for p in src]
 sys.path = paths + sys.path
 os.environ["PATH"] = "%s:%s"%(':'.join(paths), os.environ["PATH"])
@@ -291,7 +291,7 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
         os.makedirs(outdir)
 
     # DE NOVO CONTIGS
-    lastOutFn = os.path.join(outdir, "contigs.fasta") 
+    lastOutFn = os.path.join(outdir, "contigs.fa") 
     if not fasta and _corrupted_file(lastOutFn):
         resume += 1
         if verbose:

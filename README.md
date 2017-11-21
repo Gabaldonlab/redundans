@@ -158,14 +158,14 @@ Redundans is **extremely flexible**. All steps of the pipeline can be ommited us
 ### Test run
 To run the test example, execute: 
 ```bash
-./redundans.py -v -i test/*.fq.gz -f test/contigs.fa -o test/run1
+./redundans.py -v -i test/*_?.fq.gz -f test/contigs.fa -o test/run1
 
 # if your run failed for any reason, you can try to resume it
 rm test/run1/_sspace.2.1.filled.fa
-./redundans.py -v -i test/*.fq.gz -f test/contigs.fa -o test/run1 --resume
+./redundans.py -v -i test/*_?.fq.gz -f test/contigs.fa -o test/run1 --resume
 
 # if you have no contigs assembled, just run without `-f`
-./redundans.py -v -i test/{5000,600}_?.fq.gz -o test/run.denovo
+./redundans.py -v -i test/*_?.fq.gz -o test/run.denovo
 ```
 
 Note, the **order of libraries (`-i/--input`) is not important**, as long as `read1` and `read2` from each library are given one after another 
@@ -174,10 +174,10 @@ i.e. `-i 600_1.fq.gz 600_2.fq.gz 5000_1.fq.gz 5000_2.fq.gz` would be interpreted
 You can play with **any combination of inputs** ie. paired-end, mate pairs, long reads and / or reference-based scaffolding, for example:
 ```bash
 # reduction, scaffolding with paired-end, mate pairs and long reads, and gap closing with paired-end and mate pairs
-./redundans.py -v -i test/*.fq.gz -l test/pacbio.fq.gz test/nanopore.fa.gz -f test/contigs.fa -o test/run_short_long
+./redundans.py -v -i test/*_?.fq.gz -l test/pacbio.fq.gz test/nanopore.fa.gz -f test/contigs.fa -o test/run_short_long
 
 # scaffolding and gap closing with paired-end and mate pairs (no reduction)
-./redundans.py -v -i test/*.fq.gz -f test/contigs.fa -o test/run_short-scaffolding-closing --noreduction
+./redundans.py -v -i test/*_?.fq.gz -f test/contigs.fa -o test/run_short-scaffolding-closing --noreduction
 
 # reduction, reference-based scaffolding and gap closing with paired-end reads (--noscaffolding disables only short-read scaffolding)
 ./redundans.py -v -i test/600_?.fq.gz -r test/ref.fa -f test/contigs.fa -o test/run_ref_pe-closing --noscaffolding
