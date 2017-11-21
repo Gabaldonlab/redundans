@@ -17,10 +17,10 @@ Program takes [as input](#parameters) **assembled contigs**, **sequencing librar
 <img align="right" src="/docs/redundans_flowchart.png">
 
 The pipeline consists of several steps (modules):  
-0. **de novo contig assembly** (optional if no contigs are given)
-1. **redundancy reduction**: detection and selective removal of redundant contigs from an initial *de novo* assembly 
-2. **scaffolding**: joining of genome fragments using paired-end reads, mate-pairs, long reads and/or reference chromosomes 
-3. **gap closing**: filling the gaps after scaffolding using paired-end and/or mate-pair reads 
+1. **de novo contig assembly** (optional if no contigs are given)
+2. **redundancy reduction**: detection and selective removal of redundant contigs from an initial *de novo* assembly 
+3. **scaffolding**: joining of genome fragments using paired-end reads, mate-pairs, long reads and/or reference chromosomes 
+4. **gap closing**: filling the gaps after scaffolding using paired-end and/or mate-pair reads 
 
 Redundans is: 
 - **fast** & **lightweight**, multi-core support and memory-optimised, 
