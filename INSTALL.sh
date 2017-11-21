@@ -7,12 +7,13 @@
 
 log="install.log"
 branch="master" # make
+if [ ! -z $1 ]; then branch=$1; fi
 
 echo "#####################################################################################"
 echo "#                                                                                   #"
 echo "#                               Redundans installer                                 #"
 echo "#                                                                                   #"
-echo "#       version 0.13c                                      l.p.pryszcz AT gmail     #"
+echo "#       version 0.13c                                  l.p.pryszcz+git AT gmail     #"
 echo "#####################################################################################"
 echo ""
 echo "Redundans and its dependencies will be installed in:" `pwd`/redundans
