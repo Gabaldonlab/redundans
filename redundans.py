@@ -26,7 +26,7 @@ from datetime import datetime
 # update sys.path & environmental PATH
 root = os.path.dirname(os.path.abspath(sys.argv[0]))
 src = ["bin", "bin/bwa", "bin/snap", "bin/parallel/src", "bin/pyScaf", \
-       "bin/last/build", "bin/last/scripts", "bin/last/src", "bin/idba/bin", ]
+       "bin/last/build", "bin/last/scripts", "bin/last/src", "bin/idba/bin", "SPAdes/bin/"]
 paths = [os.path.join(root, p) for p in src]
 sys.path = paths + sys.path
 os.environ["PATH"] = "%s:%s"%(':'.join(paths), os.environ["PATH"])
@@ -276,7 +276,6 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
               reduction=1, scaffolding=1, gapclosing=1, cleaning=1, \
               norearrangements=0, verbose=1, log=sys.stderr):
     """Launch redundans pipeline."""
-    fastas = [fasta, ]
     # check resume
     orgresume = resume
     if resume:
@@ -292,18 +291,15 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
         os.makedirs(outdir)
 
     # DE NOVO CONTIGS
-    outfn = os.path.join(outdir, "denovo", "contig.fa")
-    if not fasta or _corrupted_file(outfn):
+    lastOutFn = os.path.join(outdir, "contigs.fasta") 
+    if not fasta and _corrupted_file(lastOutFn):
         resume += 1
         if verbose:
             log.write("%sDe novo assembly...\n"%timestamp())        
-        denovo(os.path.dirname(outfn), fastq, threads, verbose, log)
-        fasta = outfn
-    else:
-        _check_fasta(fasta)
+        fasta = denovo(os.path.join(outdir, "denovo"), fastq, threads, verbose, log)
 
     # REDUCTION
-    lastOutFn = os.path.join(outdir, "contigs.fa")
+    fastas = [fasta, ]; _check_fasta(fasta)
     symlink(fasta, lastOutFn)
     fastas.append(lastOutFn); _check_fasta(lastOutFn)
     # update fasta list
@@ -418,7 +414,8 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
         if verbose:
             log.write("%sCleaning-up...\n"%timestamp())
         for root, dirs, fnames in os.walk(outdir):
-            for i, fn in enumerate(filter(lambda x: not x.endswith(('.fa', '.fasta', '.fai', '.tsv', '.png')), fnames), 1):
+            for i, fn in enumerate(filter(lambda x: not x.endswith(('.fa', '.fasta', '.fai', '.tsv', '.png'))
+                                          or 'graph-' in x or 'contig-' in x, fnames), 1):
                 os.unlink(os.path.join(root, fn))
             # rmdir of snap index
             if root.endswith('.snap') and i==len(fnames):
@@ -463,7 +460,7 @@ def main():
     parser  = argparse.ArgumentParser(description=desc, epilog=epilog, formatter_class=argparse.RawTextHelpFormatter)
   
     parser.add_argument("-v", "--verbose",  action="store_true", help="verbose")    
-    parser.add_argument('--version', action='version', version='0.13c')
+    parser.add_argument('--version', action='version', version='0.14a')
     parser.add_argument("-i", "--fastq", nargs="*", default=[], help="FASTQ PE / MP files")
     parser.add_argument("-f", "--fasta", default="", help="FASTA file with contigs / scaffolds")
     parser.add_argument("-o", "--outdir", default="redundans", help="output directory [%(default)s]")
@@ -471,7 +468,6 @@ def main():
     parser.add_argument("--resume",  default=False, action="store_true", help="resume previous run")
     parser.add_argument("--log", default=sys.stderr, type=argparse.FileType('w'), help="output log to [stderr]")
     parser.add_argument('--nocleaning', action='store_false', help="keep intermediate files")   
-    parser.add_argument('--tmp', default='/tmp', help="TMP directory [%(default)s]")
     
     redu = parser.add_argument_group('Reduction options')
     redu.add_argument("--identity", default=0.51, type=float, help="min. identity [%(default)s]")
@@ -523,7 +519,8 @@ def main():
     sspacebin = os.path.join(root, "bin/SSPACE/SSPACE_Standard_v3.0.pl")
 
     # check if all executables exists & in correct versions
-    dependencies = {'lastal': 800, 'lastdb': 800, 'GapCloser': 0, 'paste': 0, 'tr': 0, 'zcat': 0, 'idba_ud': 0}
+    dependencies = {'lastal': 800, 'lastdb': 800, 'GapCloser': 0, 'paste': 0, 'tr': 0, 'zcat': 0,
+                    'spades.py': 0, 'platanus': 0}
     _check_dependencies(dependencies)
     
     # initialise pipeline

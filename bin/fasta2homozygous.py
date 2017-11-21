@@ -16,8 +16,6 @@ import gzip, os, sys, subprocess
 from datetime import datetime
 from FastaIndex import FastaIndex
 
-import numpy as np
-
 # update sys.path & environmental PATH
 root = os.path.dirname(os.path.abspath(sys.argv[0]))
 os.environ["PATH"] = "%s:%s"%(root, os.environ["PATH"])

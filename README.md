@@ -163,6 +163,9 @@ To run the test example, execute:
 # if your run failed for any reason, you can try to resume it
 rm test/run1/_sspace.2.1.filled.fa
 ./redundans.py -v -i test/*.fq.gz -f test/contigs.fa -o test/run1 --resume
+
+# if you have no contigs assembled, just run without `-f`
+./redundans.py -v -i test/{5000,600}_?.fq.gz -o test/run.denovo
 ```
 
 Note, the **order of libraries (`-i/--input`) is not important**, as long as `read1` and `read2` from each library are given one after another 

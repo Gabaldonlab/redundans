@@ -1,3 +1,12 @@
+####0.14a
+- de novo assembly step if not contigs given
+
+TBD
+- check if something need recompilation and try to recompile
+- instead of processing 100M reads for 4 libs with similar IS, split it by 25M each
+- bioconda
+- speed-up gap closing - so far the slowest step! (5/7 of the run!)
+
 ####0.13c
 - preprocessing
  - more accurate libs stats estimation (using 5% of the genome in the longest contigs)
@@ -6,12 +15,6 @@
 - scaffolding:
  - using combination of snap+lastal - very fast and super sensitive!
  - no gap closing during scaffolding?
-
-TBD
-- check if something need recompilation and try to recompile
-- instead of processing 100M reads for 4 libs with similar IS, split it by 25M each
-- bioconda
-- speed-up gap closing - so far the slowest step! (5/7 of the run!)
 
 ####0.13b
 - reduction:
