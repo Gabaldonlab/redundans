@@ -58,8 +58,8 @@ def denovo(outdir, fastq, threads, verbose, log, tmp='/tmp'):
         log.write(" %s libs: %s\n"%(len(fastq), ", ".join(fastq)))
         
     # create missing outdir
-    if not os.path.isdir(os.path.dirname(outdir)):
-        os.makedirs(os.path.dirname(outdir))
+    if not os.path.isdir(outdir):
+        os.makedirs(outdir)
 
     # select best library(ies)
     fastq, seqsize = get_best_lib(fastq)
@@ -86,14 +86,16 @@ def denovo(outdir, fastq, threads, verbose, log, tmp='/tmp'):
             log.write(" %s\n"%cmd)
         # write FastA to fifo
         with open(tmp, 'wb') as pipe:
-            fastq2fasta = Popen(["fastq2fasta.py", "-l 31", "-q 20", "-i"] + fastq, stdout=pipe, stderr=PIPE)
+            #parser = Popen(["zcat", ] + fastq, stdout=pipe, stderr=PIPE)
+            parser = Popen(["fastq2fasta.py", "-l 31", "-q 20", "-i"] + fastq, stdout=pipe, stderr=PIPE)
         # wait for process to finish
-        fastq2fasta.wait()
+        parser.wait()
         # rm fifo 
         os.unlink(tmp)
-        outfn = prefix + "_contigs.fa"
+        outfn = prefix + "_contig.fa"
     # read stdout to finish the process
     stdout = p.stdout.readlines()#; print stdout
+    
     return outfn
         
 def main():
