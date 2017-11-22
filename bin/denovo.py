@@ -65,8 +65,8 @@ def denovo(outdir, fastq, threads, verbose, log, tmp='/tmp'):
     fastq, seqsize = get_best_lib(fastq)
     if verbose:    
         log.write("  %s libs (~%.2f Mbases) selected for assembly: %s\n"%(len(fastq), seqsize, ", ".join(fastq)))
-    # SPAdes <5 Gb sequence
-    if seqsize < 5*1e3:
+    # SPAdes <20 Gb sequence
+    if seqsize < 2*1e4:
         cmd = "spades.py --only-assembler -t %s -o %s -s %s"%(threads, outdir, " -s ".join(fastq))
         if verbose:
             log.write(" %s\n"%cmd)
