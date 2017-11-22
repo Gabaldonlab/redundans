@@ -69,7 +69,7 @@ def get_libraries(fastq, fasta, mapq, threads, verbose, log=sys.stderr, limit=0,
         fq1, fq2, readlen, ismedian, ismean, isstd, pairs, orientation = data
         # add new library set if 
         if not libraries or ismean > 1.5*libraries[-1][4][0]:
-            # libnames, libFs, libRs, orientations, libIS, libISStDev
+            # libnames, readlen, libFs, libRs, orientations, libIS, libISStDev
             libraries.append([[], [], [], [], [], [], []])
             i = 1
         # add libname & fastq files
@@ -481,7 +481,7 @@ def main():
                       help="max link ratio between two best contig pairs [%(default)s]")    
     scaf.add_argument("--limit", default=0.2, type=float, help="align subset of reads [%(default)s]")
     scaf.add_argument("-q", "--mapq", default=10, type=int, help="min mapping quality [%(default)s]")
-    scaf.add_argument("--iters", default=2, type=int, help="iterations per library [%(default)s]")
+    scaf.add_argument("--iters", default=3, type=int, help="iterations per library [%(default)s]")
     scaf.add_argument('--noscaffolding', action='store_false', help="Skip short-read scaffolding")
      
     longscaf = parser.add_argument_group('Long-read scaffolding options')
