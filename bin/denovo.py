@@ -101,7 +101,7 @@ def run_scaffolding(prefix, fastq, threads, tmpdir, log, limit=1.):
     # wait for process to finish
     parser.wait()
     # read stdout to finish the process
-    pout = p.stdout.readlines() + p.stderr.readlines(); p.wait()#; print pout
+    pout = p.stdout.readlines() + p.stderr.readlines(); p.wait(); print pout
     # rm fifo
     os.unlink(tmp)
 
@@ -118,7 +118,7 @@ def run_gapclosing(prefix, fastq, threads, tmpdir, log, limit=1.):
     # wait for process to finish
     parser.wait()
     # read stdout to finish the process
-    pout = p.stdout.readlines() + p.stderr.readlines(); p.wait()#; print pout
+    pout = p.stdout.readlines() + p.stderr.readlines(); p.wait(); print pout
     # rm fifo
     os.unlink(tmp)
     
@@ -147,10 +147,12 @@ def denovo(outdir, fastq, threads, verbose, log, tmpdir='/tmp'):
         pefastq = []
         for x in pelibs: pefastq += x[:2]
         if verbose:
-            log.write(" selected %s lib(s) for scaffolding & gap closing: %s\n"%(len(pelibs), ", ".join(pefastq)))
+            log.write("  selected %s lib(s) for scaffolding & gap closing: %s\n"%(len(pelibs), ", ".join(pefastq)))
         run_scaffolding(prefix, pefastq, threads, tmpdir, log)
         run_gapclosing(prefix, pefastq, threads, tmpdir, log)
         outfn = prefix + "_gapClosed.fa"
+    elif verbose:
+        log.write("  No suitable libs for scaffolding & gap closing!\n")
     return outfn
 
 def main():
