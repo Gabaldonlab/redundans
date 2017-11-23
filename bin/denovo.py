@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 desc="""De novo assembly module
+
+TBA:
+- catch combination of .fq & fq.gz
+- specify IP / OP correctly
 """
 epilog="""Author:
 l.p.pryszcz@gmail.com
@@ -10,6 +14,10 @@ Warsaw, 20/11/2017
 import commands, os, sys, tempfile
 from datetime import datetime
 from subprocess import Popen, PIPE
+from fastq2insert_size import fastq2insert_size
+
+# update environmental PATH with script dir
+os.environ["PATH"] = "%s:%s"%(os.path.dirname(os.path.abspath(sys.argv[0])), os.environ["PATH"])
 
 def get_readlen_and_seqsize(fastq, limit=1000):
     """Return mean readlen and total seqsize in Mb"""
@@ -52,52 +60,99 @@ def get_best_lib(fastq, frac=0.66, verbose=0):
     maxsize = max(sizes)
     return filter(lambda x: lib2data[x][1] >= frac*maxsize, fastq), sum(sizes)
 
-def denovo(outdir, fastq, threads, verbose, log, tmp='/tmp'):
+def get_named_fifo():
+    """Return named FIFO"""
+    tmpfn = tempfile.mktemp()
+    os.mkfifo(tmpfn)
+    return tmpfn
+    
+def run_assembly(prefix, fastq, threads, tmpdir, log):
+    """Execute platanus assemble"""
+    # create named FIFO
+    tmp = get_named_fifo()
+    # run assembly
+    cmd = "platanus assemble -tmp %s -t %s -o %s -f %s" % (tmpdir, threads, prefix, tmp)
+    p = Popen(cmd.split(), stdout=PIPE, stderr=PIPE)
+    if log:
+        log.write(" %s\n"%cmd)
+    # write FastA to fifo
+    with open(tmp, 'wb') as pipe:
+        cmd = ["cat", ] + fastq
+        if filter(lambda fn: fn.endswith('.gz'), fastq):
+            cmd[0] = "zcat" 
+        parser = Popen(cmd, stdout=pipe, stderr=PIPE)
+    # wait for process to finish
+    parser.wait()
+    # read stdout to finish the process
+    pout = p.stdout.readlines() + p.stderr.readlines(); p.wait()#; print pout
+    # rm fifo
+    os.unlink(tmp)
+    
+def run_scaffolding(prefix, fastq, threads, tmpdir, log, limit=1.):
+    """Execute platanus assemble"""
+    tmp = get_named_fifo()
+    cmd = "platanus scaffold -tmp %s -t %s -o %s -c %s_contig.fa -b %s_contigBubble.fa -ip1 %s" % (tmpdir, threads, prefix, prefix, prefix, tmp)
+    p = Popen(cmd.split(), stdout=PIPE, stderr=PIPE)
+    if log:
+        log.write(" %s\n"%cmd)
+    # write shuffled FastQ to fifo
+    with open(tmp, 'wb') as pipe:
+        parser = Popen(["fastq2shuffled.py", ] + fastq, stdout=pipe, stderr=PIPE)
+    # wait for process to finish
+    parser.wait()
+    # read stdout to finish the process
+    pout = p.stdout.readlines() + p.stderr.readlines(); p.wait()#; print pout
+    # rm fifo
+    os.unlink(tmp)
+
+def run_gapclosing(prefix, fastq, threads, tmpdir, log, limit=1.):
+    """Execute platanus assemble"""
+    tmp = get_named_fifo()
+    cmd = "platanus gap_close -tmp %s -t %s -o %s -c %s_scaffold.fa -ip1 %s" % (tmpdir, threads, prefix, prefix, tmp)
+    p = Popen(cmd.split(), stdout=PIPE, stderr=PIPE)
+    if log:
+        log.write(" %s\n"%cmd)
+    # write shuffled FastQ to fifo
+    with open(tmp, 'wb') as pipe:
+        parser = Popen(["fastq2shuffled.py", ] + fastq, stdout=pipe, stderr=PIPE)
+    # wait for process to finish
+    parser.wait()
+    # read stdout to finish the process
+    pout = p.stdout.readlines() + p.stderr.readlines(); p.wait()#; print pout
+    # rm fifo
+    os.unlink(tmp)
+    
+def denovo(outdir, fastq, threads, verbose, log, tmpdir='/tmp'):
     """Select best libriaries and run de novo assembly using idba_ud"""
-    if verbose:    
-        log.write(" %s libs: %s\n"%(len(fastq), ", ".join(fastq)))
-        
     # create missing outdir
     if not os.path.isdir(outdir):
         os.makedirs(outdir)
-
     # select best library(ies)
-    fastq, seqsize = get_best_lib(fastq)
-    if verbose:    
-        log.write("  %s libs (~%.2f Mbases) selected for assembly: %s\n"%(len(fastq), seqsize, ", ".join(fastq)))
-    # SPAdes <20 Gb sequence
-    if seqsize < 2*1e4:
-        cmd = "spades.py --only-assembler -t %s -o %s -s %s"%(threads, outdir, " -s ".join(fastq))
-        if verbose:
-            log.write(" %s\n"%cmd)
-        p = Popen(cmd.split(), stdout=PIPE, stderr=PIPE)
-        outfn = os.path.join(outdir, "contigs.fasta")
-    else:
-        # platanus
-        prefix = os.path.join(outdir, "out")
-        # create named FIFO
-        tmp = tempfile.mktemp()
-        os.mkfifo(tmp)
-        # run assembly
-        #cmd = "idba_ud --mink 31 --maxk 101 --step 10 --num_threads %s -o %s -r %s"%(threads, outdir, tmp)
-        cmd = "platanus assemble -t %s -o %s -f %s" % (threads, prefix, tmp)
-        p = Popen(cmd.split(), stdout=PIPE, stderr=PIPE)
-        if verbose:
-            log.write(" %s\n"%cmd)
-        # write FastA to fifo
-        with open(tmp, 'wb') as pipe:
-            #parser = Popen(["zcat", ] + fastq, stdout=pipe, stderr=PIPE)
-            parser = Popen(["fastq2fasta.py", "-l 31", "-q 20", "-i"] + fastq, stdout=pipe, stderr=PIPE)
-        # wait for process to finish
-        parser.wait()
-        # rm fifo 
-        os.unlink(tmp)
-        outfn = prefix + "_contig.fa"
-    # read stdout to finish the process
-    stdout = p.stdout.readlines()#; print stdout
+    if verbose: 
+        log.write(" %s libs: %s\n"%(len(fastq), ", ".join(fastq)))
+    bestfastq, seqsize = get_best_lib(fastq)
+    if verbose: 
+        log.write("  %s libs (~%.2f Mbases) selected for assembly: %s\n"%(len(bestfastq), seqsize, ", ".join(bestfastq)))
+    # platanus
+    prefix = os.path.join(outdir, "out")
+    run_assembly(prefix, bestfastq, threads, tmpdir, log)
+    outfn = prefix + "_contig.fa"
     
+    # estimate insert size
+    # fq1, fq2, readlen, ismedian, ismean, isstd, pairs, orientation
+    libdata = fastq2insert_size(log, fastq, prefix+"_contig.fa", threads=threads)
+    pelibs = filter(lambda x: x[-1] in ('FR', ) and 100<x[4]<1000, libdata) #'RF'
+    if pelibs:
+        pelibs = sorted(pelibs, key=lambda x: x[4])
+        pefastq = []
+        for x in pelibs: pefastq += x[:2]
+        if verbose:
+            log.write(" selected %s lib(s) for scaffolding & gap closing: %s\n"%(len(pelibs), ", ".join(pefastq)))
+        run_scaffolding(prefix, pefastq, threads, tmpdir, log)
+        run_gapclosing(prefix, pefastq, threads, tmpdir, log)
+        outfn = prefix + "_gapClosed.fa"
     return outfn
-        
+
 def main():
     import argparse
     usage   = "%(prog)s -v"
@@ -109,6 +164,7 @@ def main():
     parser.add_argument("-o", "--outdir", default="denovo", help="output directory [%(default)s]")
     parser.add_argument("-t", "--threads", default=4, type=int, help="max threads to run [%(default)s]")
     parser.add_argument("--log", default=sys.stderr, type=argparse.FileType('w'), help="output log to [stderr]")
+    parser.add_argument("--tmp", default='/tmp', help="tmp directory [%(default)s]")
     
     # print help if no parameters
     if len(sys.argv)==1:
@@ -119,7 +175,7 @@ def main():
     if o.verbose:
         o.log.write("Options: %s\n"%str(o))
 
-    outfn = denovo(o.outdir, o.fastq, o.threads, o.verbose, o.log)
+    outfn = denovo(o.outdir, o.fastq, o.threads, o.verbose, o.log, o.tmp)
     sys.stderr.write("Final contigs in: %s\n"%outfn)
 
 if __name__=='__main__': 

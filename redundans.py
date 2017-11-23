@@ -46,7 +46,7 @@ def timestamp():
     """Return formatted date-time string"""
     return "\n%s\n[%s] "%("#"*50, datetime.ctime(datetime.now()))
 
-def get_libraries(fastq, fasta, mapq, threads, verbose, log=sys.stderr, limit=0,
+def get_libraries(fastq, fasta, mapq=10, threads=4, verbose=1, log=sys.stderr, limit=0,
                   libraries=[], stdfracTh=0.66, maxcfracTh=0.9, genomeFrac=0.05):
     """Return libraries"""
     # skip if all libs OKish
@@ -59,8 +59,7 @@ def get_libraries(fastq, fasta, mapq, threads, verbose, log=sys.stderr, limit=0,
         limit = 10e5
     
     # get libraries statistics using 1% of mapped read limit
-    libdata = fastq2insert_size(log, fastq, fasta, mapq, threads, limit/100, verbose, log, \
-                                genomeFrac, stdfracTh, maxcfracTh)
+    libdata = fastq2insert_size(log, fastq, fasta, mapq, threads, limit/100, genomeFrac, stdfracTh, maxcfracTh)
     # separate paired-end & mate pairs
     ## also separate 300 and 600 paired-ends
     libraries = []
@@ -274,7 +273,7 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
               threads, resume, identity, overlap, minLength, \
               joins, linkratio, readLimit, iters, sspacebin, \
               reduction=1, scaffolding=1, gapclosing=1, cleaning=1, \
-              norearrangements=0, verbose=1, log=sys.stderr):
+              norearrangements=0, verbose=1, log=sys.stderr, tmp="/tmp"):
     """Launch redundans pipeline."""
     # check resume
     orgresume = resume
@@ -296,7 +295,7 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
         resume += 1
         if verbose:
             log.write("%sDe novo assembly...\n"%timestamp())        
-        fasta = denovo(os.path.join(outdir, "denovo"), fastq, threads, verbose, log)
+        fasta = denovo(os.path.join(outdir, "denovo"), fastq, threads, verbose, log, tmp)
 
     # REDUCTION
     fastas = [fasta, ]; _check_fasta(fasta)
@@ -468,6 +467,7 @@ def main():
     parser.add_argument("--resume",  default=False, action="store_true", help="resume previous run")
     parser.add_argument("--log", default=sys.stderr, type=argparse.FileType('w'), help="output log to [stderr]")
     parser.add_argument('--nocleaning', action='store_false', help="keep intermediate files")   
+    parser.add_argument("--tmp", default='/tmp', help="tmp directory [%(default)s]")
     
     redu = parser.add_argument_group('Reduction options')
     redu.add_argument("--identity", default=0.51, type=float, help="min. identity [%(default)s]")
@@ -481,7 +481,7 @@ def main():
                       help="max link ratio between two best contig pairs [%(default)s]")    
     scaf.add_argument("--limit", default=0.2, type=float, help="align subset of reads [%(default)s]")
     scaf.add_argument("-q", "--mapq", default=10, type=int, help="min mapping quality [%(default)s]")
-    scaf.add_argument("--iters", default=3, type=int, help="iterations per library [%(default)s]")
+    scaf.add_argument("--iters", default=2, type=int, help="iterations per library [%(default)s]")
     scaf.add_argument('--noscaffolding', action='store_false', help="Skip short-read scaffolding")
      
     longscaf = parser.add_argument_group('Long-read scaffolding options')
@@ -528,7 +528,7 @@ def main():
               o.threads, o.resume, o.identity, o.overlap, o.minLength,  \
               o.joins, o.linkratio, o.limit, o.iters, sspacebin, \
               o.noreduction, o.noscaffolding, o.nogapclosing, o.nocleaning, \
-              o.norearrangements, o.verbose, o.log)
+              o.norearrangements, o.verbose, o.log, o.tmp)
 
 if __name__=='__main__': 
     t0 = datetime.now()
