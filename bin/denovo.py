@@ -99,7 +99,7 @@ def run_scaffolding(prefix, fastq, threads, tmpdir, log, locallog, limit=1.):
         parser = Popen(["fastq2shuffled.py", ] + fastq, stdout=pipe, stderr=locallog)
         parser.wait()
     # wait for process to finish & rm fifo
-    p.wait(); print p.returncode
+    p.wait()
     os.unlink(tmp)
     return p.returncode
 
@@ -145,10 +145,10 @@ def denovo(outdir, fastq, threads, mem, verbose, log, tmpdir='/tmp'):
         if verbose:
             log.write("  selected %s lib(s) for scaffolding & gap closing: %s\n"%(len(pelibs), ", ".join(pefastq)))
         # scaffold
-        if not run_scaffolding(prefix, pefastq, threads, tmpdir, log, locallog):
+        if run_scaffolding(prefix, pefastq, threads, tmpdir, log, locallog)==0: 
             outfn = prefix + "_scaffold.fa"
         # gap_close
-        if not run_gapclosing(prefix, pefastq, threads, tmpdir, log, locallog):
+        if run_gapclosing(prefix, pefastq, threads, tmpdir, log, locallog)==0: 
             outfn = prefix + "_gapClosed.fa"
     elif verbose:
         log.write("  No suitable libs for scaffolding & gap closing!\n")
