@@ -67,7 +67,7 @@ def get_named_fifo():
     return tmpfn
     
 def run_assembly(prefix, fastq, threads, mem, tmpdir, log, locallog):
-    """Execute platanus assemble"""
+    """Execute platanus assemble & return returncode"""
     # create named FIFO
     tmp = get_named_fifo()
     # run assembly
@@ -85,9 +85,10 @@ def run_assembly(prefix, fastq, threads, mem, tmpdir, log, locallog):
     # wait for process to finish & rm fifo
     p.wait()
     os.unlink(tmp)
+    return p.returncode
     
 def run_scaffolding(prefix, fastq, threads, tmpdir, log, locallog, limit=1.):
-    """Execute platanus assemble"""
+    """Execute platanus scaffold & return returncode"""
     tmp = get_named_fifo()
     cmd = "platanus scaffold -tmp %s -t %s -o %s -c %s_contig.fa -b %s_contigBubble.fa -ip1 %s" % (tmpdir, threads, prefix, prefix, prefix, tmp)
     p = Popen(cmd.split(), stdout=locallog, stderr=locallog)
@@ -98,11 +99,12 @@ def run_scaffolding(prefix, fastq, threads, tmpdir, log, locallog, limit=1.):
         parser = Popen(["fastq2shuffled.py", ] + fastq, stdout=pipe, stderr=locallog)
         parser.wait()
     # wait for process to finish & rm fifo
-    p.wait()
+    p.wait(); print p.returncode
     os.unlink(tmp)
+    return p.returncode
 
 def run_gapclosing(prefix, fastq, threads, tmpdir, log, locallog, limit=1.):
-    """Execute platanus assemble"""
+    """Execute platanus gap_close & return returncode"""
     tmp = get_named_fifo()
     cmd = "platanus gap_close -tmp %s -t %s -o %s -c %s_scaffold.fa -ip1 %s" % (tmpdir, threads, prefix, prefix, tmp)
     p = Popen(cmd.split(), stdout=locallog, stderr=locallog)
@@ -115,6 +117,7 @@ def run_gapclosing(prefix, fastq, threads, tmpdir, log, locallog, limit=1.):
     # wait for process to finish & rm fifo
     p.wait()
     os.unlink(tmp)
+    return p.returncode
     
 def denovo(outdir, fastq, threads, mem, verbose, log, tmpdir='/tmp'):
     """Select best libriaries and run de novo assembly using idba_ud"""
@@ -126,25 +129,27 @@ def denovo(outdir, fastq, threads, mem, verbose, log, tmpdir='/tmp'):
         log.write(" %s libs: %s\n"%(len(fastq), ", ".join(fastq)))
     bestfastq, seqsize = get_best_lib(fastq)
     if verbose: 
-        log.write("  %s libs (~%.2f Mbases) selected for assembly: %s\n"%(len(bestfastq), seqsize, ", ".join(bestfastq)))
+        log.write("  selected %s lib(s) (~%.2f Mbases) for assembly: %s\n"%(len(bestfastq), seqsize, ", ".join(bestfastq)))
     # platanus
     prefix = os.path.join(outdir, "out"); locallog = open(prefix+".log", "a")
-    run_assembly(prefix, bestfastq, threads, mem, tmpdir, log, locallog)
     outfn = prefix + "_contig.fa"
+    if not os.path.isfile(outfn):
+        run_assembly(prefix, bestfastq, threads, mem, tmpdir, log, locallog)
     
     # estimate insert size
     # fq1, fq2, readlen, ismedian, ismean, isstd, pairs, orientation
     libdata = fastq2insert_size(log, fastq, prefix+"_contig.fa", threads=threads)
     pelibs = filter(lambda x: x[-1] in ('FR', ) and 100<x[4]<1000, libdata) #'RF'
     if pelibs:
-        pelibs = sorted(pelibs, key=lambda x: x[4])
-        pefastq = []
-        for x in pelibs: pefastq += x[:2]
+        pefastq = list(sorted(pelibs, key=lambda x: x[4])[0][:2])
         if verbose:
             log.write("  selected %s lib(s) for scaffolding & gap closing: %s\n"%(len(pelibs), ", ".join(pefastq)))
-        run_scaffolding(prefix, pefastq, threads, tmpdir, log, locallog)
-        run_gapclosing(prefix, pefastq, threads, tmpdir, log, locallog)
-        outfn = prefix + "_gapClosed.fa"
+        # scaffold
+        if not run_scaffolding(prefix, pefastq, threads, tmpdir, log, locallog):
+            outfn = prefix + "_scaffold.fa"
+        # gap_close
+        if not run_gapclosing(prefix, pefastq, threads, tmpdir, log, locallog):
+            outfn = prefix + "_gapClosed.fa"
     elif verbose:
         log.write("  No suitable libs for scaffolding & gap closing!\n")
     locallog.close()
@@ -160,7 +165,7 @@ def main():
     parser.add_argument("-i", "--fastq", nargs="*", default=[], help="FASTQ PE / MP files")
     parser.add_argument("-o", "--outdir", default="denovo", help="output directory [%(default)s]")
     parser.add_argument("-t", "--threads", default=4, type=int, help="max threads to run [%(default)s]")
-    parser.add_argument("-m", "--mem", default=16, type=int, help="max memory to allocate in GB [%(default)s]")
+    parser.add_argument("-m", "--mem", default=16, type=int, help="max memory to allocate (in GB) [%(default)s]")
     parser.add_argument("--log", default=sys.stderr, type=argparse.FileType('w'), help="output log to [stderr]")
     parser.add_argument("--tmp", default='/tmp', help="tmp directory [%(default)s]")
     

@@ -89,12 +89,14 @@ Finally, heterozygous genome assembly pipeline can be applied to simulated heter
 #### Run statistics
 ##### De novo assembly
 This is optional step performed only if no contigs (`-f`) are given. 
-Redundans uses [SPAdes](http://cab.spbu.ru/software/spades/) for short-read libraries below 5 Gbases and
-[Platanus](http://platanus.bio.titech.ac.jp/?page_id=14) for larger datasets.
+Redundans uses [Platanus](http://platanus.bio.titech.ac.jp/?page_id=14) for contigs assembly, scaffolding and gap closing.
 In first order, Redundans uses libraries with reads between 70-150 bp. If no such libraries are available, 
 libraries with other read lenghts are used, but only libraries with cummulative sequence length of
-at least 2/3 of the largest library will be used.
-Note, assembly is be performed in single-end mode and only resulting contigs (not scaffolds) are going to be used. 
+at least 2/3 of the largest library will be used. 
+Note, assembly is be performed in single-end mode and only resulting contigs (not scaffolds) are going to be used.  
+Subsequently, [library statistics are estimated](#parameters-estimation) and if FR paired-end libraries are detected,
+Redundans will proceed with scaffolding and gap closing of de novo contigs using [Platanus](http://platanus.bio.titech.ac.jp/?page_id=14).
+This shouldn't be mixed with Redundans scaffolding and gap closing modules - those are using different software and set of parameters. 
 
 ##### Parameters estimation
 At the beginning, Redundans estimates number of parameters:
