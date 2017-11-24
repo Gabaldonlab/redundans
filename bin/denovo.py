@@ -66,12 +66,12 @@ def get_named_fifo():
     os.mkfifo(tmpfn)
     return tmpfn
     
-def run_assembly(prefix, fastq, threads, tmpdir, log, locallog):
+def run_assembly(prefix, fastq, threads, mem, tmpdir, log, locallog):
     """Execute platanus assemble"""
     # create named FIFO
     tmp = get_named_fifo()
     # run assembly
-    cmd = "platanus assemble -tmp %s -t %s -o %s -f %s" % (tmpdir, threads, prefix, tmp)
+    cmd = "platanus assemble -tmp %s -t %s -m %s -o %s -f %s" % (tmpdir, threads, mem, prefix, tmp)
     p = Popen(cmd.split(), stdout=locallog, stderr=locallog)
     if log:
         log.write(" %s\n"%cmd)
@@ -116,7 +116,7 @@ def run_gapclosing(prefix, fastq, threads, tmpdir, log, locallog, limit=1.):
     p.wait()
     os.unlink(tmp)
     
-def denovo(outdir, fastq, threads, verbose, log, tmpdir='/tmp'):
+def denovo(outdir, fastq, threads, mem, verbose, log, tmpdir='/tmp'):
     """Select best libriaries and run de novo assembly using idba_ud"""
     # create missing outdir
     if not os.path.isdir(outdir):
@@ -129,7 +129,7 @@ def denovo(outdir, fastq, threads, verbose, log, tmpdir='/tmp'):
         log.write("  %s libs (~%.2f Mbases) selected for assembly: %s\n"%(len(bestfastq), seqsize, ", ".join(bestfastq)))
     # platanus
     prefix = os.path.join(outdir, "out"); locallog = open(prefix+".log", "a")
-    run_assembly(prefix, bestfastq, threads, tmpdir, log, locallog)
+    run_assembly(prefix, bestfastq, threads, mem, tmpdir, log, locallog)
     outfn = prefix + "_contig.fa"
     
     # estimate insert size
@@ -160,6 +160,7 @@ def main():
     parser.add_argument("-i", "--fastq", nargs="*", default=[], help="FASTQ PE / MP files")
     parser.add_argument("-o", "--outdir", default="denovo", help="output directory [%(default)s]")
     parser.add_argument("-t", "--threads", default=4, type=int, help="max threads to run [%(default)s]")
+    parser.add_argument("-m", "--mem", default=16, type=int, help="max memory to allocate in GB [%(default)s]")
     parser.add_argument("--log", default=sys.stderr, type=argparse.FileType('w'), help="output log to [stderr]")
     parser.add_argument("--tmp", default='/tmp', help="tmp directory [%(default)s]")
     
@@ -172,7 +173,7 @@ def main():
     if o.verbose:
         o.log.write("Options: %s\n"%str(o))
 
-    outfn = denovo(o.outdir, o.fastq, o.threads, o.verbose, o.log, o.tmp)
+    outfn = denovo(o.outdir, o.fastq, o.threads, o.mem, o.verbose, o.log, o.tmp)
     sys.stderr.write("Final contigs in: %s\n"%outfn)
 
 if __name__=='__main__': 

@@ -270,7 +270,7 @@ def _check_fasta(lastOutFn, minSize=1000, log=sys.stderr):
         sys.exit(1)
         
 def redundans(fastq, longreads, fasta, reference, outdir, mapq, 
-              threads, resume, identity, overlap, minLength, \
+              threads, mem, resume, identity, overlap, minLength, \
               joins, linkratio, readLimit, iters, sspacebin, \
               reduction=1, scaffolding=1, gapclosing=1, cleaning=1, \
               norearrangements=0, verbose=1, log=sys.stderr, tmp="/tmp"):
@@ -295,7 +295,7 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
         resume += 1
         if verbose:
             log.write("%sDe novo assembly...\n"%timestamp())        
-        fasta = denovo(os.path.join(outdir, "denovo"), fastq, threads, verbose, log, tmp)
+        fasta = denovo(os.path.join(outdir, "denovo"), fastq, threads, mem, verbose, log, tmp)
 
     # REDUCTION
     fastas = [fasta, ]; _check_fasta(fasta)
@@ -466,8 +466,11 @@ def main():
     parser.add_argument("-t", "--threads", default=4, type=int, help="max threads to run [%(default)s]")
     parser.add_argument("--resume",  default=False, action="store_true", help="resume previous run")
     parser.add_argument("--log", default=sys.stderr, type=argparse.FileType('w'), help="output log to [stderr]")
-    parser.add_argument('--nocleaning', action='store_false', help="keep intermediate files")   
-    parser.add_argument("--tmp", default='/tmp', help="tmp directory [%(default)s]")
+    parser.add_argument('--nocleaning', action='store_false', help="keep intermediate files")
+    
+    denovo = parser.add_argument_group('De novo assembly options')
+    denovo.add_argument("-m", "--mem", default=16, type=int, help="max memory to allocate (in GB) [%(default)s]")
+    denovo.add_argument("--tmp", default='/tmp', help="tmp directory [%(default)s]")
     
     redu = parser.add_argument_group('Reduction options')
     redu.add_argument("--identity", default=0.51, type=float, help="min. identity [%(default)s]")
@@ -525,7 +528,7 @@ def main():
     
     # initialise pipeline
     redundans(o.fastq, o.longreads, o.fasta, o.reference, o.outdir, o.mapq, \
-              o.threads, o.resume, o.identity, o.overlap, o.minLength,  \
+              o.threads, o.mem, o.resume, o.identity, o.overlap, o.minLength,  \
               o.joins, o.linkratio, o.limit, o.iters, sspacebin, \
               o.noreduction, o.noscaffolding, o.nogapclosing, o.nocleaning, \
               o.norearrangements, o.verbose, o.log, o.tmp)
