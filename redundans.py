@@ -26,7 +26,7 @@ from datetime import datetime
 # update sys.path & environmental PATH
 root = os.path.dirname(os.path.abspath(sys.argv[0]))
 src = ["bin", "bin/bwa", "bin/snap", "bin/parallel/src", "bin/pyScaf", \
-       "bin/last/build", "bin/last/scripts", "bin/last/src", "bin/idba/bin", "bin/SPAdes/bin/"]
+       "bin/last/build", "bin/last/scripts", "bin/last/src",]
 paths = [os.path.join(root, p) for p in src]
 sys.path = paths + sys.path
 os.environ["PATH"] = "%s:%s"%(':'.join(paths), os.environ["PATH"])
@@ -413,8 +413,8 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
         if verbose:
             log.write("%sCleaning-up...\n"%timestamp())
         for root, dirs, fnames in os.walk(outdir):
-            for i, fn in enumerate(filter(lambda x: not x.endswith(('.fa', '.fasta', '.fai', '.tsv', '.png'))
-                                          or 'graph-' in x or 'contig-' in x, fnames), 1):
+            endings = ('.fa', '.fasta', '.fai', '.tsv', '.png', '.log')
+            for i, fn in enumerate(filter(lambda x: not x.endswith(endings, fnames), 1):
                 os.unlink(os.path.join(root, fn))
             # rmdir of snap index
             if root.endswith('.snap') and i==len(fnames):
@@ -522,8 +522,7 @@ def main():
     sspacebin = os.path.join(root, "bin/SSPACE/SSPACE_Standard_v3.0.pl")
 
     # check if all executables exists & in correct versions
-    dependencies = {'lastal': 800, 'lastdb': 800, 'GapCloser': 0, 'paste': 0, 'tr': 0, 'zcat': 0,
-                    'spades.py': 0, 'platanus': 0}
+    dependencies = {'lastal': 800, 'lastdb': 800, 'GapCloser': 0, 'paste': 0, 'tr': 0, 'zcat': 0, 'platanus': 0}
     _check_dependencies(dependencies)
     
     # initialise pipeline

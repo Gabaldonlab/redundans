@@ -147,9 +147,13 @@ def denovo(outdir, fastq, threads, mem, verbose, log, tmpdir='/tmp'):
         # scaffold
         if run_scaffolding(prefix, pefastq, threads, tmpdir, log, locallog)==0: 
             outfn = prefix + "_scaffold.fa"
+        else:
+            log.write("[WARNING]  failed!\n")
         # gap_close
         if run_gapclosing(prefix, pefastq, threads, tmpdir, log, locallog)==0: 
             outfn = prefix + "_gapClosed.fa"
+        else:
+            log.write("[WARNING]  failed!\n")
     elif verbose:
         log.write("  No suitable libs for scaffolding & gap closing!\n")
     locallog.close()

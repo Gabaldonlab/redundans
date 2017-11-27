@@ -33,7 +33,7 @@ For more information have a look at the [documentation](/docs), [poster](/docs/p
 
 ## Prerequisites
 Redundans uses several programs (all provided within this repository): 
-- [SPAdes](http://cab.spbu.ru/software/spades/) and [Platanus](http://platanus.bio.titech.ac.jp/?page_id=14) 
+- [Platanus](http://platanus.bio.titech.ac.jp/?page_id=14) 
 - [LAST](http://last.cbrc.jp/) v700+
  - [GNU parallel](https://www.gnu.org/software/parallel/)
 - [BWA](http://bio-bwa.sourceforge.net/) v0.7.12+
