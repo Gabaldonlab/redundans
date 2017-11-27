@@ -72,11 +72,11 @@ def run_assembly(prefix, fastq, threads, mem, tmpdir, log, locallog):
     tmp = get_named_fifo()
     # run assembly
     cmd = "platanus assemble -tmp %s -t %s -m %s -o %s -f %s" % (tmpdir, threads, mem, prefix, tmp)
-    p = Popen(cmd.split(), stdout=locallog, stderr=locallog)
     if log:
         log.write(" %s\n"%cmd)
+    p = Popen(cmd.split(), stdout=locallog, stderr=locallog)
     # write FastA to fifo
-    with open(tmp, 'wb') as pipe:
+    with open(tmp, 'w') as pipe:
         cmd = ["cat", ] + fastq
         if filter(lambda fn: fn.endswith('.gz'), fastq):
             cmd[0] = "zcat" 
@@ -91,11 +91,11 @@ def run_scaffolding(prefix, fastq, threads, tmpdir, log, locallog, limit=1.):
     """Execute platanus scaffold & return returncode"""
     tmp = get_named_fifo()
     cmd = "platanus scaffold -tmp %s -t %s -o %s -c %s_contig.fa -b %s_contigBubble.fa -ip1 %s" % (tmpdir, threads, prefix, prefix, prefix, tmp)
-    p = Popen(cmd.split(), stdout=locallog, stderr=locallog)
     if log:
         log.write(" %s\n"%cmd)
+    p = Popen(cmd.split(), stdout=locallog, stderr=locallog)
     # write shuffled FastQ to fifo
-    with open(tmp, 'wb') as pipe:
+    with open(tmp, 'w') as pipe:
         parser = Popen(["fastq2shuffled.py", ] + fastq, stdout=pipe, stderr=locallog)
         parser.wait()
     # wait for process to finish & rm fifo
@@ -107,11 +107,11 @@ def run_gapclosing(prefix, fastq, threads, tmpdir, log, locallog, limit=1.):
     """Execute platanus gap_close & return returncode"""
     tmp = get_named_fifo()
     cmd = "platanus gap_close -tmp %s -t %s -o %s -c %s_scaffold.fa -ip1 %s" % (tmpdir, threads, prefix, prefix, tmp)
-    p = Popen(cmd.split(), stdout=locallog, stderr=locallog)
     if log:
         log.write(" %s\n"%cmd)
+    p = Popen(cmd.split(), stdout=locallog, stderr=locallog)
     # write shuffled FastQ to fifo
-    with open(tmp, 'wb') as pipe:
+    with open(tmp, 'w') as pipe:
         parser = Popen(["fastq2shuffled.py", ] + fastq, stdout=pipe, stderr=locallog)
         parser.wait()
     # wait for process to finish & rm fifo
