@@ -19,7 +19,7 @@ l.p.pryszcz@gmail.com
 Mizerow/Warsaw/Bratislava/Barcelona, 17/10/2014
 """
 
-import commands, os, resource, sys
+import os, resource, sys
 import glob, subprocess, time
 from datetime import datetime
 
@@ -30,7 +30,7 @@ paths = [os.path.join(root, p) for p in src]
 sys.path = paths + sys.path
 os.environ["PATH"] = "%s:%s"%(':'.join(paths), os.environ["PATH"])
 
-# make sure using Python 2.7
+# make sure using Python 2.7 or 3?
 assert sys.version_info >= (2, 7) and sys.version_info < (3,), "Only Python 2.7 is supported!"
 
 from fasta2homozygous import fasta2homozygous
@@ -432,13 +432,14 @@ def _check_dependencies(dependencies):
     warning = 0
     # check dependencies
     info = "[WARNING] Old version of %s: %s. Update to version %s+!\n"
-    for cmd, version in dependencies.iteritems():
+    for cmd, version in dependencies.items():
         out = _check_executable(cmd)
         if "not found" in out:
             warning = 1
             sys.stderr.write("[ERROR] %s\n"%out)
         elif version:
-            out = commands.getoutput("%s --version"%cmd)
+            p = subprocess.Popen([cmd, '--version'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            out = "".join(p.stdout.readlines())
             curver = out.split()[-1]
             if not curver.isdigit():
                 warning = 1

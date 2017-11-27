@@ -7,7 +7,7 @@ l.p.pryszcz+git@gmail.com
 19/06/2012 Dublin/Warsaw
 """
 
-import commands, os, subprocess, sys, tempfile
+import os, subprocess, sys, tempfile
 from datetime import datetime
 def _unload_sam(sam):
     return sam[0], int(sam[1]), sam[2], int(sam[3]), int(sam[4]), sam[9], sam[10]
@@ -105,7 +105,7 @@ def _get_bwamem_proc(fn1, fn2, ref, cores, verbose, log=sys.stderr):
         cmd = "bwa index %s" % (ref,)
         if verbose:
             log.write(" Creating index...\n  %s\n" % cmd)
-        bwtmessage = commands.getoutput(cmd)
+        subprocess.Popen(cmd.split(), stdout=log, stderr=log)
     # skip mate rescue
     bwaArgs = ['bwa', 'mem', '-S', '-t', str(cores), ref, fn1, fn2]
     if verbose:
@@ -124,8 +124,7 @@ def _get_snap_proc(fn1, fn2, ref, cores, verbose, log=sys.stderr):
     if not os.path.isdir(idxfn):
         if verbose:
             log.write(" Creating index...\n  %s\n" % idxcmd)
-        idxmessage = commands.getoutput(idxcmd)
-        log.write(idxmessage)
+        subprocess.Popen(idxcmd.split(), stdout=log, stderr=log)
     # -d maxEditDist should be set based on readlen and expected divergence
     args = ['snap-aligner', 'paired', idxfn, fn1, fn2, '-d', '30', '--b', '-t', str(cores), '-o', '-sam', '-']
     if verbose:

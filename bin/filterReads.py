@@ -39,9 +39,9 @@ Fixes:
 """
 
 import argparse, locale, subprocess, gzip, os, sys
-from itertools import izip
 from datetime import datetime
-#locale.setlocale(locale.LC_ALL, 'en_US.utf8')
+if sys.version_info < (3,):
+    from itertools import izip as zip
 
 def checkQualityEncoding(inFile, number_reads, qual64offset, qseq):
 
@@ -201,7 +201,7 @@ def filter_paired(fpair, outfiles, minlen, maxlen, limit, minqual, \
 
     ## Process
     i = both = fori = revi = filtered = 0
-    for i, (rec1, rec2) in enumerate(izip(fqparser1, fqparser2), pi+1):
+    for i, (rec1, rec2) in enumerate(zip(fqparser1, fqparser2), pi+1):
         if rec1 and rec2:
             #store paired output
             if outF:

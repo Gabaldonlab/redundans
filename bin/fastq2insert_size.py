@@ -10,7 +10,7 @@ l.p.pryszcz@gmail.com
 Mizerow, 10/04/2015
 """
 
-import math, os, sys, commands, subprocess
+import math, os, sys, subprocess
 from datetime import datetime
 from FastaIndex import FastaIndex
 from fastq2sspace import _get_bwamem_proc, _get_snap_proc

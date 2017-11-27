@@ -11,7 +11,7 @@ l.p.pryszcz@gmail.com
 Warsaw, 20/11/2017
 """
 
-import commands, os, sys, tempfile
+import os, sys, tempfile
 from datetime import datetime
 from subprocess import Popen, PIPE
 from fastq2insert_size import fastq2insert_size
@@ -149,6 +149,7 @@ def denovo(outdir, fastq, threads, mem, verbose, log, tmpdir='/tmp'):
             outfn = prefix + "_scaffold.fa"
         else:
             log.write("[WARNING]  failed!\n")
+            return outfn
         # gap_close
         if run_gapclosing(prefix, pefastq, threads, tmpdir, log, locallog)==0: 
             outfn = prefix + "_gapClosed.fa"
