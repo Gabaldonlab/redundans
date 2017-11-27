@@ -139,13 +139,28 @@ def _get_last_proc(fn1, fn2, ref, cores, verbose, log=sys.stderr):
     if not os.path.isfile(ref+".suf"):
         os.system("lastdb -uNEAR -W 11 %s %s" % (ref, ref))
     # skip mate rescue
-    args1 = ['fastq2shuffled.py', fn1, fn2] # 'parallel', '--no-notice', '--pipe', '-L8', '-j', str(cores),
-    args2 = ['lastal', '-P', cores, '-T1', '-Q1', '-fTAB', ref] # '-m10', '-P', str(cores), '-j1', 
+    args1 = ['fastq2shuffled.py', fn1, fn2] 
+    args2 = ['parallel', '--no-notice', '--pipe', '-L8', '-j', str(cores), 'lastal', '-T1', '-Q1', '-fTAB', ref] # '-m10', '-P', str(cores), '-j1', 
     if verbose:
         log.write("  %s | %s\n"%(" ".join(args1), " ".join(args2)))
     #select ids
     proc1 = subprocess.Popen(args1, stdout=subprocess.PIPE, stderr=log)
-    proc2 = subprocess.Popen(args2, stdout=subprocess.PIPE, stdin=proc1.stdout, stderr=log)
+    proc2 = subprocess.Popen(args2, stdout=subprocess.PIPE, stdin=proc1.stdout, stderr=log) #, preexec_fn=os.setpgrp)
+    return proc2
+
+def _get_last_proc0(fqfname, ref, cores, verbose=0, log=sys.stderr):
+    """Run last process"""
+    # create genome index
+    if not os.path.isfile(ref+".suf"):
+        os.system("lastdb -uNEAR -W 11 %s %s" % (ref, ref))
+    # skip mate rescue 
+    args1 = ['cat', fqfname]
+    args2 = ['lastal', '-T1', '-Q1', '-fTAB', ref] #'-j1', # 'parallel', '--no-notice', '--pipe', '-L8', '-j', str(cores), 
+    if verbose:
+        log.write("  %s\n"%(" ".join(args1),))
+    #select ids
+    proc1 = subprocess.Popen(args1, stdout=subprocess.PIPE, stderr=log)
+    proc2 = subprocess.Popen(args2, stdout=subprocess.PIPE, stdin=proc1.stdout, stderr=log) #, preexec_fn=os.setpgrp)
     return proc2
 
 def _last2pairs(handle):

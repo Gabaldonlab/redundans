@@ -414,7 +414,7 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
             log.write("%sCleaning-up...\n"%timestamp())
         for root, dirs, fnames in os.walk(outdir):
             endings = ('.fa', '.fasta', '.fai', '.tsv', '.png', '.log')
-            for i, fn in enumerate(filter(lambda x: not x.endswith(endings, fnames), 1):
+            for i, fn in enumerate(filter(lambda x: not x.endswith(endings), fnames), 1):
                 os.unlink(os.path.join(root, fn))
             # rmdir of snap index
             if root.endswith('.snap') and i==len(fnames):
