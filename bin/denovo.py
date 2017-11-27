@@ -87,7 +87,18 @@ def run_assembly(prefix, fastq, threads, mem, tmpdir, log, locallog):
     os.unlink(tmp)
     return p.returncode
     
-def run_scaffolding(prefix, fastq, threads, tmpdir, log, locallog, limit=1.):
+def run_scaffolding(prefix, fastq, threads, tmpdir, log, locallog, tmp):
+    """Execute platanus scaffold & return returncode"""
+    cmd = "platanus scaffold -tmp %s -t %s -o %s -c %s_contig.fa -b %s_contigBubble.fa -ip1 %s" % (tmpdir, threads, prefix, prefix, prefix, tmp)
+    if log:
+        log.write(" %s\n"%cmd)
+    p = Popen(cmd.split(), stdout=locallog, stderr=locallog)
+    # wait for process to finish & rm fifo
+    p.wait(); str(p.returncode)
+    #os.unlink(tmp)
+    return p.returncode
+
+def run_scaffolding0(prefix, fastq, threads, tmpdir, log, locallog, limit=1.):
     """Execute platanus scaffold & return returncode"""
     tmp = get_named_fifo()
     cmd = "platanus scaffold -tmp %s -t %s -o %s -c %s_contig.fa -b %s_contigBubble.fa -ip1 %s" % (tmpdir, threads, prefix, prefix, prefix, tmp)
@@ -103,7 +114,7 @@ def run_scaffolding(prefix, fastq, threads, tmpdir, log, locallog, limit=1.):
     os.unlink(tmp)
     return p.returncode
 
-def run_gapclosing(prefix, fastq, threads, tmpdir, log, locallog, limit=1.):
+def run_gapclosing0(prefix, fastq, threads, tmpdir, log, locallog, limit=1.):
     """Execute platanus gap_close & return returncode"""
     tmp = get_named_fifo()
     cmd = "platanus gap_close -tmp %s -t %s -o %s -c %s_scaffold.fa -ip1 %s" % (tmpdir, threads, prefix, prefix, tmp)
@@ -117,6 +128,16 @@ def run_gapclosing(prefix, fastq, threads, tmpdir, log, locallog, limit=1.):
     # wait for process to finish & rm fifo
     p.wait(); str(p.returncode)
     os.unlink(tmp)
+    return p.returncode
+    
+def run_gapclosing(prefix, fastq, threads, tmpdir, log, locallog, tmp):
+    """Execute platanus gap_close & return returncode"""
+    cmd = "platanus gap_close -tmp %s -t %s -o %s -c %s_scaffold.fa -ip1 %s" % (tmpdir, threads, prefix, prefix, tmp)
+    if log:
+        log.write(" %s\n"%cmd)
+    p = Popen(cmd.split(), stdout=locallog, stderr=locallog)
+    # wait for process to finish & rm fifo
+    p.wait(); str(p.returncode)
     return p.returncode
     
 def denovo(outdir, fastq, threads, mem, verbose, log, tmpdir='/tmp'):
@@ -144,14 +165,19 @@ def denovo(outdir, fastq, threads, mem, verbose, log, tmpdir='/tmp'):
         pefastq = list(sorted(pelibs, key=lambda x: x[4])[0][:2])
         if verbose:
             log.write("  selected %s lib(s) for scaffolding & gap closing: %s\n"%(len(pelibs), ", ".join(pefastq)))
+        # write shuffled FastQ to fifo
+        tmp = prefix+".fq"
+        with open(tmp, 'w') as pipe:
+            parser = Popen(["fastq2shuffled.py", ] + fastq, stdout=pipe, stderr=locallog)
+            parser.wait()
         # scaffold
-        if run_scaffolding(prefix, pefastq, threads, tmpdir, log, locallog)==0: 
+        if run_scaffolding(prefix, pefastq, threads, tmpdir, log, locallog, tmp)==0: 
             outfn = prefix + "_scaffold.fa"
         else:
             log.write("[WARNING]  failed!\n")
             return outfn
         # gap_close
-        if run_gapclosing(prefix, pefastq, threads, tmpdir, log, locallog)==0: 
+        if run_gapclosing(prefix, pefastq, threads, tmpdir, log, locallog, tmp)==0: 
             outfn = prefix + "_gapClosed.fa"
         else:
             log.write("[WARNING]  failed!\n")
