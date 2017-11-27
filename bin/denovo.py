@@ -93,11 +93,11 @@ def run_scaffolding(prefix, fastq, threads, tmpdir, log, locallog, limit=1.):
     cmd = "platanus scaffold -tmp %s -t %s -o %s -c %s_contig.fa -b %s_contigBubble.fa -ip1 %s" % (tmpdir, threads, prefix, prefix, prefix, tmp)
     if log:
         log.write(" %s\n"%cmd)
-    p = Popen(cmd.split(), stdout=locallog, stderr=locallog)
     # write shuffled FastQ to fifo
+    p = Popen(cmd.split(), stdout=locallog, stderr=locallog)
     with open(tmp, 'w') as pipe:
         parser = Popen(["fastq2shuffled.py", ] + fastq, stdout=pipe, stderr=locallog)
-        parser.wait()
+        #parser.wait()
     # wait for process to finish & rm fifo
     p.wait(); str(p.returncode)
     os.unlink(tmp)
@@ -113,7 +113,7 @@ def run_gapclosing(prefix, fastq, threads, tmpdir, log, locallog, limit=1.):
     # write shuffled FastQ to fifo
     with open(tmp, 'w') as pipe:
         parser = Popen(["fastq2shuffled.py", ] + fastq, stdout=pipe, stderr=locallog)
-        parser.wait()
+        #parser.wait()
     # wait for process to finish & rm fifo
     p.wait(); str(p.returncode)
     os.unlink(tmp)
