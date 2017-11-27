@@ -83,7 +83,7 @@ def run_assembly(prefix, fastq, threads, mem, tmpdir, log, locallog):
         parser = Popen(cmd, stdout=pipe, stderr=locallog)
         parser.wait()
     # wait for process to finish & rm fifo
-    p.wait()
+    p.wait(); str(p.returncode)
     os.unlink(tmp)
     return p.returncode
     
@@ -99,7 +99,7 @@ def run_scaffolding(prefix, fastq, threads, tmpdir, log, locallog, limit=1.):
         parser = Popen(["fastq2shuffled.py", ] + fastq, stdout=pipe, stderr=locallog)
         parser.wait()
     # wait for process to finish & rm fifo
-    p.wait()
+    p.wait(); str(p.returncode)
     os.unlink(tmp)
     return p.returncode
 
@@ -115,7 +115,7 @@ def run_gapclosing(prefix, fastq, threads, tmpdir, log, locallog, limit=1.):
         parser = Popen(["fastq2shuffled.py", ] + fastq, stdout=pipe, stderr=locallog)
         parser.wait()
     # wait for process to finish & rm fifo
-    p.wait()
+    p.wait(); str(p.returncode)
     os.unlink(tmp)
     return p.returncode
     
