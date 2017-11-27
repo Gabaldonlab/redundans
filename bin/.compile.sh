@@ -14,10 +14,10 @@ echo " === You can find log in: $log === "
 cores=`grep -c ^processor /proc/cpuinfo | awk '{if($1>1){print $1-1} else {print 1}}'`
 echo " I'll use $cores thread(s) for compiling"
 
-echo `date` " GNU parallel"
+#echo `date` " GNU parallel"
 #wget http://ftp.gnu.org/gnu/parallel/parallel-latest.tar.bz2 && tar xpfj parallel-latest.tar.bz2 && rm parallel-latest.tar.bz2 && mv parallel bin/parallel
-(cd bin/parallel && ./configure && make clean && make -j $cores)  >> $log 2>&1 
-retcode=$?; if [ $retcode -gt 0 ]; then exit $retcode; fi
+#(cd bin/parallel && ./configure && make clean && make -j $cores)  >> $log 2>&1 
+#retcode=$?; if [ $retcode -gt 0 ]; then exit $retcode; fi
 
 #echo `date` " idba"
 #(cd bin/idba && ./build.sh && ./configure && make -j $cores) >> $log 2>&1 
@@ -36,7 +36,9 @@ echo `date` " BWA"
 retcode=$?; if [ $retcode -gt 0 ]; then exit $retcode; fi
 
 echo `date` " LASTal"
-(cd bin/last && make clean && make -j $cores) >> $log 2>&1
+#(cd bin/last && make clean && make -j $cores) >> $log 2>&1
+(cd bin && wget http://last.cbrc.jp/last/index.cgi/archive/tip.tar.gz && tar xfpz tip.tar.gz && ln -s last-* last && \
+ cd last && make -j $cores) >> $log 2>&1
 retcode=$?; if [ $retcode -gt 0 ]; then exit $retcode; fi
 
 echo `date` " SNAP-aligner"

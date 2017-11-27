@@ -91,7 +91,7 @@ def sam2sspace_tab(inhandle, outhandle, mapqTh=0, upto=float('inf'), verbose=Fal
     # run last
     if _tmpfile:
         _tmpfile.close()
-        lastproc = _get_last_proc0(_tmpfile.name, ref, cores)
+        lastproc = _get_last_proc(_tmpfile.name, ref, cores)
         last_tab2sspace_tab(lastproc.stdout, outhandle, mapqTh, upto, verbose, log)
         os.unlink(_tmpfile.name)
     
@@ -133,22 +133,7 @@ def _get_snap_proc(fn1, fn2, ref, cores, verbose, log=sys.stderr):
     proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=log)
     return proc
 
-def _get_last_proc(fn1, fn2, ref, cores, verbose, log=sys.stderr):
-    """Run last process"""
-    # create genome index
-    if not os.path.isfile(ref+".suf"):
-        os.system("lastdb -uNEAR -W 11 %s %s" % (ref, ref))
-    # skip mate rescue
-    args1 = ['fastq2shuffled.py', fn1, fn2] 
-    args2 = ['parallel', '--no-notice', '--pipe', '-L8', '-j', str(cores), 'lastal', '-T1', '-Q1', '-fTAB', ref] # '-m10', '-P', str(cores), '-j1', 
-    if verbose:
-        log.write("  %s | %s\n"%(" ".join(args1), " ".join(args2)))
-    #select ids
-    proc1 = subprocess.Popen(args1, stdout=subprocess.PIPE, stderr=log)
-    proc2 = subprocess.Popen(args2, stdout=subprocess.PIPE, stdin=proc1.stdout, stderr=log) #, preexec_fn=os.setpgrp)
-    return proc2
-
-def _get_last_proc0(fqfname, ref, cores, verbose=0, log=sys.stderr):
+def _get_last_proc(fqfname, ref, cores, verbose=0, log=sys.stderr):
     """Run last process"""
     # create genome index
     if not os.path.isfile(ref+".suf"):

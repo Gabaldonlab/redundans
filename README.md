@@ -34,8 +34,7 @@ For more information have a look at the [documentation](/docs), [poster](/docs/p
 ## Prerequisites
 Redundans uses several programs (all provided within this repository): 
 - [Platanus](http://platanus.bio.titech.ac.jp/?page_id=14) 
-- [LAST](http://last.cbrc.jp/) v700+
- - [GNU parallel](https://www.gnu.org/software/parallel/)
+- [LAST](http://last.cbrc.jp/) v800+
 - [BWA](http://bio-bwa.sourceforge.net/) v0.7.12+
 - [SNAP aligner](https://github.com/amplab/snap)
 - [SSPACE3](http://www.baseclear.com/genomics/bioinformatics/basetools/SSPACE)
