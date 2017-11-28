@@ -105,7 +105,7 @@ def _get_bwamem_proc(fn1, fn2, ref, cores, verbose, log=sys.stderr):
         cmd = "bwa index %s" % (ref,)
         if verbose:
             log.write(" Creating index...\n  %s\n" % cmd)
-        subprocess.Popen(cmd.split(), stdout=log, stderr=log)
+        subprocess.Popen(cmd.split(), stdout=log, stderr=log).wait()
     # skip mate rescue
     bwaArgs = ['bwa', 'mem', '-S', '-t', str(cores), ref, fn1, fn2]
     if verbose:
@@ -124,7 +124,7 @@ def _get_snap_proc(fn1, fn2, ref, cores, verbose, log=sys.stderr):
     if not os.path.isdir(idxfn):
         if verbose:
             log.write(" Creating index...\n  %s\n" % idxcmd)
-        subprocess.Popen(idxcmd.split(), stdout=log, stderr=log)
+        subprocess.Popen(idxcmd.split(), stdout=log, stderr=log).wait()
     # -d maxEditDist should be set based on readlen and expected divergence
     args = ['snap-aligner', 'paired', idxfn, fn1, fn2, '-d', '30', '--b', '-t', str(cores), '-o', '-sam', '-']
     if verbose:
@@ -136,15 +136,16 @@ def _get_last_proc(fqfname, ref, cores, verbose=0, log=sys.stderr):
     """Run last process"""
     # create genome index
     if not os.path.isfile(ref+".suf"):
-        os.system("lastdb -uNEAR -W 11 %s %s" % (ref, ref))
+        cmd = "lastdb -uNEAR -W 11 %s %s" % (ref, ref)
+        subprocess.Popen(cmd.split(), stdout=log, stderr=log).wait()
     # skip mate rescue 
     args1 = ['cat', fqfname]
-    args2 = ['lastal', '-T1', '-Q1', '-fTAB', ref] #'-j1', # 'parallel', '--no-notice', '--pipe', '-L8', '-j', str(cores), 
+    args2 = ['lastal', '-T1', '-Q1', '-fTAB', ref, fqfname] 
     if verbose:
-        log.write("  %s\n"%(" ".join(args1),))
+        log.write("  %s\n"%(" ".join(args2),))
     #select ids
-    proc1 = subprocess.Popen(args1, stdout=subprocess.PIPE, stderr=log)
-    proc2 = subprocess.Popen(args2, stdout=subprocess.PIPE, stdin=proc1.stdout, stderr=log) #, preexec_fn=os.setpgrp)
+    #proc1 = subprocess.Popen(args1, stdout=subprocess.PIPE, stderr=log) # stdin=proc1.stdout, 
+    proc2 = subprocess.Popen(args2, stdout=subprocess.PIPE, stderr=log) #, preexec_fn=os.setpgrp)
     return proc2
 
 def _last2pairs(handle):
@@ -198,13 +199,17 @@ def last_tab2sspace_tab(handle, out, mapqTh, upto, verbose, log, proc=""):
     log.write(info)
     
 def get_tab_files(outdir, reffile, libNames, fReadsFnames, rReadsFnames, inserts, iBounds, libreadlen, \
-                  cores, mapqTh, upto, verbose, log=sys.stderr):
+                  cores, mapqTh, upto, verbose, usebwa=False, log=sys.stderr):
     """Prepare genome index, align all libs and save TAB file"""
     ref = reffile.name
     tabFnames = []
-    #_get_aligner_proc = _get_bwamem_proc
     #if max(libreadlen)<=500 and min(libreadlen)>40:
-    _get_aligner_proc = _get_snap_proc
+    if usebwa:
+        _get_aligner_proc = _get_bwamem_proc
+        ref2 = '' # disable lastal
+    else:
+        _get_aligner_proc = _get_snap_proc
+        ref2 = ref
     # process all libs
     for libName, f1, f2, iSize, iFrac in zip(libNames, fReadsFnames, rReadsFnames, inserts, iBounds):
         if verbose:
@@ -221,7 +226,7 @@ def get_tab_files(outdir, reffile, libNames, fReadsFnames, rReadsFnames, inserts
         bwalog = open(outfn+".log", "w")
         proc = _get_aligner_proc(f1.name, f2.name, ref, cores, verbose, bwalog)
         # parse botwie output
-        sam2sspace_tab(proc.stdout, out, mapqTh, upto, verbose, log, ref, cores) #
+        sam2sspace_tab(proc.stdout, out, mapqTh, upto, verbose, log, ref2, cores) #
         # close file & terminate subprocess
         out.close()
         tabFnames.append(outfn)
@@ -250,7 +255,7 @@ def get_libs(outdir, libFn, libNames, tabFnames, inserts, iBounds, orientations,
 
 def fastq2sspace(out, fasta, lib, libnames, libFs, libRs, orientations,  \
                  libIS, libISStDev, libreadlen, cores, mapq, upto, minlinks, linkratio, \
-                 sspacebin, verbose, log=sys.stderr):
+                 sspacebin, verbose, usebwa=False, log=sys.stderr):
     """Map reads onto contigs, prepare library file and execute SSPACE2"""
     # get dir variables
     curdir = os.path.abspath(os.path.curdir)
@@ -265,7 +270,7 @@ def fastq2sspace(out, fasta, lib, libnames, libFs, libRs, orientations,  \
     if verbose:
         log.write("[%s] Generating TAB file(s) for %s library/ies...\n" % (datetime.ctime(datetime.now()),len(libnames)) )
     tabFnames = get_tab_files(out, fasta, libnames, libFs, libRs, libIS, libISStDev, libreadlen, \
-                              cores, mapq, upto, verbose, log)
+                              cores, mapq, upto, verbose, usebwa, log)
     
     # generate lib file
     if  verbose:
@@ -303,6 +308,7 @@ def main():
     parser.add_argument("-c", "--cores", default=2, type=int, help="no. of cpus [%(default)s]")
     parser.add_argument("-q", "--mapq", default=10, type=int, help="min map quality [%(default)s]")
     parser.add_argument("-u", "--upto", default=0, type=int, help="process up to pairs [all]")
+    parser.add_argument("-b", "--usebwa", action='store_true', help="use bwa mem for alignment [use snap-aligner]")
     parser.add_argument("--sspacebin", default="~/src/SSPACE/SSPACE_Standard_v3.0.pl", help="SSPACE perl script [%(default)s]")
     
     o = parser.parse_args()
@@ -314,7 +320,7 @@ def main():
 
     fastq2sspace(o.out, o.fasta, o.lib, o.libnames, o.libFs, o.libRs, o.orientations, \
                  o.libIS, o.libISStDev, o.cores, o.mapq, o.upto, o.minlinks, o.linkratio, \
-                 o.sspacebin, o.verbose)
+                 o.sspacebin, o.usebwa, o.verbose)
     
 if __name__=='__main__': 
     t0  = datetime.now()
