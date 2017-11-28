@@ -140,7 +140,7 @@ def _get_last_proc(fqfname, ref, cores, verbose=0, log=sys.stderr):
         subprocess.Popen(cmd.split(), stdout=log, stderr=log).wait()
     # skip mate rescue 
     args1 = ['cat', fqfname]
-    args2 = ['lastal', '-T1', '-Q1', '-fTAB', ref, fqfname] 
+    args2 = ['lastal', '-T1', '-Q1', '-fTAB', '-P%s'%cores, ref, fqfname] 
     if verbose:
         log.write("  %s\n"%(" ".join(args2),))
     #select ids
