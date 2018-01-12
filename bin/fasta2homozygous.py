@@ -27,7 +27,7 @@ def run_last(fasta, identity, threads, verbose=1):
     # build db
     ref = fasta
     if not os.path.isfile(ref+".suf"):
-        os.system("lastdb -W 11 %s %s" % (ref, fasta))
+        os.system("lastdb -P %s -W 11 %s %s" % (threads, ref, fasta))
     # run LAST
     args1 = ["lastal", "-P", str(threads), "-f", "TAB", ref, fasta]#; print " ".join(args1)
     proc1 = subprocess.Popen(args1, stdout=subprocess.PIPE, stderr=sys.stderr)
@@ -144,14 +144,20 @@ def plot_histograms(fname, contig2skip, identities, algsizes):
     except:
         sys.stderr.write("[WARNING] numpy or matplotlib missing! Cannot plot histogram\n")
         return
+
         
-    fig = plt.figure()
     contigs = contig2skip.keys()
     best = [contig2skip[c][3] for c in contigs if contig2skip[c]]
     bestalgsizes = [contig2skip[c][2] for c in contigs if contig2skip[c]]
     # get bins
     bins = np.arange(.5, 1.01, 0.01)
     
+    # safecheck for https://github.com/lpryszcz/redundans/issues/43
+    # due to error in old versions of numpy https://github.com/numpy/numpy/pull/4219
+    if not best:
+        sys.stderr.write("[WARNING] Nothing reduced!\n")
+        return
+        
     # get counts
     bestcounts = [0]*len(bins)
     bestsizes = [0]*len(bins)
@@ -166,6 +172,7 @@ def plot_histograms(fname, contig2skip, identities, algsizes):
         sizes[i] += isize
         
     bins -= 0.01
+    fig = plt.figure()
     # plot no. of contigs at give identity
     plt.subplot(211)
     plt.bar(bins*100, bestcounts, color="red", label="best", alpha=1.0)

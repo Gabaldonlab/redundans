@@ -120,7 +120,7 @@ def _get_snap_proc(fn1, fn2, ref, cores, verbose, log=sys.stderr):
     """
     # create genome index
     idxfn = ref + ".snap"
-    idxcmd = "snap-aligner index %s %s" % (ref, idxfn)
+    idxcmd = "snap-aligner index %s %s -bSpace" % (ref, idxfn)
     if not os.path.isdir(idxfn):
         if verbose:
             log.write(" Creating index...\n  %s\n" % idxcmd)
