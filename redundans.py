@@ -105,7 +105,7 @@ def get_read_limit(fasta, readLimit, verbose, log=sys.stderr):
     return limit
     
 def run_scaffolding(outdir, scaffoldsFname, fastq, libraries, reducedFname, mapq, threads, \
-                    joins, linkratio, limit, iters, sspacebin, gapclosing, verbose, log, \
+                    joins, linkratio, limit, iters, sspacebin, gapclosing, verbose, usebwa, log, \
                     identity, overlap, minLength, resume, lib=""):
     """Execute scaffolding step using libraries with increasing insert size
     in multiple iterations.
@@ -126,7 +126,7 @@ def run_scaffolding(outdir, scaffoldsFname, fastq, libraries, reducedFname, mapq
                 # run fastq scaffolding
                 fastq2sspace(out, open(pout), lib, libnames, libFs, libRs, orients, \
                              libIS, libISStDev, libreadlen, threads, mapq, limit, linkratio, joins, \
-                             sspacebin, verbose=0, log=log)
+                             sspacebin, verbose=0, usebwa=usebwa, log=log)
             # store out info
             pout = out+".fa"
             # link output ie out/_sspace.1.1/_sspace.1.1.scaffolds.fasta --> out/_sspace.1.1.scaffolds.fasta
@@ -272,7 +272,7 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
               threads, mem, resume, identity, overlap, minLength, \
               joins, linkratio, readLimit, iters, sspacebin, \
               reduction=1, scaffolding=1, gapclosing=1, cleaning=1, \
-              norearrangements=0, verbose=1, log=sys.stderr, tmp="/tmp"):
+              norearrangements=0, verbose=1, usebwa=0, log=sys.stderr, tmp="/tmp"):
     """Launch redundans pipeline."""
     # check resume
     orgresume = resume
@@ -326,7 +326,7 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
         if verbose:
             log.write("%sScaffolding...\n"%timestamp())
         libraries, resume = run_scaffolding(outdir, outfn, fastq, libraries, lastOutFn, mapq, threads, joins, \
-                                            linkratio, limit, iters, sspacebin, gapclosing, verbose, log, \
+                                            linkratio, limit, iters, sspacebin, gapclosing, verbose, usebwa, log, \
                                             identity, overlap, minLength, resume)
         # update fasta list
         fastas += filter(lambda x: "_gapcloser" not in x, sorted(glob.glob(os.path.join(outdir, "_sspace.*.fa"))))
@@ -486,6 +486,7 @@ def main():
     scaf.add_argument("-q", "--mapq", default=10, type=int, help="min mapping quality [%(default)s]")
     scaf.add_argument("--iters", default=2, type=int, help="iterations per library [%(default)s]")
     scaf.add_argument('--noscaffolding', action='store_false', help="Skip short-read scaffolding")
+    scaf.add_argument("-b", "--usebwa", action='store_true', help="use bwa mem for alignment [use snap-aligner]")
      
     longscaf = parser.add_argument_group('Long-read scaffolding options')
     longscaf.add_argument("-l", "--longreads", nargs="*", default=[], help="FastQ/FastA files with long reads")
@@ -530,7 +531,7 @@ def main():
               o.threads, o.mem, o.resume, o.identity, o.overlap, o.minLength,  \
               o.joins, o.linkratio, o.limit, o.iters, sspacebin, \
               o.noreduction, o.noscaffolding, o.nogapclosing, o.nocleaning, \
-              o.norearrangements, o.verbose, o.log, o.tmp)
+              o.norearrangements, o.verbose, o.usebwa, o.log, o.tmp)
 
 if __name__=='__main__': 
     t0 = datetime.now()
