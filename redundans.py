@@ -46,7 +46,7 @@ def timestamp():
     return "\n%s\n[%s] "%("#"*50, datetime.ctime(datetime.now()))
 
 def get_libraries(fastq, fasta, mapq=10, threads=4, verbose=1, log=sys.stderr, limit=0,
-                  libraries=[], stdfracTh=0.66, maxcfracTh=0.9, genomeFrac=0.05):
+                  libraries=[], stdfracTh=0.66, maxcfracTh=0.9, genomeFrac=0.05, usebwa=0):
     """Return libraries"""
     # skip if all libs OKish
     ## max stdfrac cannot be larger than stdfracTh in any of the libraries
@@ -58,7 +58,7 @@ def get_libraries(fastq, fasta, mapq=10, threads=4, verbose=1, log=sys.stderr, l
         limit = 10e5
     
     # get libraries statistics using 1% of mapped read limit
-    libdata = fastq2insert_size(log, fastq, fasta, mapq, threads, limit/100, genomeFrac, stdfracTh, maxcfracTh)
+    libdata = fastq2insert_size(log, fastq, fasta, mapq, threads, limit/100, genomeFrac, stdfracTh, maxcfracTh, usebwa=usebwa)
     # separate paired-end & mate pairs
     ## also separate 300 and 600 paired-ends
     libraries = []
@@ -154,7 +154,7 @@ def run_scaffolding(outdir, scaffoldsFname, fastq, libraries, reducedFname, mapq
                     info = fasta2homozygous(out, open(nogapsFname), identity, overlap, minLength, threads, verbose=0, log=log)
             pout = reducedFname            
         # update library insert size estimation, especially for mate-pairs
-        libraries = get_libraries(fastq, pout, mapq, threads, verbose=0,log=log, libraries=libraries)
+        libraries = get_libraries(fastq, pout, mapq, threads, verbose=0,log=log, libraries=libraries, usebwa=usebwa)
     # create symlink to final scaffolds or pout
     symlink(os.path.basename(pout), scaffoldsFname)
     symlink(os.path.basename(pout+".fai"), scaffoldsFname+".fai")
@@ -318,7 +318,7 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
         if verbose:
             log.write("%sEstimating parameters of libraries...\n"%timestamp())
         limit     = get_read_limit(lastOutFn, readLimit, verbose, log)
-        libraries = get_libraries(fastq, lastOutFn, mapq, threads, verbose, log)
+        libraries = get_libraries(fastq, lastOutFn, mapq, threads, verbose, log, usebwa=usebwa)
     
     # SCAFFOLDING
     outfn = os.path.join(outdir, "scaffolds.fa")
