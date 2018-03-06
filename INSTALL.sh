@@ -2,18 +2,17 @@
 ###
 # Redundans installer for UNIX.
 # bash <(curl -Ls http://bit.ly/redundans_installer)
-# version 0.12d
+# version 0.14a
 ###
 
-log="install.log"
-branch="master" # make
+branch="master" 
 if [ ! -z $1 ]; then branch=$1; fi
 
 echo "#####################################################################################"
 echo "#                                                                                   #"
 echo "#                               Redundans installer                                 #"
 echo "#                                                                                   #"
-echo "#       version 0.13c                                  l.p.pryszcz+git AT gmail     #"
+echo "#       version 0.14a                                  l.p.pryszcz+git AT gmail     #"
 echo "#####################################################################################"
 echo ""
 echo "Redundans and its dependencies will be installed in:" `pwd`/redundans
@@ -23,13 +22,9 @@ echo "To track the installation status execute in the new terminal:"
 echo "  tail -f `pwd`/redundans/$log"
 echo ""
 
-# YES/NO prompt
-echo -n " Do you want to proceed with installation (y/n)? "
-read answer
-if echo "$answer" | grep -viq "^y" ; then
-    echo "Aborted!"
-    return 0 
-fi
+# sleep
+echo "I'll proceed with installation in 10 seconds... Press Ctrl-C to cancel."
+sleep 10s
 
 echo ""
 echo `date` "Checking dependencies..."
@@ -98,7 +93,7 @@ fi
 echo `date` "Installation finished!"
 echo ""
 echo "To try redundans, execute:"
-echo "./redundans.py -v -i test/*.fq.gz -f test/contigs.fa -o test/run1"
+echo "cd redundans; ./redundans.py -v -i test/*.fq.gz -f test/contigs.fa -o test/run1"
 echo ""
 echo "To uninstall execute:"
 echo "rm -rI `pwd`"

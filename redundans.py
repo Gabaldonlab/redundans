@@ -19,19 +19,18 @@ l.p.pryszcz@gmail.com
 Mizerow/Warsaw/Bratislava/Barcelona, 17/10/2014
 """
 
-import commands, os, resource, sys
+import os, resource, sys
 import glob, subprocess, time
 from datetime import datetime
 
 # update sys.path & environmental PATH
 root = os.path.dirname(os.path.abspath(sys.argv[0]))
-src = ["bin", "bin/bwa", "bin/snap", "bin/parallel/src", "bin/pyScaf", \
-       "bin/last/build", "bin/last/scripts", "bin/last/src", ]
+src = ["bin", "bin/bwa", "bin/snap", "bin/pyScaf", "bin/last/build", "bin/last/scripts", "bin/last/src",]
 paths = [os.path.join(root, p) for p in src]
 sys.path = paths + sys.path
 os.environ["PATH"] = "%s:%s"%(':'.join(paths), os.environ["PATH"])
 
-# make sure using Python 2.7
+# make sure using Python 2.7 or 3?
 assert sys.version_info >= (2, 7) and sys.version_info < (3,), "Only Python 2.7 is supported!"
 
 from fasta2homozygous import fasta2homozygous
@@ -40,12 +39,13 @@ from fastq2insert_size import fastq2insert_size
 from filterReads import filter_paired
 from FastaIndex import FastaIndex, symlink
 from pyScaf import LongReadGraph, SyntenyGraph
+from denovo import denovo
 
 def timestamp():
     """Return formatted date-time string"""
     return "\n%s\n[%s] "%("#"*50, datetime.ctime(datetime.now()))
 
-def get_libraries(fastq, fasta, mapq, threads, verbose, log=sys.stderr, limit=0,
+def get_libraries(fastq, fasta, mapq=10, threads=4, verbose=1, log=sys.stderr, limit=0,
                   libraries=[], stdfracTh=0.66, maxcfracTh=0.9, genomeFrac=0.05):
     """Return libraries"""
     # skip if all libs OKish
@@ -58,8 +58,7 @@ def get_libraries(fastq, fasta, mapq, threads, verbose, log=sys.stderr, limit=0,
         limit = 10e5
     
     # get libraries statistics using 1% of mapped read limit
-    libdata = fastq2insert_size(log, fastq, fasta, mapq, threads, limit/100, verbose, log, \
-                                genomeFrac, stdfracTh, maxcfracTh)
+    libdata = fastq2insert_size(log, fastq, fasta, mapq, threads, limit/100, genomeFrac, stdfracTh, maxcfracTh)
     # separate paired-end & mate pairs
     ## also separate 300 and 600 paired-ends
     libraries = []
@@ -68,7 +67,7 @@ def get_libraries(fastq, fasta, mapq, threads, verbose, log=sys.stderr, limit=0,
         fq1, fq2, readlen, ismedian, ismean, isstd, pairs, orientation = data
         # add new library set if 
         if not libraries or ismean > 1.5*libraries[-1][4][0]:
-            # libnames, libFs, libRs, orientations, libIS, libISStDev
+            # libnames, readlen, libFs, libRs, orientations, libIS, libISStDev
             libraries.append([[], [], [], [], [], [], []])
             i = 1
         # add libname & fastq files
@@ -106,7 +105,7 @@ def get_read_limit(fasta, readLimit, verbose, log=sys.stderr):
     return limit
     
 def run_scaffolding(outdir, scaffoldsFname, fastq, libraries, reducedFname, mapq, threads, \
-                    joins, linkratio, limit, iters, sspacebin, gapclosing, verbose, log, \
+                    joins, linkratio, limit, iters, sspacebin, gapclosing, verbose, usebwa, log, \
                     identity, overlap, minLength, resume, lib=""):
     """Execute scaffolding step using libraries with increasing insert size
     in multiple iterations.
@@ -127,7 +126,7 @@ def run_scaffolding(outdir, scaffoldsFname, fastq, libraries, reducedFname, mapq
                 # run fastq scaffolding
                 fastq2sspace(out, open(pout), lib, libnames, libFs, libRs, orients, \
                              libIS, libISStDev, libreadlen, threads, mapq, limit, linkratio, joins, \
-                             sspacebin, verbose=0, log=log)
+                             sspacebin, verbose=0, usebwa=usebwa, log=log)
             # store out info
             pout = out+".fa"
             # link output ie out/_sspace.1.1/_sspace.1.1.scaffolds.fasta --> out/_sspace.1.1.scaffolds.fasta
@@ -258,7 +257,7 @@ def run_gapclosing(outdir, libraries, nogapsFname, scaffoldsFname,  threads, lim
 
 def _corrupted_file(fname):
     """Return True if output file doesn't exists or is corrupted."""
-    if not os.path.isfile(fname)        or not os.path.getsize(fname) or \
+    if not os.path.isfile(fname) or not os.path.getsize(fname) or \
        not os.path.isfile(fname+".fai") or not os.path.getsize(fname+".fai"):
         return True
 
@@ -270,12 +269,11 @@ def _check_fasta(lastOutFn, minSize=1000, log=sys.stderr):
         sys.exit(1)
         
 def redundans(fastq, longreads, fasta, reference, outdir, mapq, 
-              threads, resume, identity, overlap, minLength, \
+              threads, mem, resume, identity, overlap, minLength, \
               joins, linkratio, readLimit, iters, sspacebin, \
               reduction=1, scaffolding=1, gapclosing=1, cleaning=1, \
-              norearrangements=0, verbose=1, log=sys.stderr):
+              norearrangements=0, verbose=1, usebwa=0, log=sys.stderr, tmp="/tmp"):
     """Launch redundans pipeline."""
-    fastas = [fasta, ]; _check_fasta(fasta)
     # check resume
     orgresume = resume
     if resume:
@@ -289,9 +287,17 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
         sys.exit(1)
     else:
         os.makedirs(outdir)
-    
+
+    # DE NOVO CONTIGS
+    lastOutFn = os.path.join(outdir, "contigs.fa") 
+    if not fasta and _corrupted_file(lastOutFn):
+        resume += 1
+        if verbose:
+            log.write("%sDe novo assembly...\n"%timestamp())        
+        fasta = denovo(os.path.join(outdir, "denovo"), fastq, threads, mem, verbose, log, tmp)
+
     # REDUCTION
-    lastOutFn = os.path.join(outdir, "contigs.fa")
+    fastas = [fasta, ]; _check_fasta(fasta)
     symlink(fasta, lastOutFn)
     fastas.append(lastOutFn); _check_fasta(lastOutFn)
     # update fasta list
@@ -320,7 +326,7 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
         if verbose:
             log.write("%sScaffolding...\n"%timestamp())
         libraries, resume = run_scaffolding(outdir, outfn, fastq, libraries, lastOutFn, mapq, threads, joins, \
-                                            linkratio, limit, iters, sspacebin, gapclosing, verbose, log, \
+                                            linkratio, limit, iters, sspacebin, gapclosing, verbose, usebwa, log, \
                                             identity, overlap, minLength, resume)
         # update fasta list
         fastas += filter(lambda x: "_gapcloser" not in x, sorted(glob.glob(os.path.join(outdir, "_sspace.*.fa"))))
@@ -406,7 +412,8 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
         if verbose:
             log.write("%sCleaning-up...\n"%timestamp())
         for root, dirs, fnames in os.walk(outdir):
-            for i, fn in enumerate(filter(lambda x: not x.endswith(('.fa', '.fasta', '.fai', '.tsv', '.png')), fnames), 1):
+            endings = ('.fa', '.fasta', '.fai', '.tsv', '.png', '.log')
+            for i, fn in enumerate(filter(lambda x: not x.endswith(endings), fnames), 1):
                 os.unlink(os.path.join(root, fn))
             # rmdir of snap index
             if root.endswith('.snap') and i==len(fnames):
@@ -425,13 +432,14 @@ def _check_dependencies(dependencies):
     warning = 0
     # check dependencies
     info = "[WARNING] Old version of %s: %s. Update to version %s+!\n"
-    for cmd, version in dependencies.iteritems():
+    for cmd, version in dependencies.items():
         out = _check_executable(cmd)
         if "not found" in out:
             warning = 1
             sys.stderr.write("[ERROR] %s\n"%out)
         elif version:
-            out = commands.getoutput("%s --version"%cmd)
+            p = subprocess.Popen([cmd, '--version'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            out = "".join(p.stdout.readlines())
             curver = out.split()[-1]
             if not curver.isdigit():
                 warning = 1
@@ -451,18 +459,22 @@ def main():
     parser  = argparse.ArgumentParser(description=desc, epilog=epilog, formatter_class=argparse.RawTextHelpFormatter)
   
     parser.add_argument("-v", "--verbose",  action="store_true", help="verbose")    
-    parser.add_argument('--version', action='version', version='0.13c')
+    parser.add_argument('--version', action='version', version='0.14a')
     parser.add_argument("-i", "--fastq", nargs="*", default=[], help="FASTQ PE / MP files")
-    parser.add_argument("-f", "--fasta", required=1, help="FASTA file with contigs / scaffolds")
+    parser.add_argument("-f", "--fasta", default="", help="FASTA file with contigs / scaffolds")
     parser.add_argument("-o", "--outdir", default="redundans", help="output directory [%(default)s]")
     parser.add_argument("-t", "--threads", default=4, type=int, help="max threads to run [%(default)s]")
     parser.add_argument("--resume",  default=False, action="store_true", help="resume previous run")
     parser.add_argument("--log", default=sys.stderr, type=argparse.FileType('w'), help="output log to [stderr]")
-    parser.add_argument('--nocleaning', action='store_false', help="keep intermediate files")   
+    parser.add_argument('--nocleaning', action='store_false', help="keep intermediate files")
+    
+    denovo = parser.add_argument_group('De novo assembly options')
+    denovo.add_argument("-m", "--mem", default=16, type=int, help="max memory to allocate (in GB) [%(default)s]")
+    denovo.add_argument("--tmp", default='/tmp', help="tmp directory [%(default)s]")
     
     redu = parser.add_argument_group('Reduction options')
     redu.add_argument("--identity", default=0.51, type=float, help="min. identity [%(default)s]")
-    redu.add_argument("--overlap", default=0.8, type=float, help="min. overlap [%(default)s]")
+    redu.add_argument("--overlap", default=0.80, type=float, help="min. overlap [%(default)s]")
     redu.add_argument("--minLength", default=200, type=int, help="min. contig length [%(default)s]")
     redu.add_argument('--noreduction', action='store_false', help="Skip reduction")
     
@@ -474,6 +486,7 @@ def main():
     scaf.add_argument("-q", "--mapq", default=10, type=int, help="min mapping quality [%(default)s]")
     scaf.add_argument("--iters", default=2, type=int, help="iterations per library [%(default)s]")
     scaf.add_argument('--noscaffolding', action='store_false', help="Skip short-read scaffolding")
+    scaf.add_argument("-b", "--usebwa", action='store_true', help="use bwa mem for alignment [use snap-aligner]")
      
     longscaf = parser.add_argument_group('Long-read scaffolding options')
     longscaf.add_argument("-l", "--longreads", nargs="*", default=[], help="FastQ/FastA files with long reads")
@@ -495,8 +508,13 @@ def main():
     if o.verbose:
         o.log.write("Options: %s\n"%str(o))
 
-    # check if input files exists
-    for fn in [o.fasta,] + o.fastq + o.longreads: 
+    # need contigs or at least PE or MP libs to compute those
+    if not o.fasta and not o.fastq:
+        sys.stderr.write("Provide contigs and/or paired-end/mate pairs libraries\n")
+        sys.exit(1)
+        
+    # check if input files exists [o.fasta,] +
+    for fn in o.fastq + o.longreads: 
         if not os.path.isfile(fn):
             sys.stderr.write("No such file: %s\n"%fn)
             sys.exit(1)
@@ -505,15 +523,15 @@ def main():
     sspacebin = os.path.join(root, "bin/SSPACE/SSPACE_Standard_v3.0.pl")
 
     # check if all executables exists & in correct versions
-    dependencies = {'lastal': 800, 'lastdb': 800, 'GapCloser': 0, 'paste': 0, 'tr': 0, 'zcat': 0}
+    dependencies = {'lastal': 800, 'lastdb': 800, 'GapCloser': 0, 'paste': 0, 'tr': 0, 'zcat': 0, 'platanus': 0}
     _check_dependencies(dependencies)
     
     # initialise pipeline
     redundans(o.fastq, o.longreads, o.fasta, o.reference, o.outdir, o.mapq, \
-              o.threads, o.resume, o.identity, o.overlap, o.minLength,  \
+              o.threads, o.mem, o.resume, o.identity, o.overlap, o.minLength,  \
               o.joins, o.linkratio, o.limit, o.iters, sspacebin, \
               o.noreduction, o.noscaffolding, o.nogapclosing, o.nocleaning, \
-              o.norearrangements, o.verbose, o.log)
+              o.norearrangements, o.verbose, o.usebwa, o.log, o.tmp)
 
 if __name__=='__main__': 
     t0 = datetime.now()

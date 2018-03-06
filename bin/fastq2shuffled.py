@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 
 import os, sys, subprocess, gzip
-from itertools import izip
+if sys.version_info < (3,):
+    from itertools import izip as zip
 
 def fqparser(fn, stripNames=0, pair="", i=0):
     """Single process implementation of rawtrimmer.
@@ -30,7 +31,7 @@ def fastq2shuffled(fnames, out=sys.stdout, stripNames=1, limit=0):
     """Process FastQ files"""
     i = 0
     for fn1, fn2 in zip(fnames[::2], fnames[1::2]):
-        for i, (fq1, fq2) in enumerate(izip(fqparser(fn1, stripNames, '/1', i), fqparser(fn2, stripNames, '/2', i)), i):
+        for i, (fq1, fq2) in enumerate(zip(fqparser(fn1, stripNames, '/1', i), fqparser(fn2, stripNames, '/2', i)), i):
             if limit and i>limit:
                 break
             out.write(fq1+fq2)

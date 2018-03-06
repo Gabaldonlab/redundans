@@ -16,10 +16,11 @@ Program takes [as input](#parameters) **assembled contigs**, **sequencing librar
 
 <img align="right" src="/docs/redundans_flowchart.png">
 
-The pipeline consists of three steps/modules: 
-1. **redundancy reduction**: detection and selective removal of redundant contigs from an initial *de novo* assembly 
-2. **scaffolding**: joining of genome fragments using paired-end reads, mate-pairs, long reads and/or reference chromosomes 
-3. **gap closing**: filling the gaps after scaffolding using paired-end and/or mate-pair reads 
+The pipeline consists of several steps (modules):  
+1. **de novo contig assembly** (optional if no contigs are given)
+2. **redundancy reduction**: detection and selective removal of redundant contigs from an initial *de novo* assembly 
+3. **scaffolding**: joining of genome fragments using paired-end reads, mate-pairs, long reads and/or reference chromosomes 
+4. **gap closing**: filling the gaps after scaffolding using paired-end and/or mate-pair reads 
 
 Redundans is: 
 - **fast** & **lightweight**, multi-core support and memory-optimised, 
@@ -32,8 +33,8 @@ For more information have a look at the [documentation](/docs), [poster](/docs/p
 
 ## Prerequisites
 Redundans uses several programs (all provided within this repository): 
-- [LAST](http://last.cbrc.jp/) v700+
- - [GNU parallel](https://www.gnu.org/software/parallel/)
+- [Platanus](http://platanus.bio.titech.ac.jp/?page_id=14) 
+- [LAST](http://last.cbrc.jp/) v800+
 - [BWA](http://bio-bwa.sourceforge.net/) v0.7.12+
 - [SNAP aligner](https://github.com/amplab/snap)
 - [SSPACE3](http://www.baseclear.com/genomics/bioinformatics/basetools/SSPACE)
@@ -82,18 +83,20 @@ In addition, the volume needs to be mounted every time, leading to a bit complex
 ![](https://images.microbadger.com/badges/image/lpryszcz/redundans.svg)
 
 ## Running the pipeline
-Redundans input consists of **assembled contigs** (FastA) and any combination of::
-- **paired-end and/or mate pairs reads** (FastQ/FastA*)
+Redundans input consists of any combination of:
+- **assembled contigs** (FastA)
+- **paired-end and/or mate pairs reads** (FastQ*)
 - **long reads** (FastQ/FastA*) - both PacBio and Nanopore are supported
-- and/or **reference chromosomes/contigs** (FastA)
-* gzipped FastQ/FastA files are also accepted.
+- and/or **reference chromosomes/contigs** (FastA). 
+* gzipped files are also accepted.
 
 Redundans will return **homozygous genome assembly** in `scaffolds.filled.fa` (FastA).  
 In addition, the program reports [statistics for every pipeline step](/test#summary-statistics), including number of contigs that were removed, GC content, N50, N90 and size of gap regions. 
 
 ### Parameters
 For the user convenience, Redundans is equipped with a wrapper that **automatically estimates run parameters** and executes all steps/modules.
-The only mandatory parameter required at the runtime is **assembled contigs** (FastA), although you should also specify some sequencing libraries (FastA/FastQ) or reference sequence (FastA) in order to perform scaffolding. 
+You should specify some sequencing libraries (FastA/FastQ) or reference sequence (FastA) in order to perform scaffolding. 
+If you don't specify `-f` **contigs** (FastA), Redundans will assemble contigs *de novo*, but you'll have to provide **paired-end and/or mate pairs reads** (FastQ). 
 Most of the pipeline parameters can be adjusted manually (default values are given in square brackets []):  
 **HINT**: If you run fails, you may try to resume it, by adding `--resume` parameter. 
 - General options:
@@ -116,7 +119,7 @@ Most of the pipeline parameters can be adjusted manually (default values are giv
 - Reduction options:
 ```
   --identity IDENTITY   min. identity [0.51]
-  --overlap OVERLAP     min. overlap  [0.66]
+  --overlap OVERLAP     min. overlap  [0.80]
   --minLength MINLENGTH
                         min. contig length [200]
   --noreduction         Skip reduction
@@ -137,7 +140,7 @@ Most of the pipeline parameters can be adjusted manually (default values are giv
   -l LONGREADS, --longreads LONGREADS
                         FastQ/FastA files with long reads
   --identity IDENTITY   min. identity [0.51]
-  --overlap OVERLAP     min. overlap  [0.66]
+  --overlap OVERLAP     min. overlap  [0.80]
 ```
 - Reference-based scaffolding options:
 ```
@@ -145,7 +148,7 @@ Most of the pipeline parameters can be adjusted manually (default values are giv
                         reference FastA file
   --norearrangements    high identity mode (rearrangements not allowed)
   --identity IDENTITY   min. identity [0.51]
-  --overlap OVERLAP     min. overlap  [0.66]
+  --overlap OVERLAP     min. overlap  [0.80]
 ```
 - Gap closing options:
 ```
@@ -158,11 +161,14 @@ Redundans is **extremely flexible**. All steps of the pipeline can be ommited us
 ### Test run
 To run the test example, execute: 
 ```bash
-./redundans.py -v -i test/*.fq.gz -f test/contigs.fa -o test/run1
+./redundans.py -v -i test/*_?.fq.gz -f test/contigs.fa -o test/run1
 
 # if your run failed for any reason, you can try to resume it
 rm test/run1/_sspace.2.1.filled.fa
-./redundans.py -v -i test/*.fq.gz -f test/contigs.fa -o test/run1 --resume
+./redundans.py -v -i test/*_?.fq.gz -f test/contigs.fa -o test/run1 --resume
+
+# if you have no contigs assembled, just run without `-f`
+./redundans.py -v -i test/*_?.fq.gz -o test/run.denovo
 ```
 
 Note, the **order of libraries (`-i/--input`) is not important**, as long as `read1` and `read2` from each library are given one after another 
@@ -171,10 +177,10 @@ i.e. `-i 600_1.fq.gz 600_2.fq.gz 5000_1.fq.gz 5000_2.fq.gz` would be interpreted
 You can play with **any combination of inputs** ie. paired-end, mate pairs, long reads and / or reference-based scaffolding, for example:
 ```bash
 # reduction, scaffolding with paired-end, mate pairs and long reads, and gap closing with paired-end and mate pairs
-./redundans.py -v -i test/*.fq.gz -l test/pacbio.fq.gz test/nanopore.fa.gz -f test/contigs.fa -o test/run_short_long
+./redundans.py -v -i test/*_?.fq.gz -l test/pacbio.fq.gz test/nanopore.fa.gz -f test/contigs.fa -o test/run_short_long
 
 # scaffolding and gap closing with paired-end and mate pairs (no reduction)
-./redundans.py -v -i test/*.fq.gz -f test/contigs.fa -o test/run_short-scaffolding-closing --noreduction
+./redundans.py -v -i test/*_?.fq.gz -f test/contigs.fa -o test/run_short-scaffolding-closing --noreduction
 
 # reduction, reference-based scaffolding and gap closing with paired-end reads (--noscaffolding disables only short-read scaffolding)
 ./redundans.py -v -i test/600_?.fq.gz -r test/ref.fa -f test/contigs.fa -o test/run_ref_pe-closing --noscaffolding
@@ -185,7 +191,6 @@ For more details have a look in [test directory](/test).
 ## Support 
 If you have any issues or doubts check [documentation](/docs) and [FAQ (Frequently Asked Questions)](/docs#faq). 
 You may want also to sign to [our forum](https://groups.google.com/d/forum/redundans).
-
 
 ## Citation
 Leszek P. Pryszcz and Toni Gabaldón (2016) Redundans: an assembly pipeline for highly heterozygous genomes. NAR. [doi: 10.1093/nar/gkw294](http://nar.oxfordjournals.org/content/44/12/e113)
