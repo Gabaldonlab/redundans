@@ -36,9 +36,9 @@ echo `date` " BWA"
 retcode=$?; if [ $retcode -gt 0 ]; then exit $retcode; fi
 
 echo `date` " LASTal"
-#(cd bin/last && make clean && make -j $cores) >> $log 2>&1
-(cd bin && wget http://last.cbrc.jp/last/index.cgi/archive/tip.tar.gz && tar xfpz tip.tar.gz && ln -s last-* last && \
- cd last && make -j $cores) >> $log 2>&1
+(cd bin/last && make clean && make -j $cores) >> $log 2>&1
+#(cd bin && wget http://last.cbrc.jp/last/index.cgi/archive/tip.tar.gz && tar xfpz tip.tar.gz && ln -s last-* last && \
+# cd last && make -j $cores) >> $log 2>&1
 retcode=$?; if [ $retcode -gt 0 ]; then exit $retcode; fi
 
 echo `date` " SNAP-aligner"
