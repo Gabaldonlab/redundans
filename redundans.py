@@ -14,7 +14,7 @@ TBA:
  - filter last hits by e-value?
 """
 epilog="""Author:
-l.p.pryszcz@gmail.com
+l.p.pryszcz+git@gmail.com
 
 Mizerow/Warsaw/Bratislava/Barcelona, 17/10/2014
 """
