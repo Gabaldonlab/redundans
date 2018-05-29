@@ -5,7 +5,7 @@ epilog="""Author: l.p.pryszcz+git@gmail.com
 Warsaw, 20/04/2017
 """
 
-import gzip, math, os, sys, subprocess
+import gzip, math, os, sys, subprocess, tempfile
 from datetime import datetime
 from FastaIndex import FastaIndex
 
@@ -17,11 +17,16 @@ def run_last(ref, fasta, threads, verbose):
     if not os.path.isfile(fasta+".suf"):
         os.system("lastdb %s %s" % (ref, ref))
     # run LAST
+    fname = tempfile.mktemp()
+    fifo = os.mkfifo(fname)
     args1 = ["lastal", "-P", str(threads), ref, fasta]
     proc1 = subprocess.Popen(args1, stdout=subprocess.PIPE, stderr=sys.stderr)
     proc2 = subprocess.Popen(["last-split",], stdin=proc1.stdout, stdout=subprocess.PIPE, stderr=sys.stderr)
-    proc3 = subprocess.Popen(["maf-convert", "tab", "-"], stdin=proc2.stdout, stdout=subprocess.PIPE, stderr=sys.stderr)
-    return proc3.stdout
+    proc3 = subprocess.Popen(["maf-convert", "tab"], stdin=proc2.stdout, stdout=subprocess.PIPE, stderr=sys.stderr)
+    proc4 = subprocess.Popen(["tee", "-a", fname], stdin=proc3.stdout, stdout=subprocess.PIPE, stderr=sys.stderr)
+    #os.system("")
+    proc4b = subprocess.Popen(["last-dotplot", fname, "%s.dotplot.png"%fasta])
+    return proc4.stdout
     
 def get_matches(ref, fasta, threads, verbose):
     """Return LASTal hits passing identity and overlap thresholds"""
@@ -40,44 +45,6 @@ def get_matches(ref, fasta, threads, verbose):
         q2matches[q][0] += score
         q2matches[q][1] += qalg
     return q2matches
-
-def fasta2split(outs, ref, fasta, identity, overlap, minLength, threads, verbose, log=sys.stderr):
-    """ """
-    sizes = [0, 0]
-    #create/load fasta index
-    if verbose:
-        log.write("Indexing fasta...\n")
-    faidx = FastaIndex(fasta)
-    
-    # filter alignments & remove redundant
-    if verbose:
-        log.write("Parsing alignments...\n")
-    # get matches
-    q2matches = get_matches(ref, fasta, threads, verbose)
-
-    identities, algsizes, qsizes, gcs = [], [], [], []
-    for q, (score, algsize, qsize) in q2matches.iteritems():
-        _identity = 1.0 * (score+(algsize-score)/2) / algsize
-        if 1.*algsize/qsize>=overlap:
-            identities.append(_identity)
-            algsizes.append(algsize)
-            qsizes.append(qsize)
-            (A, C, G, T) = faidx.id2stats[q][-4:]
-            gc = 100.0*(G + C) / sum((A, C, G, T))
-            gcs.append(gc) #stats[-4:] for stats in self.id2stats.itervalues()
-        # split
-        if _identity > identity and 1.*algsize/qsize>=overlap:
-            i = 0
-        else:
-            i = 1
-        sizes[i] += qsize #faidx.id2stats[q][0]
-        outs[i].write(faidx[q])
-
-    log.write("%s bp split into %s files: %s\n"%(sum(sizes), len(sizes), ', '.join(map(str, sizes))))
-        
-    # plot
-    plot_scatter(fasta, identities, qsizes, gcs)
-    plot_histograms(fasta, identities, algsizes)
 
 def plot_scatter(fname, identities, algsizes, gcs):
     """Plot scatter with identity to reference and GC.
@@ -148,6 +115,49 @@ def plot_histograms(fname, identities, algsizes):
     plt.xlabel("Identity [%]")
     plt.ylabel("Cumulative alignment size [Mb]")
     fig.savefig(fname+".homo.hist.png", dpi=300)
+
+def fasta2split(outs, ref, fasta, identity, overlap, minLength, threads, verbose, log=sys.stderr):
+    """ """
+    sizes = [0, 0]
+    #create/load fasta index
+    if verbose:
+        log.write("Indexing fasta...\n")
+    faidx = FastaIndex(fasta)
+    
+    # filter alignments & remove redundant
+    if verbose:
+        log.write("Parsing alignments...\n")
+    # get matches
+    q2matches = get_matches(ref, fasta, threads, verbose)
+
+    identities, algsizes, qsizes, gcs = [], [], [], []
+    for q, (score, algsize, qsize) in q2matches.iteritems():
+        _identity = 1.0 * (score+(algsize-score)/2) / algsize
+        if 1.*algsize/qsize>=overlap:
+            identities.append(_identity)
+            algsizes.append(algsize)
+            qsizes.append(qsize)
+            (A, C, G, T) = faidx.id2stats[q][-4:]
+            gc = 100.0*(G + C) / sum((A, C, G, T))
+            gcs.append(gc) #stats[-4:] for stats in self.id2stats.itervalues()
+        # split
+        if _identity > identity and 1.*algsize/qsize>=overlap:
+            i = 0
+        else:
+            i = 1
+        sizes[i] += qsize #faidx.id2stats[q][0]
+        outs[i].write(faidx[q])
+    # check missing
+    i = 1    
+    for q in faidx:
+        if q not in q2matches:
+            sizes[i] += faidx.id2stats[q][0]
+            outs[i].write(faidx[q])
+    log.write("%s bp split into %s files: %s\n"%(sum(sizes), len(sizes), ', '.join(map(str, sizes))))
+        
+    # plot
+    plot_scatter(fasta, identities, qsizes, gcs)
+    plot_histograms(fasta, identities, algsizes)
 
 def main():
     import argparse

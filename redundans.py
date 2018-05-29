@@ -295,7 +295,9 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
         if verbose:
             log.write("%sDe novo assembly...\n"%timestamp())        
         fasta = denovo(os.path.join(outdir, "denovo"), fastq, threads, mem, verbose, log, tmp)
-
+    elif not fasta:
+        fasta = lastOutFn
+        
     # REDUCTION
     fastas = [fasta, ]; _check_fasta(fasta)
     symlink(fasta, lastOutFn)
