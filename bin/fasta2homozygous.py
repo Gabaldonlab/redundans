@@ -222,7 +222,8 @@ def fasta2homozygous(out, fasta, identity, overlap, minLength, threads=1, verbos
 
     return genomeSize, len(faidx), ssize, skipped, avgIdentity
 
-def save_homozygous(out, faidx, contig2skip, minLength, verbose):
+
+def save_homozygous(homo, faidx, contig2skip, minLength, verbose):
     """Save homozygous contigs to out stream
 
     Here you could learn from distibution of identities,
@@ -230,31 +231,34 @@ def save_homozygous(out, faidx, contig2skip, minLength, verbose):
     """
     k = skipped = ssize = nsize = identities = algLengths = 0
     # store skipped hetero contigs stats
-    out2 = open(out.name+".hetero.tsv", "w")
-    out2.write("#contig\tsize\ttarget\titentity\toverlap\n")
-    # process contigs starting from the largest
-    for i, c in enumerate(faidx, 1):
-        # skip short
-        if faidx.id2stats[c][0] < minLength:
-            skipped += 1
-            ssize   += faidx.id2stats[c][0]
-        # skip hetero
-        elif contig2skip[c]: 
-            skipped += 1
-            ssize   += faidx.id2stats[c][0]
-            score, t, algLen, identity, overlap = contig2skip[c]
-            out2.write("%s\t%s\t%s\t%.3f\t%.3f\n"%(c, faidx.id2stats[c][0], t, identity, overlap))
-            # update identities and lengths
-            identities += identity*algLen
-            algLengths += algLen
-        # save sequence
-        else:
-            out.write(faidx[c])
-            # update counters
-            k += 1
-            nsize += faidx.id2stats[c][0]
-    # close out2
-    out2.close()
+    with open(homo.name+".short-than-" + str(minLength) + ".fasta", "w") as short:
+        with open(homo.name+".hetero.fasta", "w") as hetero:
+            with open(homo.name+".hetero.tsv", "w") as heteroStats:
+                heteroStats.write("#contig\tsize\ttarget\titentity\toverlap\n")
+                # process contigs starting from the largest
+                for i, c in enumerate(faidx, 1):
+                    # skip short
+                    if faidx.id2stats[c][0] < minLength:
+                        skipped += 1
+                        ssize   += faidx.id2stats[c][0]
+                        short.write(faidx[c])
+                    # skip hetero
+                    elif contig2skip[c]:
+                        skipped += 1
+                        ssize   += faidx.id2stats[c][0]
+                        score, t, algLen, identity, overlap = contig2skip[c]
+                        heteroStats.write("%s\t%s\t%s\t%.3f\t%.3f\n"%(c, faidx.id2stats[c][0], t, identity, overlap))
+                        # update identities and lengths
+                        identities += identity*algLen
+                        algLengths += algLen
+                        hetero.write(faidx[c])
+                    # save sequence
+                    else:
+                        homo.write(faidx[c])
+                        # update counters
+                        k += 1
+                        nsize += faidx.id2stats[c][0]
+
     # calculate average identity        
     avgIdentity = 0
     if algLengths:
