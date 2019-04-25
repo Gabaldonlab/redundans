@@ -8,6 +8,8 @@
 branch="master" 
 if [ ! -z $1 ]; then branch=$1; fi
 
+log=`mktemp -t redundans.install.XXXXXXXXX.log`
+
 echo "#####################################################################################"
 echo "#                                                                                   #"
 echo "#                               Redundans installer                                 #"
