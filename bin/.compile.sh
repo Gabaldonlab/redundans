@@ -1,7 +1,7 @@
 #!/bin/bash
 # Compile redundans dependencies
 
-log="/tmp/compiling.log"
+log=`mktemp -t redundans.compiling.XXXXXXXXX.log`
 if [ ! -z $1 ]; then log=$1; fi
 
 echo `date` "Updating submodules..."
