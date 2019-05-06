@@ -10,7 +10,7 @@ l.p.pryszcz@gmail.com
 Mizerow, 10/04/2015
 """
 
-import math, os, sys, commands, subprocess
+import math, os, sys, subprocess
 from datetime import datetime
 from FastaIndex import FastaIndex
 from fastq2sspace import _get_bwamem_proc, _get_snap_proc
@@ -172,15 +172,15 @@ def prepare_genome(fasta, genomeFrac=0.05):
             out.write(faidx[c])
     return newfasta
     
-def fastq2insert_size(out, fastq, fasta, mapq, threads, limit, verbose, log=sys.stderr, 
-                      genomeFrac=0.05, stdfracTh=0.66, maxcfracTh=0.9):
+def fastq2insert_size(out, fastq, fasta, mapq=10, threads=4, limit=1e4, genomeFrac=0.05,
+                      stdfracTh=0.66, maxcfracTh=0.9, log=sys.stderr, verbose=0):
     """Report insert size statistics and return all information."""
     # prepare genome
     fasta = prepare_genome(fasta, genomeFrac)
     # 
     header  = "Insert size statistics\t\t\t\tMates orientation stats\n"
     header += "FastQ files\tread length\tmedian\tmean\tstdev\tFF\tFR\tRF\tRR\n"
-    if verbose:
+    if out:
         out.write(header)
     line = "%s %s\t%i\t%i\t%.2f\t%.2f\t%s\n"
     data = []
@@ -192,7 +192,7 @@ def fastq2insert_size(out, fastq, fasta, mapq, threads, limit, verbose, log=sys.
             log.write("[WARNING] No alignments for %s - %s!\n"%(fq1, fq2))
             continue
         # report
-        if verbose:
+        if out:
             out.write(line%(fq1, fq2, readlen, ismedian, ismean, isstd, "\t".join(map(str, pairs))))
         # store data
         data.append((fq1, fq2, readlen, ismedian, ismean, isstd, pairs, orientation))
