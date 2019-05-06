@@ -18,7 +18,7 @@ echo "##########################################################################
 echo ""
 echo "Redundans and its dependencies will be installed in:" `pwd`/redundans
 echo ""
-echo "Installation will take 5-10 minutes. "
+echo "Installation will take 2-3 minutes. "
 echo "To track the installation status execute in the new terminal:"
 echo "  tail -f `pwd`/redundans/$log"
 echo ""
@@ -88,7 +88,7 @@ retcode=$?;
 if [ $retcode -gt 0 ]; then
     echo "  [$retcode] ERROR!"
     tail -n 20 $log
-    return $retcode
+    #return $retcode
 fi
 
 echo `date` "Installation finished!"
