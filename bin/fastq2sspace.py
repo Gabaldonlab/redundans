@@ -93,6 +93,7 @@ def sam2sspace_tab(inhandle, outhandle, mapqTh=0, upto=float('inf'), verbose=Fal
         _tmpfile.close()
         lastproc = _get_last_proc(_tmpfile.name, ref, cores)
         last_tab2sspace_tab(lastproc.stdout, outhandle, mapqTh, upto, verbose, log)
+        lastproc.kill()
         os.unlink(_tmpfile.name)
     
 def _get_bwamem_proc(fn1, fn2, ref, cores, verbose, log=sys.stderr):
