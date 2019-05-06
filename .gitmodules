@@ -6,10 +6,6 @@
     path = bin/snap
     url = https://github.com/amplab/snap
 
-[submodule "bin/last"]
-    path = bin/last
-    url = https://github.com/lpryszcz/last
-
 [submodule "bin/pyScaf"]
     path = bin/pyScaf
     url = https://github.com/lpryszcz/pyScaf.git
@@ -17,3 +13,7 @@
 [submodule "bin/pyScaf/FastaIndex"]
     path = bin/pyScaf/FastaIndex
     url = https://github.com/lpryszcz/FastaIndex.git
+    
+[submodule "bin/last"]
+	path = bin/last
+	url = https://github.com/lpryszcz/last
