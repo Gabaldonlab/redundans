@@ -58,7 +58,7 @@ If it fails, make sure you have below dependencies installed:
 For user convenience, we provide [UNIX installer](#unix-installer) and [Docker image](#docker-image), that can be used instead of manually installation.  
 
 ### Unofficial conda package
-If you are familiar with conda (you'll need version for Python2), this will be by far the easiest: 
+If you are familiar with conda, this will be by far the easiest way of installing redundans: 
 ```bash
 # create new Python2 environment
 conda create -n redundans python=2.7
