@@ -60,10 +60,15 @@ For user convenience, we provide [UNIX installer](#unix-installer) and [Docker i
 ### Unofficial conda package
 If you are familiar with conda (you'll need version for Python2), this will be by far the easiest: 
 ```bash
+# create new Python2 environment
+conda create -n redundans python=2.7
+# activate it
+conda activate redundans
+# and install redundans
 conda install -c genomedk redundans 
 ```
 
-Just note, this isn't official channel and may not be completely up-to-date with this repo. 
+Note, this is unofficial channel and may not be completely up-to-date with this repo. 
 
 ### UNIX installer
 UNIX installer will automatically fetch, compile and configure Redundans together with all dependencies.
