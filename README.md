@@ -57,6 +57,14 @@ If it fails, make sure you have below dependencies installed:
 
 For user convenience, we provide [UNIX installer](#unix-installer) and [Docker image](#docker-image), that can be used instead of manually installation.  
 
+### Unofficial conda package
+If you are familiar with conda (you'll need version for Python2), this will be by far the easiest: 
+```bash
+conda install -c genomedk redundans 
+```
+
+Just note, this isn't official channel and may not be completely up-to-date with this repo. 
+
 ### UNIX installer
 UNIX installer will automatically fetch, compile and configure Redundans together with all dependencies.
 It should work on all modern Linux systems, given Python 2.7, commonly used programmes (ie. wget, curl, git, perl, gcc, g++, ldconfig) and libraries (zlib including zlib.h) are installed. 
