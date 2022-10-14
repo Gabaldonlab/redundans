@@ -610,8 +610,9 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
     symlink(fasta, lastOutFn)
     fastas.append(lastOutFn); _check_fasta(lastOutFn)
     # update fasta list
-    outfn = os.path.join(outdir, "contigs.reduced.fa")
-    if reduction and _corrupted_file(outfn):
+    outfn_check = os.path.join(outdir, "contigs.reduced.fa")
+    if reduction and _corrupted_file(outfn_check):
+        outfn = os.path.join(outdir, "contigs.reduced.fa")
         resume += 1
         if verbose:
             log.write("%sReduction...\n"%timestamp())
@@ -631,8 +632,8 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
         libraries = get_libraries(fastq, lastOutFn, mapq, threads, verbose, log, usebwa=usebwa)
     
     # SCAFFOLDING
-    outfn = os.path.join(outdir, "scaffolds.fa")
     if fastq and scaffolding: 
+        outfn = os.path.join(outdir, "scaffolds.fa")
         if verbose:
             log.write("%sScaffolding...\n"%timestamp())
         libraries, resume = run_scaffolding(outdir, outfn, fastq, libraries, lastOutFn, mapq, threads, joins, \
@@ -645,8 +646,9 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
 
 
     # SCAFFOLDING WITH LONG READS
-    outfn = os.path.join(outdir, "scaffolds.longreads.fa")
-    if longreads and _corrupted_file(outfn):
+    outfn_check = os.path.join(outdir, "scaffolds.longreads.fa")
+    if longreads and _corrupted_file(outfn_check):
+        outfn = os.path.join(outdir, "scaffolds.longreads.fa")
         # here maybe sort reads by increasing median read length
         resume += 1
         if verbose:
@@ -692,8 +694,9 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
         fastas.append(lastOutFn); _check_fasta(lastOutFn)
 
     # REFERENCE-BASED SCAFFOLDING
-    outfn = os.path.join(outdir, "scaffolds.ref.fa")
-    if reference and _corrupted_file(outfn):
+    outfn_check = os.path.join(outdir, "scaffolds.ref.fa")
+    if reference and _corrupted_file(outfn_check):
+        outfn = os.path.join(outdir, "scaffolds.ref.fa")
         resume += 1
         if verbose:
             log.write("%sScaffolding based on reference...\n"%timestamp())        
@@ -709,8 +712,9 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
     
         
     # GAP CLOSING
-    outfn = os.path.join(outdir, "scaffolds.filled.fa")
-    if fastq and gapclosing: 
+    outfn_check = os.path.join(outdir, "scaffolds.filled.fa")
+    if fastq and gapclosing:
+        outfn = os.path.join(outdir, "scaffolds.filled.fa")
         if verbose: 
             log.write("%sGap closing...\n"%timestamp())
         resume = run_gapclosing(outdir, libraries, outfn, lastOutFn, threads, limit, iters, resume, verbose, log)
@@ -720,8 +724,9 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
         fastas.append(lastOutFn); _check_fasta(lastOutFn)
 
     # FINAL REDUCTION
-    outfn = os.path.join(outdir, "scaffolds.reduced.fa")
-    if reduction and _corrupted_file(outfn):
+    outfn_check = os.path.join(outdir, "scaffolds.reduced.fa")
+    if reduction and _corrupted_file(outfn_check):
+        outfn = os.path.join(outdir, "scaffolds.reduced.fa")
         resume += 1
         if verbose:
             log.write("%sFinal reduction...\n"%timestamp())
@@ -744,7 +749,8 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
 
         if verbose:
             log.write("%sGenerating Merqury statistics...\n"%timestamp())
-        merqury_statistics(outdir, meryldb, outfn, threads, mem, kmer, verbose)
+        print()
+        merqury_statistics(outdir, meryldb, lastOutFn, threads, mem, kmer, verbose)
         
     # FASTA STATS
     if verbose:
