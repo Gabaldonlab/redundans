@@ -2,7 +2,7 @@
 ###
 # Redundans installer for UNIX.
 # bash <(curl -Ls http://bit.ly/redundans_installer)
-# version 0.14a
+# version 2.00
 ###
 
 log="install.log"
@@ -13,7 +13,7 @@ echo "##########################################################################
 echo "#                                                                                   #"
 echo "#                               Redundans installer                                 #"
 echo "#                                                                                   #"
-echo "#       version 0.14a                                  l.p.pryszcz+git AT gmail     #"
+echo "#       version 2.00                   l.p.pryszcz+git AT gmail   & dfuentes@bsc.es #"
 echo "#####################################################################################"
 echo ""
 echo "Redundans and its dependencies will be installed in:" `pwd`/redundans
@@ -66,12 +66,12 @@ if [ ! -z $error ]; then
 fi
 
 # check python version 
-PyVer=`python --version 2>&1 | cut -f2 -d" " | cut -f-2 -d"."`
-if [ $PyVer != "2.7" ] && [ $PyVer != "2.6" ]; then 
+PyVer=`python --version 2>&1 | cut -f2 -d" " | cut -f-1 -d"."`
+if [ $PyVer != 3 ]; then 
     echo ""
-    echo "[ERROR] Install Python 2.7!"
-    echo "If you have Python 2.7 already installed, you can either "
-    echo "make an alias before installation and use of Redundans ('alias python=python2.7' should do)"
+    echo "[ERROR] Install Python >= 3.0!"
+    echo "If you have Python 3 already installed, you can either "
+    echo "make an alias before installation and use of Redundans ('alias python=python3' should do)"
     echo "or use Python virtual environment (https://virtualenv.pypa.io)."
     return 1
 fi
@@ -80,7 +80,6 @@ echo " Everything looks good :) Let's proceed..."
 echo `date` "Downloading Redundans..."
 git clone -b $branch --recursive https://github.com/lpryszcz/redundans.git >> /dev/null 2>&1 
 cd redundans 
-#git checkout $branch && git submodule update --init --recursive # only needed if you clone all and want to use branch
 
 # compile dependencies
 sh bin/.compile.sh `pwd`/$log

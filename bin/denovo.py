@@ -13,6 +13,7 @@ Warsaw, 20/11/2017
 
 import os, sys, tempfile
 from datetime import datetime
+from contextlib import contextmanager
 from subprocess import Popen, PIPE
 from fastq2insert_size import fastq2insert_size
 
@@ -52,38 +53,40 @@ def get_best_lib(fastq, frac=0.66, verbose=0):
     """Select best library"""
     lib2data = {fn: get_readlen_and_seqsize(fn) for fn in fastq}#; print lib2data
     # select largest lib in 70-150 read len range
-    _fastq = filter(lambda x: 70<=lib2data[x][0]<=150, fastq)
+    _fastq = [x for x in fastq if 70<=lib2data[x][0]<=150]
     if _fastq:
         fastq = _fastq
     # return libs having frac*max size
     sizes = [lib2data[fn][1] for fn in fastq]    
     maxsize = max(sizes)
-    return filter(lambda x: lib2data[x][1] >= frac*maxsize, fastq), sum(sizes)
+    return [x for x in fastq if lib2data[x][1] >= frac*maxsize], sum(sizes)
 
 def get_named_fifo():
     """Return named FIFO"""
-    tmpfn = tempfile.mktemp()
-    os.mkfifo(tmpfn)
+    _, tmpfn = tempfile.mkstemp(prefix='redundans_')
     return tmpfn
     
 def run_assembly(prefix, fastq, threads, mem, tmpdir, log, locallog):
     """Execute platanus assemble & return returncode"""
     # create named FIFO
     tmp = get_named_fifo()
-    # run assembly
+    # write FastA to fifo
+    with open(tmp, 'w') as pipe:
+        cmd = ["cat", ] + fastq
+        if [fn for fn in fastq if fn.endswith('.gz')]:
+            cmd[0] = "zcat" 
+        parser = Popen(cmd, stdout=pipe, stderr=locallog)
+        parser.communicate()
+        parser.wait()
+
     cmd = "platanus assemble -tmp %s -t %s -m %s -o %s -f %s" % (tmpdir, threads, mem, prefix, tmp)
     if log:
         log.write(" %s\n"%cmd)
     p = Popen(cmd.split(), stdout=locallog, stderr=locallog)
-    # write FastA to fifo
-    with open(tmp, 'w') as pipe:
-        cmd = ["cat", ] + fastq
-        if filter(lambda fn: fn.endswith('.gz'), fastq):
-            cmd[0] = "zcat" 
-        parser = Popen(cmd, stdout=pipe, stderr=locallog)
-        parser.wait()
+
     # wait for process to finish & rm fifo
-    p.wait(); str(p.returncode)
+    p.communicate(); p.wait(); str(p.returncode)
+    #print("Return code " + str(p.returncode))
     os.unlink(tmp)
     return p.returncode
     
@@ -94,7 +97,8 @@ def run_scaffolding(prefix, fastq, threads, tmpdir, log, locallog, tmp):
         log.write(" %s\n"%cmd)
     p = Popen(cmd.split(), stdout=locallog, stderr=locallog)
     # wait for process to finish & rm fifo
-    p.wait(); str(p.returncode)
+    p.communicate(); p.wait(); str(p.returncode)
+    #print(p.returncode, p.stdout, p.stderr)
     #os.unlink(tmp)
     return p.returncode
 
@@ -108,9 +112,11 @@ def run_scaffolding0(prefix, fastq, threads, tmpdir, log, locallog, limit=1.):
     p = Popen(cmd.split(), stdout=locallog, stderr=locallog)
     with open(tmp, 'w') as pipe:
         parser = Popen(["fastq2shuffled.py", ] + fastq, stdout=pipe, stderr=locallog)
-        #parser.wait()
+        parser.communicate()
+        parser.wait()
     # wait for process to finish & rm fifo
     p.wait(); str(p.returncode)
+    #print(p.returncode, p.stdout, p.stderr)
     os.unlink(tmp)
     return p.returncode
 
@@ -138,6 +144,7 @@ def run_gapclosing(prefix, fastq, threads, tmpdir, log, locallog, tmp):
     p = Popen(cmd.split(), stdout=locallog, stderr=locallog)
     # wait for process to finish & rm fifo
     p.wait(); str(p.returncode)
+    os.unlink(tmp)
     return p.returncode
     
 def denovo(outdir, fastq, threads, mem, verbose, log, tmpdir='/tmp'):
@@ -160,7 +167,7 @@ def denovo(outdir, fastq, threads, mem, verbose, log, tmpdir='/tmp'):
     # estimate insert size
     # fq1, fq2, readlen, ismedian, ismean, isstd, pairs, orientation
     libdata = fastq2insert_size(log, fastq, prefix+"_contig.fa", threads=threads)
-    pelibs = filter(lambda x: x[-1] in ('FR', ) and 100<x[4]<1000, libdata) #'RF'
+    pelibs = [x for x in libdata if x[-1] in ('FR', ) and 100<x[4]<1000] #'RF'
     if pelibs:
         pefastq = list(sorted(pelibs, key=lambda x: x[4])[0][:2])
         if verbose:
@@ -168,8 +175,10 @@ def denovo(outdir, fastq, threads, mem, verbose, log, tmpdir='/tmp'):
         # write shuffled FastQ to fifo
         tmp = prefix+".fq"
         with open(tmp, 'w') as pipe:
-            parser = Popen(["fastq2shuffled.py", ] + fastq, stdout=pipe, stderr=locallog)
+            #print("fastq2shuffled.py "+str(fastq))
+            parser = Popen(["fastq2shuffled.py", ] + fastq + [tmp], stdout=pipe, stderr=locallog)
             parser.wait()
+            #print(parser.returncode)
         # scaffold
         if run_scaffolding(prefix, pefastq, threads, tmpdir, log, locallog, tmp)==0: 
             outfn = prefix + "_scaffold.fa"
@@ -195,8 +204,8 @@ def main():
     parser.add_argument('--version', action='version', version='0.13c')
     parser.add_argument("-i", "--fastq", nargs="*", default=[], help="FASTQ PE / MP files")
     parser.add_argument("-o", "--outdir", default="denovo", help="output directory [%(default)s]")
-    parser.add_argument("-t", "--threads", default=4, type=int, help="max threads to run [%(default)s]")
-    parser.add_argument("-m", "--mem", default=16, type=int, help="max memory to allocate (in GB) [%(default)s]")
+    parser.add_argument("-t", "--threads", default=16, type=int, help="max threads to run [%(default)s]")
+    parser.add_argument("-m", "--mem", default=2, type=int, help="max memory to allocate (in GB) [%(default)s]")
     parser.add_argument("--log", default=sys.stderr, type=argparse.FileType('w'), help="output log to [stderr]")
     parser.add_argument("--tmp", default='/tmp', help="tmp directory [%(default)s]")
     

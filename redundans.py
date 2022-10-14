@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 desc="""Heterozygous genome assembly pipeline. It consists of three steps:
 reduction, scaffolding and gap closing.
 
@@ -17,21 +17,28 @@ epilog="""Author:
 l.p.pryszcz+git@gmail.com
 
 Mizerow/Warsaw/Bratislava/Barcelona, 17/10/2014
+
+Updated to Python3 by Diego Fuentes Palacios
+Barcelona 08/18/2022
 """
 
-import os, resource, sys
+import os, resource, sys, re
+from ssl import PROTOCOL_TLSv1_2
 import glob, subprocess, time
 from datetime import datetime
+from io import TextIOWrapper, StringIO
+from traceback import print_list
 
 # update sys.path & environmental PATH
 root = os.path.dirname(os.path.abspath(sys.argv[0]))
-src = ["bin", "bin/bwa", "bin/snap", "bin/pyScaf", "bin/last/build", "bin/last/scripts", "bin/last/src",]
+src = ["bin/", "bin/bwa/", "bin/snap/", "bin/pyScaf/", "bin/last/build/",
+    "bin/last/scripts/", "bin/last/src/", "bin/minimap2/", "bin/merqury"]
 paths = [os.path.join(root, p) for p in src]
 sys.path = paths + sys.path
 os.environ["PATH"] = "%s:%s"%(':'.join(paths), os.environ["PATH"])
 
-# make sure using Python 2.7 or 3?
-assert sys.version_info >= (2, 7) and sys.version_info < (3,), "Only Python 2.7 is supported!"
+# make sure using Python 3
+assert sys.version_info >= (3,), "Only Python 3 is supported!"
 
 from fasta2homozygous import fasta2homozygous
 from fastq2sspace import fastq2sspace
@@ -50,7 +57,7 @@ def get_libraries(fastq, fasta, mapq=10, threads=4, verbose=1, log=sys.stderr, l
     """Return libraries"""
     # skip if all libs OKish
     ## max stdfrac cannot be larger than stdfracTh in any of the libraries
-    if libraries and not filter(lambda x: x>stdfracTh, (max(lib[5]) for lib in libraries)):
+    if libraries and not [x for x in (max(lib[5]) for lib in libraries) if x>stdfracTh]:
         return libraries
     
     # otherwise process all reads
@@ -267,12 +274,310 @@ def _check_fasta(lastOutFn, minSize=1000, log=sys.stderr):
     if not len(faidx) or faidx.genomeSize<minSize:
         log.write("[ERROR] Empty FastA file encountered: %s !\n"%lastOutFn)
         sys.exit(1)
+
+def _build_meryldb(outpath, fastq, threads, mem, kmer=21):
+    """Build meryldb using Illumina reads"""
+    
+
+    outname = os.path.join(outpath, "complete.meryl")
+
+    for fq1, fq2 in zip(fastq[0::2], fastq[1::2]):
+        # meryl k=$k count output read$i.meryl read$i.fastq.gz
+        k = "k=%s"%kmer
+
+        #First copy fastq files to outpath to generate the meryl db there. Those files are going to be deleted later
+        
+        args0 = ["cp", "-t", outpath, fq1, fq2]
+        proc0 = subprocess.Popen(args0, stderr=sys.stderr)
+        proc0.communicate()
+
+        basefq1=os.path.basename(fq1)
+        basefq2=os.path.basename(fq2)
+
+        fq1 = os.path.join(outpath, basefq1)
+        fq2 = os.path.join(outpath, basefq2)
+        meryldb1 = os.path.join(outpath, "%s.meryl"%basefq1)
+        meryldb2 = os.path.join(outpath, "%s.meryl"%basefq2)
+        t = "threads=%s"%threads
+        m = "memory=%s"%mem
+
+        #Generate a meryl db for each reads file
+        args1 = ["meryl", k, "count", "output", t, m, meryldb1, fq1]
+        proc1 = subprocess.Popen(args1, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+        args2 = ["meryl", k, "count", "output", t, m, meryldb2, fq2]
+        proc2 = subprocess.Popen(args2, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+
+        #Communicate to enforce process has ended to avoid memory/thread issues
+        proc1.communicate()
+        proc2.communicate()
+
+
+    path = os.path.join(outpath, "*.meryl")
+    
+    #Tried with code below, unknown error
+    #args4 = ["meryl", "union-sum", "output", t, m, outname, path]
+    args4 = "meryl union-sum output "+t+" "+m+" "+outname+" "+path
+
+    proc4 = subprocess.Popen(args4, stderr=sys.stderr, shell=True)
+
+    proc4.communicate()
+
+    return outname
+
+def merqury_statistics(outdir, meryldb, outfile, threads, mem, kmer=21, verbose=0):
+
+    """This function recreates merqury functionality in python instead of a bash wrapper to apply subprocesses"""
+
+    #####Define base variables
+    mqout = os.path.join(outdir, "merqury_results")
+    t = "threads=%s"%threads
+    m = "memory=%s"%mem
+    k = "k=%s"%kmer
+    fname = os.path.basename(outfile)+".meryl"
+    assembly_db = os.path.join(mqout, fname)
+
+    ##Generate results directory
+    args_pre = ["mkdir", mqout]
+    proc_pre = subprocess.Popen(args_pre)
+
+    #Glob all read meryl + complete.meryl dbs and create a symbolic link
+    pattern = os.path.dirname(os.path.abspath(meryldb))+"/*.meryl"
+    list_meryl = glob.glob(pattern) 
+    
+    for readdb in list_meryl:
+        args_tmp = ["ln", "-s", os.path.abspath(readdb), mqout]
+        proc_tmp = subprocess.Popen(args_tmp)
+
+    #Recreating merqury:
+
+    #Step 1: find filter kmer size and filter complete.meryl
+
+    args0= "meryl histogram %s %s %s > %s"%(t, m, meryldb, os.path.join(mqout, "filt.hist"))
+    proc0 = subprocess.Popen(args0, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, shell=True)
+    proc0.communicate()
+
+    #java -jar -Xmx1g $MERQURY/eval/kmerHistToPloidyDepth.ja
+    
+    args1 = "java -jar -Xmx1g bin/merqury/eval/kmerHistToPloidyDepth.jar %s > %s"%(os.path.join(mqout, "filt.hist"), os.path.join(mqout, ".result"))
+    proc1 = subprocess.Popen(args1, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, shell=True)
+    proc1.communicate()
+
+    #arg2 = ["java", "-jar", "-Xmx1g","bin/merqury/eval/kmerHistToPloidyDepth.jar"]
+    #proc2 = subprocess.Popen(arg2, stdout=subprocess.PIPE, stdin=proc1.stdout, stderr=sys.stderr)
+    #proc2.communicate()
+
+    args2 = "sed -n 2p %s | awk '{print $NF}'"%os.path.join(mqout, ".result")
+    proc2 = subprocess.Popen(args2, stdout=subprocess.PIPE, stderr=sys.stderr, shell=True)
+    kmer_filt = proc2.stdout.read().decode("utf-8").strip()
+    proc2.communicate()
+    if verbose:
+        sys.stderr.write("[INFO] Filtering meryldb with kmers below %s kmer size\n"%kmer_filt)
+
+    args3 = "meryl greater-than %s output %s %s"%(kmer_filt, os.path.join(mqout, "filtered_k%s.complete.meryl"%kmer_filt), meryldb)
+    args3 = ["meryl", "greater-than", kmer_filt, "output", t, m, os.path.join(mqout, "filtered_k%s.complete.meryl"%kmer_filt), meryldb]
+    proc3 = subprocess.Popen(args3, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+    proc3.communicate()
+    #meryl greater-than $filt output $db.gt$filt.meryl $db.meryl
+
+    #Step 2:
+    
+    if verbose:
+        sys.stderr.write("=== Generate spectra-cn plots per assemblies and get QV, k-mer completeness ===\n")
+
+    args4 = ["meryl", k, "count", "output", t, m, assembly_db, outfile]
+    proc4 = subprocess.Popen(args4, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+    proc4.communicate()
+
+
+    #Generate the spectra hist
+    #with open(os.path.join(mqout, "spectra-cn.hist"), "a+") as file:
+        #file.write("Copies\tkmer_multiplicity\tCount")
+
+    #First the ones specific to reads
+    name = "asm.k%s.0.%s"%(kmer, os.path.basename(assembly_db))
+    path = os.path.join(mqout, name)
+
+    cmd = "echo \"Copies\tkmer_multiplicity\tCount\" > %s"%os.path.join(mqout, "spectra-cn.hist")
+    subprocess.Popen(cmd, shell=True)
+
+    args5 = "meryl difference output %s %s %s %s %s"%(t, m, path, meryldb, assembly_db)
+    proc5 = subprocess.Popen(args5, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, shell=True)
+    proc5.communicate()
+
+    args6 =  "meryl histogram %s %s %s | awk '{print \"read-only\t\"$0}' >> %s"%(t, m, path, os.path.join(mqout, "spectra-cn.hist"))
+    proc6 = subprocess.Popen(args6, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, shell=True)
+    proc6.communicate()
+
+    #group kmers based on copy number from 1 to 4
+    if verbose:
+        sys.stderr.write("Group kmers based on copy number from 1 to 4 and larger than 4.\n")
+    for i in range(1, 5, 1):
+        name_i = "asm.k%s.%s.%s"%(kmer, i, os.path.basename(assembly_db))
+        path_i = os.path.join(mqout, name_i)
+        tree_cmd = "[equal-to %s %s ]"%(i, assembly_db)
+        #args7=["meryl", "intersect", t, m, "output", path_i, meryldb, tree_cmd]
+        args7= "meryl intersect output %s %s %s %s %s"%(t, m, path_i, meryldb, tree_cmd)
+        proc7=subprocess.Popen(args7, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, shell=True)
+        proc7.communicate()
+        args8="meryl histogram %s %s %s | awk -v cn=%s \'{print cn\"\t\"$0}\' >> %s"%(t, m, path_i, i, os.path.join(mqout, "spectra-cn.hist"))
+        proc8 = subprocess.Popen(args8, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, shell=True)
+        proc8.communicate()
+        args9=["rm", "-r", path_i]
+        proc9 = subprocess.Popen(args9)
+
+    #For copy number >4
+    name_cn = "asm.k%s.gt4.%s"%(kmer, os.path.basename(assembly_db))
+    path_cn = os.path.join(mqout, name_cn)
+    tree_cmd = "[greater-than %s %s ]"%(i, assembly_db)
+
+    args10= "meryl intersect output %s %s %s %s %s"%(t, m, path_cn, meryldb, tree_cmd)
+    proc10=subprocess.Popen(args10, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, shell=True)
+    proc10.communicate()
+
+    args11="meryl histogram %s %s %s | awk -v cn=\">4\" \'{print cn\"\t\"$0}\' >> %s"%(t, m, path_cn, os.path.join(mqout, "spectra-cn.hist"))
+    proc11 = subprocess.Popen(args11, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, shell=True)
+    proc11.communicate()
+
+    args12=["rm", "-r", path_cn]
+    proc12 = subprocess.Popen(args12)
+    
+    # Copy numbers in k-mers found only in asm")
+
+    args13 = "meryl difference output %s %s %s %s %s"%(t, m, path, assembly_db, meryldb)
+    proc13 = subprocess.Popen(args13, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, shell=True)
+    proc13.communicate()
+
+    #Extract the ones that are are distinct and multi
+
+    args14 = "meryl statistics %s %s %s | head -n4 | tail -n1 | awk '{print $2}'"%(t, m, path)
+    proc14 = subprocess.Popen(args14, stdout=subprocess.PIPE, stderr=sys.stderr, shell=True)
+    PRESENT = proc14.stdout.read().decode("utf-8").strip()
+    proc14.communicate()
+
+    args15 = "meryl statistics %s %s %s | head -n3 | tail -n1 | awk '{print $2}'"%(t, m, path)
+    proc15 = subprocess.Popen(args15, stdout=subprocess.PIPE, stderr=sys.stderr, shell=True)
+    DISTINCT = proc15.stdout.read().decode("utf-8").strip()
+    proc15.communicate()
+    MULTI = str(int(PRESENT)-int(DISTINCT))
+
+    #Store results in a complementary hist file
+    cmd = "echo \"1\t0\t%s\" > %s"%(DISTINCT, os.path.join(mqout, "only.hist"))
+    subprocess.Popen(cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+    cmd = "echo \"2\t0\t%s\" >> %s"%(MULTI, os.path.join(mqout, "only.hist"))
+    subprocess.Popen(cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+
+
+    #Generate the QV statistics
+    if verbose:
+        sys.stderr.write("Generate the QV statistics here: %s\n"%os.path.join(mqout, (os.path.basename(outfile)+".qv")))
+
+    args16="meryl statistics %s %s %s| head -n4 | tail -n1 | awk '{print $2}'"%(t, m, path)
+    proc16 = subprocess.Popen(args16, stdout=subprocess.PIPE, stderr=sys.stderr, shell=True)
+    ASM_ONLY=proc16.stdout.read().decode("utf-8").strip()
+    proc16.communicate()
+
+    args17="meryl statistics %s %s %s | head -n4 | tail -n1 | awk '{print $2}'"%(t, m, assembly_db)
+    proc17 = subprocess.Popen(args17, stdout=subprocess.PIPE, stderr=sys.stderr, shell=True)
+    TOTAL=proc17.stdout.read().decode("utf-8").strip()
+    proc17.communicate()
+
+    args18= "echo \"%s %s\" | awk -v k=%s '{print (1-(1-$1/$2)^(1/k))}'"%(ASM_ONLY, TOTAL, kmer)
+    proc18 = subprocess.Popen(args18, stdout=subprocess.PIPE, stderr=sys.stderr, shell=True)
+    ERROR=proc18.stdout.read().decode("utf-8").strip()
+
+    args19="echo \"%s %s\" | awk -v k=%s '{print (-10*log(1-(1-$1/$2)^(1/k))/log(10))}'"%(ASM_ONLY, TOTAL, kmer)
+    proc19 = subprocess.Popen(args19, stdout=subprocess.PIPE, stderr=sys.stderr, shell=True)
+    QV=proc19.stdout.read().decode("utf-8").strip()
+
+    #Store it in QV file
+    qv_cmd="echo \"%s\t%s\t%s\t%s\t%s\" >> %s"%(os.path.basename(outfile), ASM_ONLY, TOTAL, QV, ERROR, os.path.join(mqout, (os.path.basename(outfile)+".qv")))
+    subprocess.Popen(qv_cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+
+    # Per seq QV statistics"
+
+    args20="meryl-lookup -existence -sequence %s -mers %s/ | awk -v k=%s '{print $1\"\t\"$4\"\t\"$2\"\t\"(-10*log(1-(1-$4/$2)^(1/k))/log(10))\"\t\"(1-(1-$4/$2)^(1/k))}' > %s"%(outfile, path, kmer, os.path.join(mqout, (os.path.basename(outfile)+".perseq.qv")))
+    proc20 = subprocess.Popen(args20, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, shell=True)
+    proc20.communicate()
+
+
+    # k-mer completeness (recoveray rate) with solid k-mers for $asm with > $filt counts"
+
+    if verbose:
+        sys.stderr.write("Generate the k-mer completeness (recovery rate) with solid k-mers over %s.\n"%kmer)
+
+    args21 = "meryl intersect output %s %s %s %s %s"%(t, m, os.path.join(mqout, "assembly_filtered_k%s.meryl"%kmer_filt), assembly_db, os.path.join(mqout, "filtered_k%s.complete.meryl"%kmer_filt))
+    proc21 = subprocess.Popen(args21, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, shell=True)
+    proc21.communicate()
+
+    args22 = "meryl statistics %s %s %s | head -n3 | tail -n1 | awk '{print $2}'"%(t, m, os.path.join(mqout, "filtered_k%s.complete.meryl"%kmer_filt))
+    proc22 = subprocess.Popen(args22, stdout=subprocess.PIPE, stderr=sys.stderr, shell=True)
+    TOTAL=proc22.stdout.read().decode("utf-8").strip()
+
+    args23 = "meryl statistics %s %s %s | head -n3 | tail -n1 | awk '{print $2}'"%(t, m, os.path.join(mqout, "assembly_filtered_k%s.meryl"%kmer_filt))
+    proc23 = subprocess.Popen(args23, stdout=subprocess.PIPE, stderr=sys.stderr, shell=True)
+    ASM=proc23.stdout.read().decode("utf-8").strip()
+
+    try:
+        completeness_cmd = "echo \"%s\tall\t%s\t%s\" | awk '{print $0\"\t\"((100*$3)/$4)}' >> %s"%(os.path.basename(outfile), ASM, TOTAL, os.path.join(mqout, os.path.basename(outfile)+".completeness.stats"))
+        subprocess.Popen(completeness_cmd, shell=True)
+    except ValueError as e:
+        sys.stderr.write("[WARNING] Couldn't generate kmer completeness plot")
+        pass
+
+
+    cmd_rm=["rm", "-r", os.path.join(mqout, "assembly_filtered_k%s.meryl"%kmer_filt)]
+    subprocess.Popen(cmd_rm)
+
+    #Generate the assembly histogram for plotting
+
+    args24 = "meryl intersect output %s %s %s %s %s"%(t, m, os.path.join(mqout, "assembly.k%s.meryl"%kmer_filt), meryldb, assembly_db)
+    proc24 = subprocess.Popen(args24, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, shell=True)
+    proc24.communicate()
+    
+    histname=os.path.join(mqout, os.path.basename(outfile)+".spectra-asm.hist")
+    args25= "echo \"Assembly\tkmer_multiplicity\tCount\" > %s"%(histname)
+    subprocess.Popen(args25, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+
+    args26 = "meryl histogram %s %s %s | awk '{print \"read-only\t\"$0}' >> %s"%(t, m, path, histname)
+    proc26 = subprocess.Popen(args26, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, shell=True)
+    proc26.communicate()
+
+    args27 = "meryl histogram %s %s %s | awk -v hap=\"%s\" '{print hap\"\t\"$0}' >> %s"%(t, m, os.path.join(mqout, "assembly.k%s.meryl"%kmer_filt), os.path.basename(outfile), histname)
+    proc27 = subprocess.Popen(args27, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, shell=True)
+    proc27.communicate()
+
+    # Get asm only for spectra-asm"
+
+    args28 = "meryl statistics %s %s %s | head -n3 | tail -n1 | awk '{print $2}'"%(t, m, path)
+    proc28 = subprocess.Popen(args28, stdout=subprocess.PIPE, stderr=sys.stderr, shell=True)
+    ASM_ONLY=proc28.stdout.read().decode("utf-8").strip()
+
+    hist_only=os.path.join(mqout, os.path.basename(outfile)+".dist_only.hist")
+    args25= "echo \"%s\t0\t%s\" >  %s"%(os.path.basename(outfile), ASM_ONLY, hist_only)
+    subprocess.Popen(args25, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+
+    if verbose:
+        sys.stderr.write("[INFO] Plotting the results in spectra plots here %s\n"%mqout)
+
+    rcommand = "Rscript bin/merqury/plot/plot_spectra_cn.R -f %s -o %s -z %s"%(os.path.join(mqout, "spectra-cn.hist"), os.path.join(mqout, "results.spectra-cn"), os.path.join(mqout, "only.hist"))
+    rproc = subprocess.Popen(rcommand, stdout=subprocess.PIPE, stderr=sys.stderr, shell=True)
+
+    rcommand2 = "Rscript bin/merqury/plot/plot_spectra_cn.R -f %s -o %s -z %s"%(histname, os.path.join(mqout, "results.spectra-asm"), hist_only)
+    rproc2 = subprocess.Popen(rcommand2, stdout=subprocess.PIPE, stderr=sys.stderr, shell=True)
+
+    rproc.communicate()
+    rproc2.communicate()
+
+    return True
+
+
+#TODO Add a check for R version, if fails, notify.
         
 def redundans(fastq, longreads, fasta, reference, outdir, mapq, 
               threads, mem, resume, identity, overlap, minLength, \
-              joins, linkratio, readLimit, iters, sspacebin, \
-              reduction=1, scaffolding=1, gapclosing=1, cleaning=1, \
-              norearrangements=0, verbose=1, usebwa=0, log=sys.stderr, tmp="/tmp"):
+              joins, linkratio, readLimit, iters, sspacebin, refpreset, \
+              reduction=1, scaffolding=1, gapclosing=1, usemerqury=1, kmer=21, cleaning=1, \
+              norearrangements=0, verbose=1, usebwa=0, useminimap2=0, log=sys.stderr, tmp="/tmp"):
     """Launch redundans pipeline."""
     # check resume
     orgresume = resume
@@ -287,6 +592,8 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
         sys.exit(1)
     else:
         os.makedirs(outdir)
+
+    #return True
 
     # DE NOVO CONTIGS
     lastOutFn = os.path.join(outdir, "contigs.fa") 
@@ -315,6 +622,7 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
         lastOutFn = outfn
         fastas.append(lastOutFn); _check_fasta(lastOutFn)
 
+
     # get read limit & libraries
     if fastq:
         if verbose:
@@ -331,9 +639,10 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
                                             linkratio, limit, iters, sspacebin, gapclosing, verbose, usebwa, log, \
                                             identity, overlap, minLength, resume)
         # update fasta list
-        fastas += filter(lambda x: "_gapcloser" not in x, sorted(glob.glob(os.path.join(outdir, "_sspace.*.fa"))))
+        fastas += [x for x in sorted(glob.glob(os.path.join(outdir, "_sspace.*.fa"))) if "_gapcloser" not in x]
         lastOutFn = outfn
         fastas.append(lastOutFn); _check_fasta(lastOutFn)
+
 
     # SCAFFOLDING WITH LONG READS
     outfn = os.path.join(outdir, "scaffolds.longreads.fa")
@@ -346,8 +655,29 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
         for i, fname in enumerate(longreads, 1):
             if verbose:
                 log.write(" iteration %s...\n"%i)
-            s = LongReadGraph(lastOutFn, fname, identity, overlap, maxgap=0, threads=threads, \
-                              dotplot="", norearrangements=norearrangements, log=0)
+            
+            #Add a check to change preset based on filename if provided a list of files:
+            
+            if re.search("ont", fname, flags=re.IGNORECASE) or re.search("nanopore", fname, flags=re.IGNORECASE) or re.search("oxford", fname, flags=re.IGNORECASE):
+                preset = "map-ont"
+            elif re.search("pb", fname, flags=re.IGNORECASE) or re.search("pacbio", fname, flags=re.IGNORECASE) or re.search("smrt", fname, flags=re.IGNORECASE):
+                preset = "map-pb"
+            elif re.search("hifi", fname, flags=re.IGNORECASE) or re.search("hi_fi", fname, flags=re.IGNORECASE) or re.search("hi-fi", fname, flags=re.IGNORECASE):
+                preset = "map-hifi"
+            else:
+                #Added this to default to ONT
+                preset = "map-ont"
+
+            if useminimap2 and verbose:
+                log.write("Using minimap2 preset %s for file %s...\n"%(preset, fname))
+            elif verbose:
+                log.write("Using LAST for file %s...\n"%fname)
+
+            s = LongReadGraph(lastOutFn, fname, identity, overlap, preset=preset, useminimap2=useminimap2, maxgap=0, threads=threads, \
+                        dotplot="", norearrangements=norearrangements, log=0)
+            #else:
+            #    s = LongReadGraph(lastOutFn, fname, identity, overlap, maxgap=0, threads=threads, \
+            #                  dotplot="", norearrangements=norearrangements, log=0)
             # save output
             _outfn = os.path.join(outdir, "scaffolds.longreads.%s.fa"%i)
             with open(_outfn, "w") as out:
@@ -368,13 +698,15 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
         if verbose:
             log.write("%sScaffolding based on reference...\n"%timestamp())        
         s = SyntenyGraph(lastOutFn, reference, identity=0.51, overlap=0.66, maxgap=0, threads=threads, \
-                         dotplot="", norearrangements=norearrangements, log=0)
+                         dotplot="", norearrangements=norearrangements, useminimap2=useminimap2, preset=refpreset, log=0)
         # save output
         with open(outfn, "w") as out:
             s.save(out)
         # update fasta list
         lastOutFn = outfn
         fastas.append(lastOutFn); _check_fasta(lastOutFn)
+
+    
         
     # GAP CLOSING
     outfn = os.path.join(outdir, "scaffolds.filled.fa")
@@ -400,6 +732,19 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
         # update fasta list
         lastOutFn = outfn
         fastas.append(lastOutFn); _check_fasta(lastOutFn)
+
+    # MERQURY ANALYSIS
+
+    if usemerqury:
+
+        # MERYL DB
+        if verbose:
+            log.write("\n%sGenerating a complete Meryl database for your samples...\n"%(timestamp()))
+        meryldb = _build_meryldb(outdir, fastq, threads, mem, kmer)
+
+        if verbose:
+            log.write("%sGenerating Merqury statistics...\n"%timestamp())
+        merqury_statistics(outdir, meryldb, outfn, threads, mem, kmer, verbose)
         
     # FASTA STATS
     if verbose:
@@ -414,8 +759,9 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
         if verbose:
             log.write("%sCleaning-up...\n"%timestamp())
         for root, dirs, fnames in os.walk(outdir):
-            endings = ('.fa', '.fasta', '.fai', '.tsv', '.png', '.log')
-            for i, fn in enumerate(filter(lambda x: not x.endswith(endings), fnames), 1):
+            #If you want to check meryl data, add '.merylData', '.merylIndex', 'merylIndex'
+            endings = ('.fa', '.fasta', '.fai', '.tsv', '.qv', '.stats', '.png', '.log', '.hist')
+            for i, fn in enumerate([x for x in fnames if not x.endswith(endings)], 1):
                 os.unlink(os.path.join(root, fn))
             # rmdir of snap index
             if root.endswith('.snap') and i==len(fnames):
@@ -427,22 +773,31 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
 def _check_executable(cmd):
     """Check if executable exists."""
     p = subprocess.Popen("type " + cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    return "".join(p.stdout.readlines())
+    stdout = p.stdout.readlines()[0].decode("utf-8")
+    return "".join(stdout)
 
 def _check_dependencies(dependencies):
     """Return error if wrong software version"""
     warning = 0
     # check dependencies
     info = "[WARNING] Old version of %s: %s. Update to version %s+!\n"
-    for cmd, version in dependencies.items():
+    for cmd, version in list(dependencies.items()):
+        #print("Checking %s version %s"%(cmd, version))
         out = _check_executable(cmd)
         if "not found" in out:
             warning = 1
             sys.stderr.write("[ERROR] %s\n"%out)
         elif version:
             p = subprocess.Popen([cmd, '--version'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            out = "".join(p.stdout.readlines())
-            curver = out.split()[-1]
+            if cmd == "R":
+                out = p.stdout.readline().decode("utf-8")
+                _, _, ver, _ = out.split(" ", 3)
+                curver = "".join(ver.split(".", 2))
+                #For clarity in the warning message
+                out = ver
+            else:
+                out = "".join(p.stdout.readlines()[0].decode("utf-8"))
+                curver = out.split()[-1]
             if not curver.isdigit():
                 warning = 1
                 sys.stderr.write("[WARNING] Problem checking %s version: %s\n"%(cmd, out))
@@ -465,13 +820,13 @@ def main():
     parser.add_argument("-i", "--fastq", nargs="*", default=[], help="FASTQ PE / MP files")
     parser.add_argument("-f", "--fasta", default="", help="FASTA file with contigs / scaffolds")
     parser.add_argument("-o", "--outdir", default="redundans", help="output directory [%(default)s]")
-    parser.add_argument("-t", "--threads", default=4, type=int, help="max threads to run [%(default)s]")
+    parser.add_argument("-t", "--threads", default=16, type=int, help="max threads to run [%(default)s]")
     parser.add_argument("--resume",  default=False, action="store_true", help="resume previous run")
     parser.add_argument("--log", default=sys.stderr, type=argparse.FileType('w'), help="output log to [stderr]")
     parser.add_argument('--nocleaning', action='store_false', help="keep intermediate files")
     
     denovo = parser.add_argument_group('De novo assembly options')
-    denovo.add_argument("-m", "--mem", default=16, type=int, help="max memory to allocate (in GB) [%(default)s]")
+    denovo.add_argument("-m", "--mem", default=2, type=int, help="max memory to allocate (in GB) [%(default)s]")
     denovo.add_argument("--tmp", default='/tmp', help="tmp directory [%(default)s]")
     
     redu = parser.add_argument_group('Reduction options')
@@ -491,15 +846,21 @@ def main():
     scaf.add_argument("-b", "--usebwa", action='store_true', help="use bwa mem for alignment [use snap-aligner]")
      
     longscaf = parser.add_argument_group('Long-read scaffolding options')
-    longscaf.add_argument("-l", "--longreads", nargs="*", default=[], help="FastQ/FastA files with long reads")
+    longscaf.add_argument("-l", "--longreads", nargs="*", default=[], help="FastQ/FastA files with long reads. By default LAST")
+    longscaf.add_argument("--useminimap2", action='store_true', help="Use Minimap2 for aligning long reads. Preset usage dependant on file name convention (case insensitive): ont, nanopore, pb, pacbio, hifi, hi_fi, hi-fi. ie: s324_nanopore.fq.gz.")
     
     refscaf = parser.add_argument_group('Reference-based scaffolding options')
     refscaf.add_argument("-r", "--reference", default='', help="reference FastA file")
     refscaf.add_argument("--norearrangements", default=False, action='store_true', 
                          help="high identity mode (rearrangements not allowed)")
+    refscaf.add_argument("-p", "--preset", default='asm10', help="Preset option for minimap2 Reference-based scaffolding. Possible options: asm5 (5%. sequence divergence), asm10 (10%. sequence divergence) and asm20(20%. sequence divergence). Default [%(default)s]")
     
     gaps = parser.add_argument_group('Gap closing options')
-    gaps.add_argument('--nogapclosing',  action='store_false', default=True)   
+    gaps.add_argument('--nogapclosing',  action='store_false', default=True)
+
+    stats = parser.add_argument_group('Meryl and Merqury options')
+    stats.add_argument('--nomerqury',  action='store_false', default=True, help="Skip meryldb and merqury assembly stats.")
+    stats.add_argument('-k', "--kmer",  default=21, type=int, help="K-mer size for meryl [%(default)s]")    
         
     # print help if no parameters
     if len(sys.argv)==1:
@@ -525,15 +886,19 @@ def main():
     sspacebin = os.path.join(root, "bin/SSPACE/SSPACE_Standard_v3.0.pl")
 
     # check if all executables exists & in correct versions
-    dependencies = {'lastal': 800, 'lastdb': 800, 'GapCloser': 0, 'paste': 0, 'tr': 0, 'zcat': 0, 'platanus': 0}
+    #If using merqury, check for R version, else do not bother
+    if o.nomerqury:
+        dependencies = {'lastal': 800, 'lastdb': 800, 'GapCloser': 0, 'paste': 0, 'tr': 0, 'zcat': 0, 'platanus': 0, 'R' : 360}
+    else:
+        dependencies = {'lastal': 800, 'lastdb': 800, 'GapCloser': 0, 'paste': 0, 'tr': 0, 'zcat': 0, 'platanus': 0}
     _check_dependencies(dependencies)
     
     # initialise pipeline
     redundans(o.fastq, o.longreads, o.fasta, o.reference, o.outdir, o.mapq, \
               o.threads, o.mem, o.resume, o.identity, o.overlap, o.minLength,  \
               o.joins, o.linkratio, o.limit, o.iters, sspacebin, \
-              o.noreduction, o.noscaffolding, o.nogapclosing, o.nocleaning, \
-              o.norearrangements, o.verbose, o.usebwa, o.log, o.tmp)
+              o.preset, o.noreduction, o.noscaffolding, o.nogapclosing, o.nomerqury, o.kmer, o.nocleaning, \
+              o.norearrangements, o.verbose, o.usebwa, o.useminimap2, o.log, o.tmp)
 
 if __name__=='__main__': 
     t0 = datetime.now()

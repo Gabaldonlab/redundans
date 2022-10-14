@@ -54,12 +54,13 @@ def run_last_q2best(fasta, identity, threads, verbose=1):
 
 def _qhits_generator(handle, minLength):
     pq, pqsize, hits = '', 0, {}
-    for l in handle: 
+    for line in handle:
+        l = line.decode("utf-8")
         if l.startswith('#'): 
             continue
         # unpack
         (score, t, tstart, talg, tstrand, tsize, q, qstart, qalg, qstrand, qsize, blocks) = l.split()[:12]
-        (score, qstart, qalg, qsize, tstart, talg, tsize) = map(int, (score, qstart, qalg, qsize, tstart, talg, tsize))
+        (score, qstart, qalg, qsize, tstart, talg, tsize) = list(map(int, (score, qstart, qalg, qsize, tstart, talg, tsize)))
         # skip reverse matches
         if t==q or tsize<qsize or qsize<minLength or tsize==qsize and t<q: 
             continue
@@ -86,12 +87,12 @@ def _overlap(s, e, score, hits, maxfrac=0.1):
     maxoverlap = maxfrac*(e-s)
     selection = lambda x: x[0]<s<x[1] and s+maxoverlap<x[1] or x[0]<e<x[1] and e-maxoverlap>x[0] or \
                           s<x[0]<e and x[0]+maxoverlap<e or s<x[1]<e and x[1]-maxoverlap>s
-    if filter(selection, hits):
+    if list(filter(selection, hits)):
         return True
             
 def hits2valid(hits, q, qsize, identityTh, overlapTh):
     """Return valid matches for particular query"""
-    for t, (score, qalg, se) in hits.iteritems():
+    for t, (score, qalg, se) in hits.items():
         identity = 1.0 * (score+(qalg-score)/2) / qalg
         if qalg>qsize: qalg = qsize
         overlap  = 1.0 * qalg / qsize
@@ -146,7 +147,7 @@ def plot_histograms(fname, contig2skip, identities, algsizes):
         return
 
         
-    contigs = contig2skip.keys()
+    contigs = list(contig2skip.keys())
     best = [contig2skip[c][3] for c in contigs if contig2skip[c]]
     bestalgsizes = [contig2skip[c][2] for c in contigs if contig2skip[c]]
     # get bins

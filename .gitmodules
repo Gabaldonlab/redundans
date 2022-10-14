@@ -8,12 +8,20 @@
 
 [submodule "bin/pyScaf"]
     path = bin/pyScaf
-    url = https://github.com/lpryszcz/pyScaf.git
+    url = https://github.com/Gabaldonlab/pyScaf
 
 [submodule "bin/pyScaf/FastaIndex"]
     path = bin/pyScaf/FastaIndex
-    url = https://github.com/lpryszcz/FastaIndex.git
+    url = https://github.com/Gabaldonlab/FastaIndex
     
 [submodule "bin/last"]
 	path = bin/last
-	url = https://github.com/lpryszcz/last
+	url = https://github.com/Gabaldonlab/last
+    
+[submodule "bin/minimap2"]
+	path = bin/minimap2
+	url = https://github.com/lh3/minimap2
+
+[submodule "bin/merqury"]
+	path = bin/merqury
+	url = https://github.com/marbl/merqury.git

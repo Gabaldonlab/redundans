@@ -5,6 +5,9 @@ epilog="""Author:
 l.p.pryszcz+git@gmail.com
 
 19/06/2012 Dublin/Warsaw
+
+Updated to Python3 by Diego Fuentes Palacios
+Barcelona 08/18/2022
 """
 
 import os, subprocess, sys, tempfile
@@ -15,12 +18,18 @@ def _unload_sam(sam):
 def parse_sam(handle):
     """Return tuple representing entries from SAM."""
     q1 = q2 = ""
-    for l in handle:
+    for le in handle:
+        l= le.decode('utf-8')
         l = l.strip()
         if not l or l.startswith('@'):
             continue
         sam = l.split('\t')
-        # first in pair
+        ## first in pair
+
+        #However, ingore if the number of fields does not reach minimum
+        if len(sam) < 11:
+            continue
+
         if int(sam[1]) & 64:
             # skip multiple matches
             if sam[0] == q1:
@@ -68,7 +77,7 @@ def sam2sspace_tab(inhandle, outhandle, mapqTh=0, upto=float('inf'), verbose=Fal
         if mapqTh:
             if mapq1 < mapqTh or mapq2 < mapqTh:
                 if _tmpfile:
-                    _tmpfile.write(sam2fastq("%s/1"%i, seq1, qual1, flag1)+sam2fastq("%s/2"%i, seq2, qual2, flag2))
+                    _tmpfile.write((sam2fastq("%s/1"%i, seq1, qual1, flag1).encode('utf-8')+sam2fastq("%s/2"%i, seq2, qual2, flag2).encode('utf-8')))
                 continue
         if q1!=q2:
             log.write("[Warning] Queries have different names: %s vs %s\n" % (q1, q2))
@@ -153,16 +162,16 @@ def _last2pairs(handle):
     """Yield pairs from LASTal"""
     pq = ""
     hits = [[]]
-    for l in handle: 
+    for le in handle:
+        l= le.decode('utf-8')
         if l.startswith('#'): 
             continue
         # unpack
         (score, t, tstart, talg, tstrand, tsize, q, qstart, qalg, qstrand, qsize, blocks) = l.split()[:12]
-        score, tstart, talg = map(int, (score, tstart, talg))
+        score, tstart, talg = list(map(int, (score, tstart, talg)))
         # report previous query
         if pq != q:
-            #print map(len, hits)
-            if map(len, hits) == [1, 1] and hits[0][0][-1][:-1] == hits[1][0][-1][:-1]:
+            if list(map(len, hits)) == [1, 1] and hits[0][0][-1][:-1] == hits[1][0][-1][:-1]:
                 yield hits[0][0][1:4], hits[1][0][1:4]
                 hits = [[]]
             elif len(hits)==2:
@@ -180,7 +189,7 @@ def _last2pairs(handle):
             hits[-1].append(data)
         pq = q
     # yield last bit
-    if map(len, hits) == [1, 1] and hits[0][0][-1][:-1] == hits[1][0][-1][:-1]:
+    if list(map(len, hits)) == [1, 1] and hits[0][0][-1][:-1] == hits[1][0][-1][:-1]:
         yield hits[0][0][1:4], hits[1][0][1:4]
     
 def last_tab2sspace_tab(handle, out, mapqTh, upto, verbose, log, proc=""):

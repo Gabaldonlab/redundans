@@ -7,7 +7,7 @@ l.p.pryszcz+git@gmail.com
 Warsaw, 6/05/2017
 """
 
-import math, os, sys, commands, subprocess
+import math, os, sys, subprocess, subprocess
 from datetime import datetime
 from FastaIndex import FastaIndex
 from fastq2sspace import _get_bwamem_proc, _get_snap_proc
@@ -26,7 +26,7 @@ def reads2window(faidx, iSize, wSize, mapQ):
         if l.startswith('@'):
             continue
         flag, ref, pos, mapq, cigar, mref, mpos, isize = l.split('\t')[1:9] # q
-        flag, pos, mapq, mpos, isize = map(int, (flag, pos, mapq, mpos, isize))
+        flag, pos, mapq, mpos, isize = list(map(int, (flag, pos, mapq, mpos, isize)))
         # skip low quality algs, short contigs and algs from contig ends 
         if mapq<mapQ or faidx.id2stats[ref][0]<3*iSize or pos<1.5*iSize or pos+1.5*iSize>faidx.id2stats[ref][0]:
             continue
@@ -50,13 +50,13 @@ def fasta2qc(fasta, outfn="", fq1="", fq2="", iSize=600, wSize=100, minFrac=0.66
     contig2split = {}
     for ref, wi, c in reads2window(faidx, iSize, wSize, mapQ):
         mref, mcount = c.most_common(1)[0]
-        if mref!="=" and 1.*mcount/sum(c.itervalues()) > minFrac:
-            if verbose: print ref, wi, mref, c
+        if mref!="=" and 1.*mcount/sum(c.values()) > minFrac:
+            if verbose: print(ref, wi, mref, c)
             if ref not in contig2split:
                 contig2split[ref] = []
             contig2split[ref].append(wi)
             #break
-    if verbose: print contig2split
+    if verbose: print(contig2split)
 
     out = open(outfn, "w")
     for c in faidx:

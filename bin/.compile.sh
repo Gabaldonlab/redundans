@@ -42,8 +42,20 @@ echo `date` " LASTal"
 retcode=$?; if [ $retcode -gt 0 ]; then exit $retcode; fi
 
 echo `date` " SNAP-aligner"
-(cd bin && wget -nc https://github.com/amplab/snap/releases/download/v1.0beta.18/snap-aligner && chmod +x snap-aligner)
+(cd bin && wget -nc https://github.com/amplab/snap/releases/download/v2.0.1/snap-aligner && chmod +x snap-aligner)  >> $log 2>&1
 #(cd bin/snap && make clean && make -j $cores) >> $log 2>&1
+retcode=$?; if [ $retcode -gt 0 ]; then exit $retcode; fi
+
+echo `date` " Minimap2"
+(cd bin/minimap2 && make clean && make) >> $log 2>&1
+retcode=$?; if [ $retcode -gt 0 ]; then exit $retcode; fi
+
+echo `date` " k8"
+(cd bin && curl -L https://github.com/attractivechaos/k8/releases/download/v0.2.4/k8-0.2.4.tar.bz2 | tar -jxf - && mv -t . ./k8-0.2.4/k8-Linux && rm -r ./k8-0.2.4/) >> $log 2>&1
+retcode=$?; if [ $retcode -gt 0 ]; then exit $retcode; fi
+
+echo `date` " Meryl"
+(cd bin && wget -nc https://github.com/marbl/meryl/releases/download/v1.3/meryl-1.3.Linux-amd64.tar.xz && tar -xJf meryl-1.3.Linux-amd64.tar.xz && mv -t . ./meryl-1.3/bin/*  && rm -r ./meryl-1.3/ && rm meryl-1.3.Linux-amd64.tar.xz) >> $log 2>&1
 retcode=$?; if [ $retcode -gt 0 ]; then exit $retcode; fi
 
 echo `date` "Done!"
