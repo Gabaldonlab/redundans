@@ -859,7 +859,7 @@ def main():
     refscaf.add_argument("-r", "--reference", default='', help="reference FastA file")
     refscaf.add_argument("--norearrangements", default=False, action='store_true', 
                          help="high identity mode (rearrangements not allowed)")
-    refscaf.add_argument("-p", "--preset", default='asm10', help="Preset option for minimap2 Reference-based scaffolding. Possible options: asm5 (5%. sequence divergence), asm10 (10%. sequence divergence) and asm20(20%. sequence divergence). Default [%(default)s]")
+    refscaf.add_argument("-p", "--preset", default='asm10', help="Preset option for minimap2 Reference-based scaffolding. Possible options: asm5 (5 percent sequence divergence), asm10 (10 percent sequence divergence) and asm20(20 percent sequence divergence). Default [%(default)s]")
     
     gaps = parser.add_argument_group('Gap closing options')
     gaps.add_argument('--nogapclosing',  action='store_false', default=True)
