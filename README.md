@@ -32,37 +32,56 @@ so it can be run even on the laptop for small-to-medium size genomes
 For more information have a look at the [documentation](/docs), [poster](/docs/poster.pdf), [publication](http://nar.oxfordjournals.org/content/44/12/e113), [test dataset](/test) or [manual](http://bit.ly/redundans_manual). 
 
 ## Prerequisites
-Redundans uses several programs (all provided within this repository): 
-- [Platanus](http://platanus.bio.titech.ac.jp/?page_id=14) 
-- [LAST](http://last.cbrc.jp/) v800+
-- [BWA](http://bio-bwa.sourceforge.net/) v0.7.12+
-- [Minimap2](https://github.com/lh3/minimap2)
-- [SNAP aligner](https://github.com/amplab/snap)
-- [SSPACE3](http://www.baseclear.com/genomics/bioinformatics/basetools/SSPACE)
-- [GapCloser](http://sourceforge.net/projects/soapdenovo2/files/GapCloser/)
-- [pyScaf](https://github.com/lpryszcz/pyScaf)
-- [FastaIndex](https://github.com/lpryszcz/FastaIndex)
-- [Meryl](https://github.com/marbl/meryl)
-- [Merqury](https://github.com/marbl/merqury)
-- [k8](https://github.com/attractivechaos/k8/) v0.2.4+
+Redundans uses several programs (all provided within this repository):
+
+| Resource | Type | Version |
+| :--- | :--- | :--- |
+| [Python](https://www.python.org/downloads) | Language interpreter | ≥ 3.0 |
+| [Platanus](http://platanus.bio.titech.ac.jp/?page_id=14) | Genome assembler | v1.2.4 |
+| [LAST](http://last.cbrc.jp/) | Sequence aligner | ≥ v800 |
+| [BWA](http://bio-bwa.sourceforge.net/) | Sequence aligner | ≥ v0.7.12 |
+| [SNAP aligner](https://github.com/amplab/snap) | Sequence aligner | v2.0.1 |
+| [SSPACE3](http://www.baseclear.com/genomics/bioinformatics/basetools/SSPACE) | Scaffolding software | v3.0 |
+| [GapCloser](http://sourceforge.net/projects/soapdenovo2/files/GapCloser/) | Gapclosing software | v1.12 |
+| [pyScaf](https://github.com/lpryszcz/pyScaf) | Scaffolding software | |
+| [FastaIndex](https://github.com/lpryszcz/FastaIndex) | Indexing software | |
+| [Meryl](https://github.com/marbl/meryl) | K-mer counter software | ≥ v1.3 |
+| [Merqury](https://github.com/marbl/merqury) | Assembly evaluation software | ≥ v1.3 |
+| [k8](https://github.com/attractivechaos/k8/) | Javascript shell based on V8 | ≥ v0.2.4 |
+| [R](https://cran.r-project.org/) | Language interpreter | ≥ 3.6 |
+| [ggplot2](https://ggplot2.tidyverse.org)| R package | ≥ 3.3.2 |
+| [scales](https://cran.r-project.org/web/packages/scales/) | R package | ≥ 3.3.2 |
+| [argparser](https://cran.r-project.org/web/packages/argparser/) | R package | ≥ 3.6 |
+
 
 On most Linux distros, the installation should be as easy as:
 ```
-git clone --recursive https://github.com/lpryszcz/redundans.git
+git clone --recursive https://github.com/Dfupa/redundans/
 cd redundans && bin/.compile.sh
 ```
 
 If it fails, make sure you have below dependencies installed: 
-- Python >= 3
 - Perl [SSPACE3]
-- make, gcc & g++ [BWA, Minimap2 & LAST] ie. `sudo apt-get install make gcc g++`
-- R >= 3.6, ggplot2, scales, argparser for Merqury ie. `sudo apt-get install r-base r-cran-ggplot2 r-cran-scales r-cran-argparse`
+- make, gcc & g++ [BWA & LAST] ie. `sudo apt-get install make gcc g++`
 - [zlib including zlib.h headers](http://zlib.net/) [BWA] ie. `sudo apt-get install zlib1g-dev`
 - optionally for plotting `numpy` and `matplotlib` ie. `sudo -H pip install -U matplotlib numpy`
 
 For user convenience, we provide [UNIX installer](#unix-installer) and [Docker image](#docker-image), that can be used instead of manually installation.  
 
-### UNIX installer
+### Unofficial conda package
+If you are familiar with conda, this will be by far the easiest way of installing redundans: 
+```bash
+# create new Python2 environment
+conda create -n redundans python=2.7
+# activate it
+conda activate redundans
+# and install redundans
+conda install -c genomedk redundans 
+```
+
+Note, this is unofficial channel and may not be completely up-to-date with this repo. 
+
+## UNIX installer
 UNIX installer will automatically fetch, compile and configure Redundans together with all dependencies.
 It should work on all modern Linux systems, given Python 2.7, commonly used programmes (ie. wget, curl, git, perl, gcc, g++, ldconfig) and libraries (zlib including zlib.h) are installed. 
 ```bash
