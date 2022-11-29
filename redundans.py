@@ -113,7 +113,7 @@ def get_read_limit(fasta, readLimit, verbose, log=sys.stderr):
     
 def run_scaffolding(outdir, scaffoldsFname, fastq, libraries, reducedFname, mapq, threads, \
                     joins, linkratio, limit, iters, sspacebin, gapclosing, verbose, usebwa, log, \
-                    identity, overlap, minLength, resume, lib=""):
+                    identity, overlap, minLength, resume, useminimap2=0, preset="asm10", lib=""):
     """Execute scaffolding step using libraries with increasing insert size
     in multiple iterations.
     """
@@ -152,13 +152,13 @@ def run_scaffolding(outdir, scaffoldsFname, fastq, libraries, reducedFname, mapq
                     log.write("  closing gaps ...\n")
                 basename    = "_sspace.%s.%s._gapcloser"%(i, j)
                 run_gapclosing(outdir, [libraries[i-1],], nogapsFname, pout, threads, limit, \
-                               iters=1, resume=resume, verbose=0, log=log, basename=basename)
+                               iters, resume=resume, verbose=0, log=log, basename=basename)
             reducedFname = ".".join(pout.split(".")[:-1]) + ".reduced.fa"
             if resume>1 or _corrupted_file(reducedFname):
                 if verbose:
                     log.write("  reducing ...\n")
                 with open(reducedFname, "w") as out:
-                    info = fasta2homozygous(out, open(nogapsFname), identity, overlap, minLength, threads, verbose=0, log=log)
+                    info = fasta2homozygous(out, open(nogapsFname), identity, overlap, minLength, threads, verbose=0, useminimap2=useminimap2, preset=preset,log=log)
             pout = reducedFname            
         # update library insert size estimation, especially for mate-pairs
         libraries = get_libraries(fastq, pout, mapq, threads, verbose=0,log=log, libraries=libraries, usebwa=usebwa)
@@ -577,7 +577,7 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
               threads, mem, resume, identity, overlap, minLength, \
               joins, linkratio, readLimit, iters, sspacebin, refpreset, \
               reduction=1, scaffolding=1, gapclosing=1, usemerqury=1, kmer=21, cleaning=1, \
-              norearrangements=0, verbose=1, usebwa=0, useminimap2=0, log=sys.stderr, tmp="/tmp"):
+              norearrangements=0, verbose=1, usebwa=0, minimap2reduce=0, useminimap2=0, log=sys.stderr, tmp="/tmp"):
     """Launch redundans pipeline."""
     # check resume
     orgresume = resume
@@ -618,7 +618,7 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
             log.write("%sReduction...\n"%timestamp())
             log.write("#file name\tgenome size\tcontigs\theterozygous size\t[%]\theterozygous contigs\t[%]\tidentity [%]\tpossible joins\thomozygous size\t[%]\thomozygous contigs\t[%]\n")
         with open(outfn, "w") as out:
-            info = fasta2homozygous(out, open(fastas[-1]), identity, overlap, minLength, threads, verbose=0, log=log)
+            info = fasta2homozygous(out, open(fastas[-1]), identity, overlap, minLength, threads, verbose=0, useminimap2=minimap2reduce, preset=refpreset, log=log)
         # update fasta list
         lastOutFn = outfn
         fastas.append(lastOutFn); _check_fasta(lastOutFn)
@@ -698,8 +698,10 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
     if reference and _corrupted_file(outfn_check):
         outfn = os.path.join(outdir, "scaffolds.ref.fa")
         resume += 1
-        if verbose:
-            log.write("%sScaffolding based on reference...\n"%timestamp())        
+        if useminimap2 and verbose:
+            log.write("%sScaffolding based on reference using minimap2 and preset %s...\n"%(timestamp(), refpreset))
+        elif verbose:
+            log.write("%sScaffolding based on reference using LAST...\n"%timestamp())        
         s = SyntenyGraph(lastOutFn, reference, identity=0.51, overlap=0.66, maxgap=0, threads=threads, \
                          dotplot="", norearrangements=norearrangements, useminimap2=useminimap2, preset=refpreset, log=0)
         # save output
@@ -733,7 +735,7 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
             log.write("#file name\tgenome size\tcontigs\theterozygous size\t[%]\theterozygous contigs\t[%]\tidentity [%]\tpossible joins\thomozygous size\t[%]\thomozygous contigs\t[%]\n")
         # reduce
         with open(outfn, "w") as out:
-            info = fasta2homozygous(out, open(lastOutFn), identity, overlap,  minLength, threads, verbose=0, log=log)
+            info = fasta2homozygous(out, open(lastOutFn), identity, overlap,  minLength, threads, verbose=0, useminimap2=minimap2reduce, preset=refpreset, log=log)
         # update fasta list
         lastOutFn = outfn
         fastas.append(lastOutFn); _check_fasta(lastOutFn)
@@ -811,7 +813,7 @@ def _check_dependencies(dependencies):
                 warning = 1
                 sys.stderr.write(info%(cmd, curver, version))
                 
-    message = "Make sure you have installed all dependencies from https://github.com/lpryszcz/redundans#manual-installation !"
+    message = "Make sure you have installed all necessary dependencies from https://github.com/Gabaldonlab/redundans#manual-installation !\n [INFO] R dependencies can be ignored by using --nomerqury option"
     if warning:
         sys.stderr.write("\n%s\n\n"%message)
         sys.exit(1)
@@ -839,6 +841,7 @@ def main():
     redu.add_argument("--identity", default=0.51, type=float, help="min. identity [%(default)s]")
     redu.add_argument("--overlap", default=0.80, type=float, help="min. overlap [%(default)s]")
     redu.add_argument("--minLength", default=200, type=int, help="min. contig length [%(default)s]")
+    redu.add_argument("--minimap2reduce", action='store_true', help="Use minimap2 for the initial and final Reduction step. Recommended for input assembled contigs from long reads using --preset[asm5] by default. By default LASTal is used for Reduction.")
     redu.add_argument('--noreduction', action='store_false', help="Skip reduction")
     
     scaf = parser.add_argument_group('Short-read scaffolding options')
@@ -853,13 +856,13 @@ def main():
      
     longscaf = parser.add_argument_group('Long-read scaffolding options')
     longscaf.add_argument("-l", "--longreads", nargs="*", default=[], help="FastQ/FastA files with long reads. By default LAST")
-    longscaf.add_argument("--useminimap2", action='store_true', help="Use Minimap2 for aligning long reads. Preset usage dependant on file name convention (case insensitive): ont, nanopore, pb, pacbio, hifi, hi_fi, hi-fi. ie: s324_nanopore.fq.gz.")
+    longscaf.add_argument("--useminimap2", action='store_true', help="Use Minimap2 for aligning long reads. If used for long read scaffolding the preset usage dependant on file name convention (case insensitive): ont, nanopore, pb, pacbio, hifi, hi_fi, hi-fi. ie: s324_nanopore.fq.gz.")
     
     refscaf = parser.add_argument_group('Reference-based scaffolding options')
     refscaf.add_argument("-r", "--reference", default='', help="reference FastA file")
     refscaf.add_argument("--norearrangements", default=False, action='store_true', 
                          help="high identity mode (rearrangements not allowed)")
-    refscaf.add_argument("-p", "--preset", default='asm10', help="Preset option for minimap2 Reference-based scaffolding. Possible options: asm5 (5 percent sequence divergence), asm10 (10 percent sequence divergence) and asm20(20 percent sequence divergence). Default [%(default)s]")
+    refscaf.add_argument("-p", "--preset", default='asm5', help="Preset option for Minimap2-based Reduction and/or Reference-based scaffolding. Possible options: asm5 (5 percent sequence divergence), asm10 (10 percent sequence divergence) and asm20(20 percent sequence divergence). Default [%(default)s]")
     
     gaps = parser.add_argument_group('Gap closing options')
     gaps.add_argument('--nogapclosing',  action='store_false', default=True)
@@ -904,7 +907,7 @@ def main():
               o.threads, o.mem, o.resume, o.identity, o.overlap, o.minLength,  \
               o.joins, o.linkratio, o.limit, o.iters, sspacebin, \
               o.preset, o.noreduction, o.noscaffolding, o.nogapclosing, o.nomerqury, o.kmer, o.nocleaning, \
-              o.norearrangements, o.verbose, o.usebwa, o.useminimap2, o.log, o.tmp)
+              o.norearrangements, o.verbose, o.usebwa, o.minimap2reduce, o.useminimap2, o.log, o.tmp)
 
 if __name__=='__main__': 
     t0 = datetime.now()
