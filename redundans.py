@@ -105,7 +105,7 @@ def get_read_limit(fasta, readLimit, verbose, log=sys.stderr):
             log.write(" Aligning %s mates per library...\n"%limit)
     return limit
 
-def generate_gfa_file(file):
+def generate_gfa_file(file, threads="4"):
     """Return a gfa file generated using gfastats"""
 
     #First process the filename to add the new extension
@@ -114,7 +114,7 @@ def generate_gfa_file(file):
 
     with open(abs_path_gfa, "wb") as f:
 
-        args1 = ["gfastats", "-f", file, "-o", "gfa"]
+        args1 = ["gfastats", "-f", file, "--threads", str(threads), "-o", "gfa"]
         proc1 = subprocess.Popen(args1, stderr=subprocess.DEVNULL, stdout=f)
         proc1.communicate()
 
@@ -337,7 +337,7 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
         # update fasta list
         lastOutFn = outfn
         fastas.append(lastOutFn); _check_fasta(lastOutFn)
-        generate_gfa_file(lastOutFn)
+        generate_gfa_file(lastOutFn, threads)
 
 
     # get read limit & libraries
@@ -359,7 +359,7 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
         fastas += [x for x in sorted(glob.glob(os.path.join(outdir, "_sspace.*.fa"))) if "_gapcloser" not in x]
         lastOutFn = outfn
         fastas.append(lastOutFn); _check_fasta(lastOutFn)
-        generate_gfa_file(lastOutFn)
+        generate_gfa_file(lastOutFn, threads)
 
 
     # SCAFFOLDING WITH LONG READS
@@ -404,7 +404,7 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
                     log.write("Using LAST aligner for file %s...\n"%fname)
             else:
                 if useminimap2 and verbose:
-                    log.write("Using minimap2 as an aligner and preset %s...\n"%refpreset)
+                    log.write("Using minimap2 as an aligner and overlap preset %s...\n"%preset)
                 elif verbose:
                     log.write("Using LAST as an aligner...\n")   
 
@@ -429,7 +429,7 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
         # update fasta list
         lastOutFn = outfn
         fastas.append(lastOutFn); _check_fasta(lastOutFn)
-        generate_gfa_file(lastOutFn)
+        generate_gfa_file(lastOutFn, threads)
 
     # REFERENCE-BASED SCAFFOLDING
     outfn_check = os.path.join(outdir, "scaffolds.ref.fa")
@@ -448,7 +448,7 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
         # update fasta list
         lastOutFn = outfn
         fastas.append(lastOutFn); _check_fasta(lastOutFn)
-        generate_gfa_file(lastOutFn)
+        generate_gfa_file(lastOutFn, threads)
 
     
         
@@ -463,7 +463,7 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
         fastas += sorted(glob.glob(os.path.join(outdir, "_gap*.fa")))
         lastOutFn = outfn
         fastas.append(lastOutFn); _check_fasta(lastOutFn)
-        generate_gfa_file(lastOutFn)
+        generate_gfa_file(lastOutFn, threads)
 
     # FINAL REDUCTION
     outfn_check = os.path.join(outdir, "scaffolds.reduced.fa")
@@ -478,8 +478,8 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
             info = fasta2homozygous(out, open(lastOutFn), identity, overlap,  minLength, threads, verbose=0, useminimap2=minimap2reduce, preset=refpreset, log=log)
         # update fasta list
         lastOutFn = outfn
-        fastas.append(lastOutFn); _check_fasta(lastOutFn)
-        generate_gfa_file(lastOutFn)
+        fastas.append(lastOutFn); _check_fasta(lastOutFn, threads)
+        generate_gfa_file(lastOutFn, threads)
 
     # MERQURY ANALYSIS
 
@@ -515,6 +515,12 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
             # rmdir of snap index
             if root.endswith('.snap') and i==len(fnames):
                 os.rmdir(root)
+        #If you want to check meryl data, comment the loop below
+        for root, dirs, fnames in os.walk(outdir):
+            for item in dirs:
+                if os.path.isdir(os.path.join(outdir,item)):
+                    if str(item).endswith('.meryl'):
+                        os.rmdir(os.path.join(root, item))
 
     if orgresume:
         log.write("%sResume report: %s step(s) have been recalculated.\n"%(timestamp(), resume-1))
