@@ -164,6 +164,7 @@ Most of the pipeline parameters can be adjusted manually (default values are giv
 ```
   -l LONGREADS, --longreads LONGREADS
                         FastQ/FastA files with long reads
+  -e, --experimental    Run experimental long read scaffolding, else generate an assembly for reference-based scaffolding
   --useminimap2         Use Minimap2 for aligning long reads. Preset usage dependant on file name convention (case insensitive): ont, nanopore, pb, pacbio, hifi, hi_fi, hi-fi. ie: s324_nanopore.fq.gz.
   --identity IDENTITY   min. identity [0.51]
   --overlap OVERLAP     min. overlap  [0.80]
@@ -194,6 +195,9 @@ To run the test example, execute:
 ```bash
 ./redundans.py -v -i test/*_?.fq.gz -f test/contigs.fa -o test/run1
 
+#Test it using minimap2 for the reduction step, increasing performance for large genomes
+./redundans.py -v -i test/*_?.fq.gz -f test/contigs.fa --minimap2reduce -o test/run2
+
 # if your run failed for any reason, you can try to resume it
 rm test/run1/_sspace.2.1.filled.fa
 ./redundans.py -v -i test/*_?.fq.gz -f test/contigs.fa -o test/run1 --resume
@@ -207,8 +211,11 @@ i.e. `-i 600_1.fq.gz 600_2.fq.gz 5000_1.fq.gz 5000_2.fq.gz` would be interpreted
 
 You can play with **any combination of inputs** ie. paired-end, mate pairs, long reads and / or reference-based scaffolding, for example:
 ```bash
-# reduction, scaffolding with paired-end, mate pairs and long reads, and gap closing with paired-end and mate pairs
-./redundans.py -v -i test/*_?.fq.gz -l test/pacbio.fq.gz test/nanopore.fa.gz -f test/contigs.fa -o test/run_short_long
+# reduction, scaffolding with paired-end, mate pairs and long reads used to generate a miniasm assembly to do reference-based scaffolding, and gap closing with paired-end and mate pairs using as an aligner minimap2
+./redundans.py -v -i test/*_?.fq.gz -e -l test/nanopore.fa.gz -f test/contigs.fa -o test/run_short_long_ref --useminimap2
+
+# reduction, scaffolding with paired-end, mate pairs and long reads, and gap closing with paired-end and mate pairs using experimental long read scaffolder
+./redundans.py -v -i test/*_?.fq.gz -e -l test/pacbio.fq.gz test/nanopore.fa.gz -f test/contigs.fa -o test/run_short_long_experimental
 
 # scaffolding and gap closing with paired-end and mate pairs (no reduction)
 ./redundans.py -v -i test/*_?.fq.gz -f test/contigs.fa -o test/run_short-scaffolding-closing --noreduction

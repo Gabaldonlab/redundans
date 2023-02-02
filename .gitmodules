@@ -5,14 +5,6 @@
 [submodule "bin/snap"]
     path = bin/snap
     url = https://github.com/amplab/snap
-
-[submodule "bin/pyScaf"]
-    path = bin/pyScaf
-    url = https://github.com/Gabaldonlab/pyScaf
-
-[submodule "bin/pyScaf/FastaIndex"]
-    path = bin/pyScaf/FastaIndex
-    url = https://github.com/Gabaldonlab/FastaIndex
     
 [submodule "bin/last"]
 	path = bin/last

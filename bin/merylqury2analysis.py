@@ -113,7 +113,7 @@ def merqury_statistics(outdir, meryldb, outfile, threads, mem, kmer=21, verbose=
     #proc2.communicate()
 
     args2 = "sed -n 2p %s | awk '{print $NF}'"%os.path.join(mqout, ".result")
-    proc2 = subprocess.Popen(args2, stdout=subprocess.PIPE, stderr=sys.stderr, shell=True)
+    proc2 = subprocess.Popen(args2, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, shell=True)
     kmer_filt = proc2.stdout.read().decode("utf-8").strip()
     proc2.communicate()
     if verbose:
@@ -121,7 +121,7 @@ def merqury_statistics(outdir, meryldb, outfile, threads, mem, kmer=21, verbose=
 
     args3 = "meryl greater-than %s output %s %s"%(kmer_filt, os.path.join(mqout, "filtered_k%s.complete.meryl"%kmer_filt), meryldb)
     args3 = ["meryl", "greater-than", kmer_filt, "output", t, m, os.path.join(mqout, "filtered_k%s.complete.meryl"%kmer_filt), meryldb]
-    proc3 = subprocess.Popen(args3, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+    proc3 = subprocess.Popen(args3, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     proc3.communicate()
     #meryl greater-than $filt output $db.gt$filt.meryl $db.meryl
 
@@ -131,7 +131,7 @@ def merqury_statistics(outdir, meryldb, outfile, threads, mem, kmer=21, verbose=
         sys.stderr.write("=== Generate spectra-cn plots per assemblies and get QV, k-mer completeness ===\n")
 
     args4 = ["meryl", k, "count", "output", t, m, assembly_db, outfile]
-    proc4 = subprocess.Popen(args4, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+    proc4 = subprocess.Popen(args4, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     proc4.communicate()
 
 
@@ -147,11 +147,11 @@ def merqury_statistics(outdir, meryldb, outfile, threads, mem, kmer=21, verbose=
     subprocess.Popen(cmd, shell=True)
 
     args5 = "meryl difference output %s %s %s %s %s"%(t, m, path, meryldb, assembly_db)
-    proc5 = subprocess.Popen(args5, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, shell=True)
+    proc5 = subprocess.Popen(args5, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
     proc5.communicate()
 
     args6 =  "meryl histogram %s %s %s | awk '{print \"read-only\t\"$0}' >> %s"%(t, m, path, os.path.join(mqout, "spectra-cn.hist"))
-    proc6 = subprocess.Popen(args6, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, shell=True)
+    proc6 = subprocess.Popen(args6, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
     proc6.communicate()
 
     #group kmers based on copy number from 1 to 4
@@ -163,10 +163,10 @@ def merqury_statistics(outdir, meryldb, outfile, threads, mem, kmer=21, verbose=
         tree_cmd = "[equal-to %s %s ]"%(i, assembly_db)
         #args7=["meryl", "intersect", t, m, "output", path_i, meryldb, tree_cmd]
         args7= "meryl intersect output %s %s %s %s %s"%(t, m, path_i, meryldb, tree_cmd)
-        proc7=subprocess.Popen(args7, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, shell=True)
+        proc7=subprocess.Popen(args7, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
         proc7.communicate()
         args8="meryl histogram %s %s %s | awk -v cn=%s \'{print cn\"\t\"$0}\' >> %s"%(t, m, path_i, i, os.path.join(mqout, "spectra-cn.hist"))
-        proc8 = subprocess.Popen(args8, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, shell=True)
+        proc8 = subprocess.Popen(args8, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
         proc8.communicate()
         args9=["rm", "-r", path_i]
         proc9 = subprocess.Popen(args9)
@@ -177,11 +177,11 @@ def merqury_statistics(outdir, meryldb, outfile, threads, mem, kmer=21, verbose=
     tree_cmd = "[greater-than %s %s ]"%(i, assembly_db)
 
     args10= "meryl intersect output %s %s %s %s %s"%(t, m, path_cn, meryldb, tree_cmd)
-    proc10=subprocess.Popen(args10, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, shell=True)
+    proc10=subprocess.Popen(args10, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
     proc10.communicate()
 
     args11="meryl histogram %s %s %s | awk -v cn=\">4\" \'{print cn\"\t\"$0}\' >> %s"%(t, m, path_cn, os.path.join(mqout, "spectra-cn.hist"))
-    proc11 = subprocess.Popen(args11, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, shell=True)
+    proc11 = subprocess.Popen(args11, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
     proc11.communicate()
 
     args12=["rm", "-r", path_cn]
@@ -190,27 +190,27 @@ def merqury_statistics(outdir, meryldb, outfile, threads, mem, kmer=21, verbose=
     # Copy numbers in k-mers found only in asm")
 
     args13 = "meryl difference output %s %s %s %s %s"%(t, m, path, assembly_db, meryldb)
-    proc13 = subprocess.Popen(args13, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, shell=True)
+    proc13 = subprocess.Popen(args13, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
     proc13.communicate()
 
     #Extract the ones that are are distinct and multi
 
     args14 = "meryl statistics %s %s %s | head -n4 | tail -n1 | awk '{print $2}'"%(t, m, path)
-    proc14 = subprocess.Popen(args14, stdout=subprocess.PIPE, stderr=sys.stderr, shell=True)
+    proc14 = subprocess.Popen(args14, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, shell=True)
     PRESENT = proc14.stdout.read().decode("utf-8").strip()
     proc14.communicate()
 
     args15 = "meryl statistics %s %s %s | head -n3 | tail -n1 | awk '{print $2}'"%(t, m, path)
-    proc15 = subprocess.Popen(args15, stdout=subprocess.PIPE, stderr=sys.stderr, shell=True)
+    proc15 = subprocess.Popen(args15, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, shell=True)
     DISTINCT = proc15.stdout.read().decode("utf-8").strip()
     proc15.communicate()
     MULTI = str(int(PRESENT)-int(DISTINCT))
 
     #Store results in a complementary hist file
     cmd = "echo \"1\t0\t%s\" > %s"%(DISTINCT, os.path.join(mqout, "only.hist"))
-    subprocess.Popen(cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+    subprocess.Popen(cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     cmd = "echo \"2\t0\t%s\" >> %s"%(MULTI, os.path.join(mqout, "only.hist"))
-    subprocess.Popen(cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+    subprocess.Popen(cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
     #Generate the QV statistics
@@ -218,31 +218,31 @@ def merqury_statistics(outdir, meryldb, outfile, threads, mem, kmer=21, verbose=
         sys.stderr.write("Generate the QV statistics here: %s\n"%os.path.join(mqout, (os.path.basename(outfile)+".qv")))
 
     args16="meryl statistics %s %s %s| head -n4 | tail -n1 | awk '{print $2}'"%(t, m, path)
-    proc16 = subprocess.Popen(args16, stdout=subprocess.PIPE, stderr=sys.stderr, shell=True)
+    proc16 = subprocess.Popen(args16, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, shell=True)
     ASM_ONLY=proc16.stdout.read().decode("utf-8").strip()
     proc16.communicate()
 
     args17="meryl statistics %s %s %s | head -n4 | tail -n1 | awk '{print $2}'"%(t, m, assembly_db)
-    proc17 = subprocess.Popen(args17, stdout=subprocess.PIPE, stderr=sys.stderr, shell=True)
+    proc17 = subprocess.Popen(args17, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, shell=True)
     TOTAL=proc17.stdout.read().decode("utf-8").strip()
     proc17.communicate()
 
     args18= "echo \"%s %s\" | awk -v k=%s '{print (1-(1-$1/$2)^(1/k))}'"%(ASM_ONLY, TOTAL, kmer)
-    proc18 = subprocess.Popen(args18, stdout=subprocess.PIPE, stderr=sys.stderr, shell=True)
+    proc18 = subprocess.Popen(args18, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, shell=True)
     ERROR=proc18.stdout.read().decode("utf-8").strip()
 
     args19="echo \"%s %s\" | awk -v k=%s '{print (-10*log(1-(1-$1/$2)^(1/k))/log(10))}'"%(ASM_ONLY, TOTAL, kmer)
-    proc19 = subprocess.Popen(args19, stdout=subprocess.PIPE, stderr=sys.stderr, shell=True)
+    proc19 = subprocess.Popen(args19, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, shell=True)
     QV=proc19.stdout.read().decode("utf-8").strip()
 
     #Store it in QV file
     qv_cmd="echo \"%s\t%s\t%s\t%s\t%s\" >> %s"%(os.path.basename(outfile), ASM_ONLY, TOTAL, QV, ERROR, os.path.join(mqout, (os.path.basename(outfile)+".qv")))
-    subprocess.Popen(qv_cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+    subprocess.Popen(qv_cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
     # Per seq QV statistics"
 
     args20="meryl-lookup -existence -sequence %s -mers %s/ | awk -v k=%s '{print $1\"\t\"$4\"\t\"$2\"\t\"(-10*log(1-(1-$4/$2)^(1/k))/log(10))\"\t\"(1-(1-$4/$2)^(1/k))}' > %s"%(outfile, path, kmer, os.path.join(mqout, (os.path.basename(outfile)+".perseq.qv")))
-    proc20 = subprocess.Popen(args20, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, shell=True)
+    proc20 = subprocess.Popen(args20, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
     proc20.communicate()
 
 
@@ -252,15 +252,15 @@ def merqury_statistics(outdir, meryldb, outfile, threads, mem, kmer=21, verbose=
         sys.stderr.write("Generate the k-mer completeness (recovery rate) with solid k-mers over %s.\n"%kmer)
 
     args21 = "meryl intersect output %s %s %s %s %s"%(t, m, os.path.join(mqout, "assembly_filtered_k%s.meryl"%kmer_filt), assembly_db, os.path.join(mqout, "filtered_k%s.complete.meryl"%kmer_filt))
-    proc21 = subprocess.Popen(args21, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, shell=True)
+    proc21 = subprocess.Popen(args21, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
     proc21.communicate()
 
     args22 = "meryl statistics %s %s %s | head -n3 | tail -n1 | awk '{print $2}'"%(t, m, os.path.join(mqout, "filtered_k%s.complete.meryl"%kmer_filt))
-    proc22 = subprocess.Popen(args22, stdout=subprocess.PIPE, stderr=sys.stderr, shell=True)
+    proc22 = subprocess.Popen(args22, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, shell=True)
     TOTAL=proc22.stdout.read().decode("utf-8").strip()
 
     args23 = "meryl statistics %s %s %s | head -n3 | tail -n1 | awk '{print $2}'"%(t, m, os.path.join(mqout, "assembly_filtered_k%s.meryl"%kmer_filt))
-    proc23 = subprocess.Popen(args23, stdout=subprocess.PIPE, stderr=sys.stderr, shell=True)
+    proc23 = subprocess.Popen(args23, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, shell=True)
     ASM=proc23.stdout.read().decode("utf-8").strip()
 
     try:
@@ -277,39 +277,39 @@ def merqury_statistics(outdir, meryldb, outfile, threads, mem, kmer=21, verbose=
     #Generate the assembly histogram for plotting
 
     args24 = "meryl intersect output %s %s %s %s %s"%(t, m, os.path.join(mqout, "assembly.k%s.meryl"%kmer_filt), meryldb, assembly_db)
-    proc24 = subprocess.Popen(args24, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, shell=True)
+    proc24 = subprocess.Popen(args24, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
     proc24.communicate()
     
     histname=os.path.join(mqout, os.path.basename(outfile)+".spectra-asm.hist")
     args25= "echo \"Assembly\tkmer_multiplicity\tCount\" > %s"%(histname)
-    subprocess.Popen(args25, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+    subprocess.Popen(args25, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
     args26 = "meryl histogram %s %s %s | awk '{print \"read-only\t\"$0}' >> %s"%(t, m, path, histname)
-    proc26 = subprocess.Popen(args26, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, shell=True)
+    proc26 = subprocess.Popen(args26, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
     proc26.communicate()
 
     args27 = "meryl histogram %s %s %s | awk -v hap=\"%s\" '{print hap\"\t\"$0}' >> %s"%(t, m, os.path.join(mqout, "assembly.k%s.meryl"%kmer_filt), os.path.basename(outfile), histname)
-    proc27 = subprocess.Popen(args27, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, shell=True)
+    proc27 = subprocess.Popen(args27, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
     proc27.communicate()
 
     # Get asm only for spectra-asm"
 
     args28 = "meryl statistics %s %s %s | head -n3 | tail -n1 | awk '{print $2}'"%(t, m, path)
-    proc28 = subprocess.Popen(args28, stdout=subprocess.PIPE, stderr=sys.stderr, shell=True)
+    proc28 = subprocess.Popen(args28, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, shell=True)
     ASM_ONLY=proc28.stdout.read().decode("utf-8").strip()
 
     hist_only=os.path.join(mqout, os.path.basename(outfile)+".dist_only.hist")
     args25= "echo \"%s\t0\t%s\" >  %s"%(os.path.basename(outfile), ASM_ONLY, hist_only)
-    subprocess.Popen(args25, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+    subprocess.Popen(args25, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
     if verbose:
         sys.stderr.write("[INFO] Plotting the results in spectra plots here %s\n"%mqout)
 
     rcommand = "Rscript bin/merqury/plot/plot_spectra_cn.R -f %s -o %s -z %s"%(os.path.join(mqout, "spectra-cn.hist"), os.path.join(mqout, "results.spectra-cn"), os.path.join(mqout, "only.hist"))
-    rproc = subprocess.Popen(rcommand, stdout=subprocess.PIPE, stderr=sys.stderr, shell=True)
+    rproc = subprocess.Popen(rcommand, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, shell=True)
 
     rcommand2 = "Rscript bin/merqury/plot/plot_spectra_cn.R -f %s -o %s -z %s"%(histname, os.path.join(mqout, "results.spectra-asm"), hist_only)
-    rproc2 = subprocess.Popen(rcommand2, stdout=subprocess.PIPE, stderr=sys.stderr, shell=True)
+    rproc2 = subprocess.Popen(rcommand2, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, shell=True)
 
     rproc.communicate()
     rproc2.communicate()

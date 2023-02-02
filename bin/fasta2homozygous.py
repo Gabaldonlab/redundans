@@ -30,7 +30,7 @@ def run_last(fasta, identity, threads, verbose=1):
         os.system("lastdb -P %s -W 11 %s %s" % (threads, ref, fasta))
     # run LAST
     args1 = ["lastal", "-P", str(threads), "-f", "TAB", ref, fasta]#; print " ".join(args1)
-    proc1 = subprocess.Popen(args1, stdout=subprocess.PIPE, stderr=sys.stderr)
+    proc1 = subprocess.Popen(args1, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
     return proc1
     
 def run_last_q2best(fasta, identity, threads, verbose=0):
@@ -46,10 +46,10 @@ def run_last_q2best(fasta, identity, threads, verbose=0):
     args2 = ["skip_selfmatches.py"]
     args3 = ["last-split"]
     args4 = ["maf-convert", "tab"]
-    proc1 = subprocess.Popen(args1, stdout=subprocess.PIPE, stderr=sys.stderr)
-    proc2 = subprocess.Popen(args2, stdout=subprocess.PIPE, stderr=sys.stderr, stdin=proc1.stdout)
-    proc3 = subprocess.Popen(args3, stdout=subprocess.PIPE, stderr=sys.stderr, stdin=proc2.stdout)
-    proc4 = subprocess.Popen(args4, stdout=subprocess.PIPE, stderr=sys.stderr, stdin=proc3.stdout)
+    proc1 = subprocess.Popen(args1, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+    proc2 = subprocess.Popen(args2, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, stdin=proc1.stdout)
+    proc3 = subprocess.Popen(args3, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, stdin=proc2.stdout)
+    proc4 = subprocess.Popen(args4, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, stdin=proc3.stdout)
     return proc4
 
 
@@ -70,12 +70,12 @@ def run_minimap2(fasta, threads, preset, winsize=19, chain_penalty=200, verbose=
 
     args1 = ["minimap2", "-x", preset, "-PD", windowsize, penalty, "-t", str(threads), "--cs=long", ref, fasta]
     #sys.stderr.write(" %s\n"%args1)
-    proc1 = subprocess.Popen(args1, stdout=subprocess.PIPE, stderr=sys.stderr)
+    proc1 = subprocess.Popen(args1, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
     args2 = ["k8-Linux", "bin/minimap2/misc/paftools.js", "view", "-f", "maf", "-"]
-    proc2 = subprocess.Popen(args2, stdout=subprocess.PIPE, stdin=proc1.stdout, stderr=sys.stderr)
+    proc2 = subprocess.Popen(args2, stdout=subprocess.PIPE, stdin=proc1.stdout, stderr=subprocess.DEVNULL)
     #Added maf converter from LAST to keep same format
     args3 = ["maf-convert", "tab", "-"]
-    proc3 = subprocess.Popen(args3, stdout=subprocess.PIPE, stdin=proc2.stdout, stderr=sys.stderr)
+    proc3 = subprocess.Popen(args3, stdout=subprocess.PIPE, stdin=proc2.stdout, stderr=subprocess.DEVNULL)
     return proc3
 
 def _qhits_generator(handle, minLength):
@@ -326,7 +326,7 @@ def main():
   
     parser.add_argument('--version', action='version', version='1.01d')   
     parser.add_argument("-v", "--verbose", default=False, action="store_true", help="verbose")    
-    parser.add_argument("-i", "-f", "--fasta", nargs="+", type=file, help="FASTA file(s)")
+    parser.add_argument("-i", "-f", "--fasta", nargs="+", type=argparse.FileType('w'), help="FASTA file(s)")
     parser.add_argument("-t", "--threads", default=4, type=int, help="max threads to run [%(default)s]")
     parser.add_argument("--identity", default=0.51, type=float, help="min. identity [%(default)s]")
     parser.add_argument("--overlap", default=0.8, type=float, help="min. overlap [%(default)s]")

@@ -23,8 +23,8 @@ from traceback import print_list
 
 # update sys.path & environmental PATH
 root = os.path.dirname(os.path.abspath(sys.argv[0]))
-src = ["bin/", "bin/bwa/", "bin/snap/", "bin/pyScaf/", "bin/last/build/",
-    "bin/last/bin/", "bin/last/src/", "bin/minimap2/", "bin/merqury"]
+src = ["bin/", "bin/bwa/", "bin/snap/", "bin/pyScaf/", "bin/last/build/", "/usr/bin/",
+    "bin/last/bin/", "bin/last/src/", "bin/minimap2/", "bin/miniasm/", "bin/merqury"]
 paths = [os.path.join(root, p) for p in src]
 sys.path = paths + sys.path
 os.environ["PATH"] = "%s:%s"%(':'.join(paths), os.environ["PATH"])
@@ -37,7 +37,8 @@ from fastq2sspace import fastq2sspace
 from fastq2insert_size import fastq2insert_size
 from filterReads import filter_paired
 from FastaIndex import FastaIndex, symlink
-from pyScaf import LongReadGraph, SyntenyGraph
+#from pyScaf import LongReadGraph, SyntenyGraph
+from fasta2scaffold import LongReadGraph, SyntenyGraph
 from denovo import denovo
 from merylqury2analysis import _build_meryldb, merqury_statistics
 
@@ -273,7 +274,7 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
               threads, mem, resume, identity, overlap, minLength, \
               joins, linkratio, readLimit, iters, sspacebin, refpreset, \
               reduction=1, scaffolding=1, gapclosing=1, usemerqury=1, kmer=21, cleaning=1, \
-              norearrangements=0, verbose=1, usebwa=0, minimap2reduce=0, useminimap2=0, log=sys.stderr, tmp="/tmp"):
+              norearrangements=0, verbose=1, usebwa=0, minimap2reduce=0, useminimap2=0, experimental=0, log=sys.stderr, tmp="/tmp"):
     """Launch redundans pipeline."""
     # check resume
     orgresume = resume
@@ -347,8 +348,10 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
         outfn = os.path.join(outdir, "scaffolds.longreads.fa")
         # here maybe sort reads by increasing median read length
         resume += 1
-        if verbose:
-            log.write("%sScaffolding with long reads...\n"%timestamp())
+        if verbose and experimental:
+            log.write("%s[WARNING] Running experimental long read scaffolding mode...\n"%timestamp())
+        elif verbose and not experimental:
+            log.write("%sUsing long reads to generate an assembly to use as a reference for scaffolding...\n"%timestamp())
         poutfn = lastOutFn
         for i, fname in enumerate(longreads, 1):
             if verbose:
@@ -357,26 +360,44 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
             #Add a check to change preset based on filename if provided a list of files:
             
             if re.search("ont", fname, flags=re.IGNORECASE) or re.search("nanopore", fname, flags=re.IGNORECASE) or re.search("oxford", fname, flags=re.IGNORECASE):
-                preset = "map-ont"
+                preset = "ava-ont"
+                if experimental:
+                    preset = "map-ont"
             elif re.search("pb", fname, flags=re.IGNORECASE) or re.search("pacbio", fname, flags=re.IGNORECASE) or re.search("smrt", fname, flags=re.IGNORECASE):
-                preset = "map-pb"
+                preset = "ava-pb"
+                if experimental:
+                    preset = "map-pb"
             elif re.search("hifi", fname, flags=re.IGNORECASE) or re.search("hi_fi", fname, flags=re.IGNORECASE) or re.search("hi-fi", fname, flags=re.IGNORECASE):
-                preset = "map-hifi"
+                preset = "ava-pb"
+                if experimental:
+                    preset = "map-hifi"
             else:
                 #Added this to default to ONT
-                preset = "map-ont"
+                preset = "ava-ont"
+                if experimental:
+                    preset = "map-ont"
 
-            if useminimap2 and verbose:
-                log.write("Using minimap2 preset %s for file %s...\n"%(preset, fname))
-            elif verbose:
-                log.write("Using LAST for file %s...\n"%fname)
+            if experimental:
+                if useminimap2 and verbose:
+                    log.write("Using minimap2 aligner preset %s for file %s...\n"%(preset, fname))
+                elif verbose:
+                    log.write("Using LAST aligner for file %s...\n"%fname)
+            else:
+                if useminimap2 and verbose:
+                    log.write("Using minimap2 as an aligner and preset %s...\n"%refpreset)
+                elif verbose:
+                    log.write("Using LAST as an aligner...\n")   
 
-            s = LongReadGraph(lastOutFn, fname, identity, overlap, preset=preset, useminimap2=useminimap2, maxgap=0, threads=threads, \
+
+            #If experimental mode wants to be run: scaffolding based on long read mapping
+            if experimental:
+                s = LongReadGraph(lastOutFn, fname, identity, overlap, preset=preset, useminimap2=useminimap2, maxgap=0, threads=threads, \
                         dotplot="", norearrangements=norearrangements, log=0)
-            #else:
-            #    s = LongReadGraph(lastOutFn, fname, identity, overlap, maxgap=0, threads=threads, \
-            #                  dotplot="", norearrangements=norearrangements, log=0)
-            # save output
+            #Else use long reads to generate an assembly that can be used for reference-based scaffolding
+            else:
+                s = SyntenyGraph(lastOutFn, reference, identity=0.51, overlap=0.66, maxgap=0, threads=threads, \
+                         dotplot="", norearrangements=norearrangements, useminimap2=useminimap2, preset=refpreset, log=0, uselongreads=longreads, preset_long=preset, fastq=fname)
+  
             _outfn = os.path.join(outdir, "scaffolds.longreads.%s.fa"%i)
             with open(_outfn, "w") as out:
                 s.save(out)
@@ -399,7 +420,7 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
         elif verbose:
             log.write("%sScaffolding based on reference using LAST...\n"%timestamp())        
         s = SyntenyGraph(lastOutFn, reference, identity=0.51, overlap=0.66, maxgap=0, threads=threads, \
-                         dotplot="", norearrangements=norearrangements, useminimap2=useminimap2, preset=refpreset, log=0)
+                         dotplot="", norearrangements=norearrangements, useminimap2=useminimap2, preset=refpreset, log=0, uselongreads=0)
         # save output
         with open(outfn, "w") as out:
             s.save(out)
@@ -552,7 +573,8 @@ def main():
      
     longscaf = parser.add_argument_group('Long-read scaffolding options')
     longscaf.add_argument("-l", "--longreads", nargs="*", default=[], help="FastQ/FastA files with long reads. By default LAST")
-    longscaf.add_argument("--useminimap2", action='store_true', help="Use Minimap2 for aligning long reads. If used for long read scaffolding the preset usage dependant on file name convention (case insensitive): ont, nanopore, pb, pacbio, hifi, hi_fi, hi-fi. ie: s324_nanopore.fq.gz.")
+    longscaf.add_argument("-e", "--experimental",action='store_true', help="Run experimental long read scaffolding, else generate an assembly for reference-based scaffolding")
+    longscaf.add_argument("--useminimap2", action='store_true', help="Use Minimap2 for aligning long reads. If used for long read experimental scaffolding the preset usage dependant on file name convention (case insensitive): ont, nanopore, pb, pacbio, hifi, hi_fi, hi-fi. ie: s324_nanopore.fq.gz.")
     
     refscaf = parser.add_argument_group('Reference-based scaffolding options')
     refscaf.add_argument("-r", "--reference", default='', help="reference FastA file")
@@ -603,7 +625,7 @@ def main():
               o.threads, o.mem, o.resume, o.identity, o.overlap, o.minLength,  \
               o.joins, o.linkratio, o.limit, o.iters, sspacebin, \
               o.preset, o.noreduction, o.noscaffolding, o.nogapclosing, o.nomerqury, o.kmer, o.nocleaning, \
-              o.norearrangements, o.verbose, o.usebwa, o.minimap2reduce, o.useminimap2, o.log, o.tmp)
+              o.norearrangements, o.verbose, o.usebwa, o.minimap2reduce, o.useminimap2, o.experimental, o.log, o.tmp)
 
 if __name__=='__main__': 
     t0 = datetime.now()
