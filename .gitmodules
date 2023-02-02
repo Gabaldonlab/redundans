@@ -17,3 +17,6 @@
 [submodule "bin/merqury"]
 	path = bin/merqury
 	url = https://github.com/marbl/merqury.git
+[submodule "bin/miniasm"]
+	path = bin/miniasm
+	url = https://github.com/lh3/miniasm.git
