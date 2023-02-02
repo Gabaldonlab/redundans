@@ -47,5 +47,9 @@ echo `date` " Meryl"
 (cd bin && wget -nc https://github.com/marbl/meryl/releases/download/v1.3/meryl-1.3.Linux-amd64.tar.xz && tar -xJf meryl-1.3.Linux-amd64.tar.xz && mv -t . ./meryl-1.3/bin/*  && rm -r ./meryl-1.3/ && rm meryl-1.3.Linux-amd64.tar.xz) >> $log 2>&1
 retcode=$?; if [ $retcode -gt 0 ]; then exit $retcode; fi
 
+echo `date` " gfastats"
+(cd bin/gfastats && make -j) >> $log 2>&1
+retcode=$?; if [ $retcode -gt 0 ]; then exit $retcode; fi
+
 echo `date` "Done!"
 

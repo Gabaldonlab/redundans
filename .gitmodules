@@ -20,3 +20,6 @@
 [submodule "bin/miniasm"]
 	path = bin/miniasm
 	url = https://github.com/lh3/miniasm.git
+[submodule "bin/gfastats"]
+	path = bin/gfastats
+	url = https://github.com/vgl-hub/gfastats.git

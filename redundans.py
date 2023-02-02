@@ -23,7 +23,7 @@ from traceback import print_list
 
 # update sys.path & environmental PATH
 root = os.path.dirname(os.path.abspath(sys.argv[0]))
-src = ["bin/", "bin/bwa/", "bin/snap/", "bin/pyScaf/", "bin/last/build/", "/usr/bin/",
+src = ["bin/", "bin/bwa/", "bin/snap/", "bin/pyScaf/", "bin/last/build/", "/usr/bin/", "bin/gfastats/build/bin",
     "bin/last/bin/", "bin/last/src/", "bin/minimap2/", "bin/miniasm/", "bin/merqury"]
 paths = [os.path.join(root, p) for p in src]
 sys.path = paths + sys.path
@@ -104,6 +104,24 @@ def get_read_limit(fasta, readLimit, verbose, log=sys.stderr):
         if verbose:
             log.write(" Aligning %s mates per library...\n"%limit)
     return limit
+
+def generate_gfa_file(file):
+    """Return a gfa file generated using gfastats"""
+
+    #First process the filename to add the new extension
+
+    abs_path_gfa = os.path.abspath(re.sub(".fa", ".gfa", file))
+
+    with open(abs_path_gfa, "wb") as f:
+
+        args1 = ["gfastats", "-f", file, "-o", "gfa"]
+        proc1 = subprocess.Popen(args1, stderr=subprocess.DEVNULL, stdout=f)
+        proc1.communicate()
+
+
+    if os.path.exists(abs_path_gfa): return True
+    else: return False
+
     
 def run_scaffolding(outdir, scaffoldsFname, fastq, libraries, reducedFname, mapq, threads, \
                     joins, linkratio, limit, iters, sspacebin, gapclosing, verbose, usebwa, log, \
@@ -319,6 +337,7 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
         # update fasta list
         lastOutFn = outfn
         fastas.append(lastOutFn); _check_fasta(lastOutFn)
+        generate_gfa_file(lastOutFn)
 
 
     # get read limit & libraries
@@ -340,6 +359,7 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
         fastas += [x for x in sorted(glob.glob(os.path.join(outdir, "_sspace.*.fa"))) if "_gapcloser" not in x]
         lastOutFn = outfn
         fastas.append(lastOutFn); _check_fasta(lastOutFn)
+        generate_gfa_file(lastOutFn)
 
 
     # SCAFFOLDING WITH LONG READS
@@ -409,6 +429,7 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
         # update fasta list
         lastOutFn = outfn
         fastas.append(lastOutFn); _check_fasta(lastOutFn)
+        generate_gfa_file(lastOutFn)
 
     # REFERENCE-BASED SCAFFOLDING
     outfn_check = os.path.join(outdir, "scaffolds.ref.fa")
@@ -427,6 +448,7 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
         # update fasta list
         lastOutFn = outfn
         fastas.append(lastOutFn); _check_fasta(lastOutFn)
+        generate_gfa_file(lastOutFn)
 
     
         
@@ -441,6 +463,7 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
         fastas += sorted(glob.glob(os.path.join(outdir, "_gap*.fa")))
         lastOutFn = outfn
         fastas.append(lastOutFn); _check_fasta(lastOutFn)
+        generate_gfa_file(lastOutFn)
 
     # FINAL REDUCTION
     outfn_check = os.path.join(outdir, "scaffolds.reduced.fa")
@@ -456,6 +479,7 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
         # update fasta list
         lastOutFn = outfn
         fastas.append(lastOutFn); _check_fasta(lastOutFn)
+        generate_gfa_file(lastOutFn)
 
     # MERQURY ANALYSIS
 
@@ -485,7 +509,7 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
             log.write("%sCleaning-up...\n"%timestamp())
         for root, dirs, fnames in os.walk(outdir):
             #If you want to check meryl data, add '.merylData', '.merylIndex', 'merylIndex'
-            endings = ('.fa', '.fasta', '.fai', '.tsv', '.qv', '.stats', '.png', '.log', '.hist')
+            endings = ('.fa', '.fasta', '.fai', '.tsv', '.qv', '.stats', '.png', '.log', '.hist', '.gfa')
             for i, fn in enumerate([x for x in fnames if not x.endswith(endings)], 1):
                 os.unlink(os.path.join(root, fn))
             # rmdir of snap index
