@@ -18,6 +18,10 @@ echo `date` " Platanus"
 (wget -O- http://platanus.bio.titech.ac.jp/?ddownload=145 > bin/platanus && chmod +x bin/platanus) >> $log 2>&1 
 retcode=$?; if [ $retcode -gt 0 ]; then exit $retcode; fi
 
+echo `date` " Miniasm"
+(cd bin/miniasm && make clean && make) >> $log 2>&1
+retcode=$?; if [ $retcode -gt 0 ]; then exit $retcode; fi
+
 echo `date` " BWA"
 (cd bin/bwa && make clean && make -j $cores) >> $log 2>&1 
 retcode=$?; if [ $retcode -gt 0 ]; then exit $retcode; fi

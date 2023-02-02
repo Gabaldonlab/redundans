@@ -38,13 +38,12 @@ Redundans uses several programs (all provided within this repository):
 | :--- | :--- | :--- |
 | [Python](https://www.python.org/downloads) | Language interpreter | ≥ 3.0 |
 | [Platanus](http://platanus.bio.titech.ac.jp/?page_id=14) | Genome assembler | v1.2.4 |
+| [Miniasm](https://github.com/lh3/miniasm) | Genome assembler | v0.3 (r179) |
 | [LAST](http://last.cbrc.jp/) | Sequence aligner | ≥ v800 |
 | [BWA](http://bio-bwa.sourceforge.net/) | Sequence aligner | ≥ v0.7.12 |
 | [SNAP aligner](https://github.com/amplab/snap) | Sequence aligner | v2.0.1 |
 | [SSPACE3](http://www.baseclear.com/genomics/bioinformatics/basetools/SSPACE) | Scaffolding software | v3.0 |
 | [GapCloser](http://sourceforge.net/projects/soapdenovo2/files/GapCloser/) | Gapclosing software | v1.12 |
-| [pyScaf](https://github.com/lpryszcz/pyScaf) | Scaffolding software | |
-| [FastaIndex](https://github.com/lpryszcz/FastaIndex) | Indexing software | |
 | [Meryl](https://github.com/marbl/meryl) | K-mer counter software | ≥ v1.3 |
 | [Merqury](https://github.com/marbl/merqury) | Assembly evaluation software | ≥ v1.3 |
 | [k8](https://github.com/attractivechaos/k8/) | Javascript shell based on V8 | ≥ v0.2.4 |
