@@ -60,8 +60,6 @@ def _build_meryldb(outpath, fastq, threads, mem, kmer=21):
 
     path = os.path.join(outpath, "*.meryl")
     
-    #Tried with code below, unknown error
-    #args4 = ["meryl", "union-sum", "output", t, m, outname, path]
     args4 = "meryl union-sum output "+t+" "+m+" "+outname+" "+path
 
     proc4 = subprocess.Popen(args4, stderr=subprocess.DEVNULL, shell=True)

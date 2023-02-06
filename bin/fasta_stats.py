@@ -6,6 +6,9 @@ with 4 extended columns, storing counts for A, C, G & T for each sequence.
 """
 epilog="""Author: l.p.pryszcz+git@gmail.com
 Mizerow/Bratislava, 26/08/2014
+
+Updated to Python3 and new functionality/tools by Diego Fuentes Palacios
+Barcelona 08/18/2022
 """
 
 import gzip, os, sys

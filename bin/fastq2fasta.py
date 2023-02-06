@@ -6,6 +6,9 @@ Note, reads are reported in arbitrary order due to multiprocessing!
 epilog="""
 l.p.pryszcz+git@gmail.com
 Barcelona, 10/05/2013
+
+Updated to Python3 by Diego Fuentes Palacios
+Barcelona 08/18/2022
 """
  
 import argparse, gzip, os, sys, subprocess

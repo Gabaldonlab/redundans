@@ -8,11 +8,10 @@ Orphaned reads may be store optionally (-u).
 epilog="""Author:
 Leszek Pryszcz/l.p.pryszcz@gmail.com
 Modified by Salvador Capella-Gutierrez/salcagu@gmail.com
+Barcelona, 01/01/2014
 
 Updated to Python3 by Diego Fuentes Palacios
 Barcelona 08/18/2022
-
-Barcelona, 01/01/2014
 """
 
 """

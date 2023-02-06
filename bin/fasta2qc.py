@@ -5,6 +5,9 @@ epilog="""Author:
 l.p.pryszcz+git@gmail.com
 
 Warsaw, 6/05/2017
+
+Updated to Python3 and new functionality/tools by Diego Fuentes Palacios
+Barcelona 08/18/2022
 """
 
 import math, os, sys, subprocess, subprocess

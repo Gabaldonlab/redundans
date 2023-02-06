@@ -13,6 +13,9 @@ epilog="""Author:
 l.p.pryszcz@gmail.com
 
 Warsaw, 26/02/2016
+
+Updated to Python3 and new functionality/tools by Diego Fuentes Palacios
+Barcelona 08/18/2022
 """
 
 import os, sys, gzip

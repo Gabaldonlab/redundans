@@ -7,7 +7,6 @@ More info at: http://bit.ly/Redundans
 """
 epilog="""Author:
 l.p.pryszcz+git@gmail.com
-
 Mizerow/Warsaw/Bratislava/Barcelona, 17/10/2014
 
 Updated to Python3 and new functionality/tools by Diego Fuentes Palacios
@@ -37,7 +36,6 @@ from fastq2sspace import fastq2sspace
 from fastq2insert_size import fastq2insert_size
 from filterReads import filter_paired
 from FastaIndex import FastaIndex, symlink
-#from pyScaf import LongReadGraph, SyntenyGraph
 from fasta2scaffold import LongReadGraph, SyntenyGraph
 from denovo import denovo
 from merylqury2analysis import _build_meryldb, merqury_statistics
@@ -292,7 +290,7 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
               threads, mem, resume, identity, overlap, minLength, \
               joins, linkratio, readLimit, iters, sspacebin, refpreset, \
               reduction=1, scaffolding=1, gapclosing=1, usemerqury=1, kmer=21, cleaning=1, \
-              norearrangements=0, verbose=1, usebwa=0, minimap2reduce=0, useminimap2=0, experimental=0, log=sys.stderr, tmp="/tmp"):
+              norearrangements=0, verbose=1, usebwa=0, minimap2reduce=0, index="4G", useminimap2=0, experimental=0, log=sys.stderr, tmp="/tmp"):
     """Launch redundans pipeline."""
     # check resume
     orgresume = resume
@@ -411,12 +409,12 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
 
             #If experimental mode wants to be run: scaffolding based on long read mapping
             if experimental:
-                s = LongReadGraph(lastOutFn, fname, identity, overlap, preset=preset, useminimap2=useminimap2, maxgap=0, threads=threads, \
+                s = LongReadGraph(lastOutFn, fname, identity, overlap, preset=preset, index=index, useminimap2=useminimap2, maxgap=0, threads=threads, \
                         dotplot="", norearrangements=norearrangements, log=0)
             #Else use long reads to generate an assembly that can be used for reference-based scaffolding
             else:
                 s = SyntenyGraph(lastOutFn, reference, identity=0.51, overlap=0.66, maxgap=0, threads=threads, \
-                         dotplot="", norearrangements=norearrangements, useminimap2=useminimap2, preset=refpreset, log=0, uselongreads=longreads, preset_long=preset, fastq=fname)
+                         dotplot="", norearrangements=norearrangements, index=index, useminimap2=useminimap2, preset=refpreset, log=0, uselongreads=longreads, preset_long=preset, fastq=fname)
   
             _outfn = os.path.join(outdir, "scaffolds.longreads.%s.fa"%i)
             with open(_outfn, "w") as out:
@@ -441,7 +439,7 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
         elif verbose:
             log.write("%sScaffolding based on reference using LAST...\n"%timestamp())        
         s = SyntenyGraph(lastOutFn, reference, identity=0.51, overlap=0.66, maxgap=0, threads=threads, \
-                         dotplot="", norearrangements=norearrangements, useminimap2=useminimap2, preset=refpreset, log=0, uselongreads=0)
+                         dotplot="", norearrangements=norearrangements, index=index, useminimap2=useminimap2, preset=refpreset, log=0, uselongreads=0)
         # save output
         with open(outfn, "w") as out:
             s.save(out)
@@ -589,6 +587,7 @@ def main():
     redu.add_argument("--overlap", default=0.80, type=float, help="min. overlap [%(default)s]")
     redu.add_argument("--minLength", default=200, type=int, help="min. contig length [%(default)s]")
     redu.add_argument("--minimap2reduce", action='store_true', help="Use minimap2 for the initial and final Reduction step. Recommended for input assembled contigs from long reads using --preset[asm5] by default. By default LASTal is used for Reduction.")
+    redu.add_argument('-x', "--index", default="4G", type=str, help="Minimap2 parameter -i used to load at most INDEX target bases into RAM for indexing [%(default)s]. It has to be provided as a string INDEX ending with k/K/m/M/g/G.")
     redu.add_argument('--noreduction', action='store_false', help="Skip reduction")
     
     scaf = parser.add_argument_group('Short-read scaffolding options')
@@ -655,7 +654,7 @@ def main():
               o.threads, o.mem, o.resume, o.identity, o.overlap, o.minLength,  \
               o.joins, o.linkratio, o.limit, o.iters, sspacebin, \
               o.preset, o.noreduction, o.noscaffolding, o.nogapclosing, o.nomerqury, o.kmer, o.nocleaning, \
-              o.norearrangements, o.verbose, o.usebwa, o.minimap2reduce, o.useminimap2, o.experimental, o.log, o.tmp)
+              o.norearrangements, o.verbose, o.usebwa, o.minimap2reduce, o.index, o.useminimap2, o.experimental, o.log, o.tmp)
 
 if __name__=='__main__': 
     t0 = datetime.now()

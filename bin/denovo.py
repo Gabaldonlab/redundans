@@ -9,6 +9,9 @@ epilog="""Author:
 l.p.pryszcz@gmail.com
 
 Warsaw, 20/11/2017
+
+Updated to Python3 and new functionality/tools by Diego Fuentes Palacios
+Barcelona 08/18/2022
 """
 
 import os, sys, tempfile

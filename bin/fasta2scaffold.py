@@ -213,7 +213,7 @@ class Graph(object):
             proc = subprocess.Popen(args, stdin=self._lastal(query), stderr=self.log)
         return proc
 
-    def _minimap2(self, queries=[]):
+    def _minimap2(self, queries=[], index="4G"):
         """Minimap2 for long read alignment using presets"""
 
         #Provide necessary arguments:
@@ -226,7 +226,7 @@ class Graph(object):
         if queries[0].endswith('.gz'):
             args0[0] = "zcat"
         proc0 = subprocess.Popen(args0, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
-        args1 = ["minimap2", "-x", str(self.preset), "-t", str(self.threads), "--cs=long", self.ref, "-"]
+        args1 = ["minimap2", "-x", str(self.preset), "-t", str(self.threads),  "-I", index, "--cs=long", self.ref, "-"]
         proc1 = subprocess.Popen(args1, stdout=subprocess.PIPE, stdin=proc0.stdout, stderr=subprocess.DEVNULL)
         args2 = ["k8-Linux", "bin/minimap2/misc/paftools.js", "view", "-f", "maf", "-"]
         proc2 = subprocess.Popen(args2, stdout=subprocess.PIPE, stdin=proc1.stdout, stderr=subprocess.DEVNULL)
@@ -328,7 +328,7 @@ class Graph(object):
            
 class SyntenyGraph(Graph):
     """Graph class to represent scaffolds derived from synteny information"""
-    def __init__(self, genome, reference, identity=0.51, overlap=0.66, preset="asm10", useminimap2=0, norearrangements=0, 
+    def __init__(self, genome, reference, identity=0.51, overlap=0.66, preset="asm10", index="4G", useminimap2=0, norearrangements=0, 
                  threads=4, mingap=15, maxgap=0, nofilter_overlaps=0, 
                  dotplot="png", printlimit=10, log=sys.stderr, uselongreads=0, preset_long="ava-ont", fastq=None):
         """Construct a graph with the given vertices & features"""
@@ -355,6 +355,7 @@ class SyntenyGraph(Graph):
         self.overlap  = overlap
         self.dotplot  = dotplot
         self.useminimap2 = useminimap2
+        self.index=index
         self.preset = preset
         # 0-local alignment; 
         if norearrangements:
@@ -409,7 +410,7 @@ class SyntenyGraph(Graph):
         t2size = {}
         q2hits = {}
         if self.useminimap2:
-            handle = self._minimap2()
+            handle = self._minimap2(index=self.index)
         else:
             handle = self._lastal_global()
         for le in handle:
@@ -514,9 +515,10 @@ class SyntenyGraph(Graph):
         ## consider splitting into two functions
         ## to facilitate more input formats
         t2hits, t2size = {}, {}
+        index=self.index
         q2hits = {}
         if self.useminimap2:
-            handle = self._minimap2(self.genome)
+            handle = self._minimap2(self.genome, index=index)
         else:
             handle = self._lastal(self.genome)
         for le in handle:
@@ -771,7 +773,7 @@ def _miniasm(outref, longreads, threads, preset = "ava-ont"):
 
 class LongReadGraph(Graph):
     """Graph class to represent scaffolds derived from synteny after using long reads to assemble a reference"""
-    def __init__(self, genome, fastq, identity=0.51, overlap=0.66, preset="map-ont", useminimap2=0, norearrangements=0, 
+    def __init__(self, genome, fastq, identity=0.51, overlap=0.66, preset="map-ont", index="4G", useminimap2=0, norearrangements=0, 
                  threads=4, dotplot="png", mingap=15, maxgap=0, printlimit=10, log=sys.stderr):
         """Construct a graph with the given vertices & features"""
         self.name = "ReferenceGraph"
@@ -787,6 +789,7 @@ class LongReadGraph(Graph):
 
         self.preset = preset
         self.useminimap2 = useminimap2
+        self.index=index
         self.identity = identity
         self.overlap  = overlap
         self.threads  = threads

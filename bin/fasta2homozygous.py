@@ -10,6 +10,9 @@ TO ADD:
 """
 epilog="""Author: l.p.pryszcz@gmail.com
 Mizerow, 26/08/2014
+
+Updated to Python3 and new functionality/tools by Diego Fuentes Palacios
+Barcelona 08/18/2022
 """
 
 import gzip, os, sys, subprocess
@@ -53,12 +56,14 @@ def run_last_q2best(fasta, identity, threads, verbose=0):
     return proc4
 
 
-def run_minimap2(fasta, threads, preset, winsize=19, chain_penalty=200, verbose=1):
+def run_minimap2(fasta, threads, preset, index="4G", winsize=19, chain_penalty=200, verbose=1):
     """Run Minimap2 multi_threaded"""
 
     #Default params
     windowsize = "-w%s"%winsize
     penalty = "-m%s"%chain_penalty
+    
+    #Check index is solid, else use default
 
     if verbose:
         sys.stderr.write(" Running Minimap2...\n")
@@ -68,7 +73,7 @@ def run_minimap2(fasta, threads, preset, winsize=19, chain_penalty=200, verbose=
     if not preset.startswith("asm"):
         preset = "asm5"
 
-    args1 = ["minimap2", "-x", preset, "-PD", windowsize, penalty, "-t", str(threads), "--cs=long", ref, fasta]
+    args1 = ["minimap2", "-x", preset, "-PD", windowsize, penalty, "-t", str(threads), "-I", index, "--cs=long", ref, fasta]
     #sys.stderr.write(" %s\n"%args1)
     proc1 = subprocess.Popen(args1, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
     args2 = ["k8-Linux", "bin/minimap2/misc/paftools.js", "view", "-f", "maf", "-"]
@@ -126,7 +131,7 @@ def hits2valid(hits, q, qsize, identityTh, overlapTh):
         if identity >= identityTh and overlap >= overlapTh:
             yield score, t, q, qalg, identity, overlap
 
-def fasta2hits(fasta, threads, identityTh, overlapTh, minLength, verbose, preset, useminimap2=0):
+def fasta2hits(fasta, threads, identityTh, overlapTh, minLength, verbose, preset, index="4G", useminimap2=0):
     """Return LASTal hits passing identity and overlap thresholds for LASTal and presets for minimap2
     
     Best identity cutoff is infered here by averaging all hits' identity"""
@@ -136,7 +141,7 @@ def fasta2hits(fasta, threads, identityTh, overlapTh, minLength, verbose, preset
 
     # execute last or minimap
     if useminimap2:
-        handle = run_minimap2(fasta.name, threads, preset, verbose=verbose) #_q2best
+        handle = run_minimap2(fasta.name, threads, preset, index, verbose=verbose) #_q2best
     else:
         handle = run_last(fasta.name, identityTh, threads, verbose) #_q2best
     for q, qsize, qhits in _qhits_generator(handle.stdout, minLength):
@@ -168,13 +173,14 @@ def fasta2hits(fasta, threads, identityTh, overlapTh, minLength, verbose, preset
         #print("[INFO] The average identity cutoff is %.2f"%avgIdentity)
         #print("[INFO] The average overlap cutoff is %.2f"%avgOverlap)
     except:
-        print("[WARNING] Nothing reduced!")
+        #print("[WARNING] Nothing reduced!")
+        pass
                
-def fasta2skip(out, fasta, faidx, threads, identityTh, overlapTh, minLength, useminimap2, preset, verbose):
+def fasta2skip(out, fasta, faidx, threads, identityTh, overlapTh, minLength, useminimap2, index, preset, verbose):
     """Return dictionary with redundant contigs and their best alignments"""
     # get hits generator
 
-    hits = fasta2hits(fasta, threads, identityTh, overlapTh, minLength, verbose, preset, useminimap2)
+    hits = fasta2hits(fasta, threads, identityTh, overlapTh, minLength, verbose, preset, index, useminimap2)
     # iterate through hits
     identities, sizes = [], []
     contig2skip = {c: 0 for c in faidx}
@@ -247,7 +253,7 @@ def plot_histograms(fname, contig2skip, identities, algsizes):
     plt.ylabel("Cumulative alignment size [Mb]")
     fig.savefig(fname+".hist.png", dpi=300)
     
-def fasta2homozygous(out, fasta, identity, overlap, minLength, threads=1, verbose=0, useminimap2=0, preset="asm10", log=sys.stderr):
+def fasta2homozygous(out, fasta, identity, overlap, minLength, threads=1, verbose=0, useminimap2=0, index="4G", preset="asm10", log=sys.stderr):
     """Parse alignments and report homozygous contigs.
     
     Return genomeSize, no. of contigs, removed contigs size & number
@@ -264,7 +270,7 @@ def fasta2homozygous(out, fasta, identity, overlap, minLength, threads=1, verbos
     # filter alignments & remove redundant
     if verbose:
         log.write("Parsing alignments...\n")
-    contig2skip = fasta2skip(out, fasta, faidx, threads, identity, overlap, minLength, useminimap2, preset, verbose)
+    contig2skip = fasta2skip(out, fasta, faidx, threads, identity, overlap, minLength, useminimap2, index, preset, verbose)
     
     #report homozygous fasta
     nsize, k, skipped, ssize, avgIdentity = save_homozygous(out, faidx, contig2skip, minLength, verbose)

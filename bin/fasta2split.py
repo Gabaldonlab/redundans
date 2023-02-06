@@ -3,6 +3,10 @@ desc="""Separate heterozygous contigs into two files based on identity to homozy
 """
 epilog="""Author: l.p.pryszcz+git@gmail.com
 Warsaw, 20/04/2017
+
+Updated to Python3 and new functionality/tools by Diego Fuentes Palacios
+diegofupa@gmail.com
+Barcelona 08/18/2022
 """
 
 import gzip, math, os, sys, subprocess, tempfile
