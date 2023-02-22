@@ -32,7 +32,7 @@ so it can be run even on the laptop for small-to-medium size genomes
 For more information have a look at the [documentation](/docs), [poster](/docs/poster.pdf), [publication](http://nar.oxfordjournals.org/content/44/12/e113), [test dataset](/test) or [manual](http://bit.ly/redundans_manual). 
 
 ## Prerequisites
-Redundans uses several programs (all provided within this repository):
+Redundans uses several programs (all except the interpreters are provided within this repository):
 
 | Resource | Type | Version |
 | :--- | :--- | :--- |
@@ -62,9 +62,10 @@ cd redundans && bin/.compile.sh
 
 If it fails, make sure you have below dependencies installed: 
 - Perl [SSPACE3]
-- make, gcc & g++ [BWA & LAST] ie. `sudo apt-get install make gcc g++`
+- make, gcc & g++ [BWA, GFAstats, Miniasm & LAST] ie. `sudo apt-get install make gcc g++`
 - [zlib including zlib.h headers](http://zlib.net/) [BWA] ie. `sudo apt-get install zlib1g-dev`
-- optionally for plotting `numpy` and `matplotlib` ie. `sudo -H pip install -U matplotlib numpy`
+- [R  ≥ 3.6](https://cran.r-project.org/) and additional packages [ggplot2, scales, argparser] for plotting the Merqury results.
+- optionally for additional plotting `numpy` and `matplotlib` ie. `sudo -H pip install -U matplotlib numpy`
 
 For user convenience, we provide [UNIX installer](#unix-installer) and [Docker image](#docker-image), that can be used instead of manually installation.  
 
@@ -83,28 +84,25 @@ Note, this is unofficial channel and may not be completely up-to-date with this 
 
 ## UNIX installer
 UNIX installer will automatically fetch, compile and configure Redundans together with all dependencies.
-It should work on all modern Linux systems, given Python 2.7, commonly used programmes (ie. wget, curl, git, perl, gcc, g++, ldconfig) and libraries (zlib including zlib.h) are installed. 
+It should work on all modern Linux systems, given Python >= 3, commonly used programmes (ie. wget, make, curl, git, perl, gcc, g++, ldconfig) and libraries (zlib including zlib.h) are installed. 
 ```bash
-source <(curl -Ls http://bit.ly/redundans_installer)
+source <(curl -Ls https://raw.githubusercontent.com/gabaldonlab/redundans/master/INSTALL.sh)
 ```
 
 ### Docker image
 First, you  need to install [docker](https://www.docker.com/): `wget -qO- https://get.docker.com/ | sh`  
 Then, you can run the test example by executing: 
 ```bash
+#Pull the image directly from dockerhub
+docker pull cgenomics/redundans:latest
+
 # process the data inside the image - all data will be lost at the end
-docker run -it -w /root/src/redundans lpryszcz/redundans ./redundans.py -v -i test/{600,5000}_{1,2}.fq.gz -f test/contigs.fa -o test/run1
+docker run -it -w /root/src/redundans cgenomics/redundans:latest ./redundans.py -v -i test/{600,5000}_{1,2}.fq.gz -f test/contigs.fa -o test/run1
 
 # if you wish to process local files, you need to mount the volume with -v
 ## make sure you are in redundans repo directory (containing test/ directory)
-docker run -v `pwd`/test:/test:rw -it lpryszcz/redundans /root/src/redundans/redundans.py -v -i test/*.fq.gz -f test/contigs.fa -o test/run1
+docker run -v `pwd`/test:/test:rw -it cgenomics/redundans:latest /root/src/redundans/redundans.py -v -i test/*.fq.gz -f test/contigs.fa -o test/run1
 ```
-Docker images are very handy, but they have certain limitation. 
-The most annoying for me is the **lack of autocompletion**, unless you specify the path in host and container in the exactly same manner as in the example above.
-In addition, the volume needs to be mounted every time, leading to a bit complex commands. 
-
-[![](https://images.microbadger.com/badges/version/lpryszcz/redundans.svg)](https://hub.docker.com/r/lpryszcz/redundans/)
-![](https://images.microbadger.com/badges/image/lpryszcz/redundans.svg)
 
 ## Running the pipeline
 Redundans input consists of any combination of:
@@ -146,6 +144,9 @@ Most of the pipeline parameters can be adjusted manually (default values are giv
   --overlap OVERLAP     min. overlap  [0.80]
   --minLength MINLENGTH
                         min. contig length [200]
+  --minimap2reduce      Use minimap2 for the initial and final Reduction step. Recommended for input assembled contigs from long reads using --preset[asm5] by default. By default LASTal is used for Reduction.
+  -x INDEX, --index INDEX
+                        Minimap2 parameter -i used to load at most INDEX target bases into RAM for indexing [4G]. It has to be provided as a string INDEX ending with k/K/m/M/g/G.
   --noreduction         Skip reduction
 ```
 - Short-read scaffolding options:
@@ -164,22 +165,19 @@ Most of the pipeline parameters can be adjusted manually (default values are giv
 ```
   -l LONGREADS, --longreads LONGREADS
                         FastQ/FastA files with long reads
-  -e, --experimental    Run experimental long read scaffolding, else generate an assembly for reference-based scaffolding
+  -e, --experimental    Run experimental long read scaffolding, else generate an assembly for reference-based scaffolding. Default False.
   --useminimap2         Use Minimap2 for aligning long reads. Preset usage dependant on file name convention (case insensitive): ont, nanopore, pb, pacbio, hifi, hi_fi, hi-fi. ie: s324_nanopore.fq.gz.
-  --identity IDENTITY   min. identity [0.51]
-  --overlap OVERLAP     min. overlap  [0.80]
 ```
 - Reference-based scaffolding options:
 ```
   -r REFERENCE, --reference REFERENCE
                         reference FastA file
   --norearrangements    high identity mode (rearrangements not allowed)
-  --identity IDENTITY   min. identity [0.51]
-  --overlap OVERLAP     min. overlap  [0.80]
+  -p PRESET, --preset PRESET
+                        Preset option for Minimap2-based Reduction and/or Reference-based scaffolding. Possible options: asm5 (5 percent sequence divergence), asm10 (10 percent sequence divergence) and asm20(20 percent sequence divergence). Default [asm5]
 ```
 - Gap closing options:
 ```
-  --iters ITERS         iterations per library [2]
   --nogapclosing                        
 ```
 - Meryl and Merqury options:

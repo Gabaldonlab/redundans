@@ -549,11 +549,15 @@ def _check_dependencies(dependencies):
                 #For clarity in the warning message
                 out = ver
             else:
-                out = "".join(p.stdout.readlines()[0].decode("utf-8"))
-                curver = out.split()[-1]
+                try:
+                    out = "".join(p.stdout.readlines()[0].decode("utf-8"))
+                    curver = out.split()[-1]
+                except:
+                    warning = 1
+                    sys.stderr.write("[WARNING] Problem checking %s version: %s. Proceed with care.\n"%(cmd, out))
             if not curver.isdigit():
                 warning = 1
-                sys.stderr.write("[WARNING] Problem checking %s version: %s\n"%(cmd, out))
+                sys.stderr.write("[WARNING] Problem checking %s version: %s. Proceed with care.\n"%(cmd, out))
             elif int(curver)<version:
                 warning = 1
                 sys.stderr.write(info%(cmd, curver, version))
@@ -587,7 +591,7 @@ def main():
     redu.add_argument("--overlap", default=0.80, type=float, help="min. overlap [%(default)s]")
     redu.add_argument("--minLength", default=200, type=int, help="min. contig length [%(default)s]")
     redu.add_argument("--minimap2reduce", action='store_true', help="Use minimap2 for the initial and final Reduction step. Recommended for input assembled contigs from long reads using --preset[asm5] by default. By default LASTal is used for Reduction.")
-    redu.add_argument('-x', "--index", default="4G", type=str, help="Minimap2 parameter -i used to load at most INDEX target bases into RAM for indexing [%(default)s]. It has to be provided as a string INDEX ending with k/K/m/M/g/G.")
+    redu.add_argument('-x', "--index", default="4G", type=str, help="Minimap2 parameter -I used to load at most INDEX target bases into RAM for indexing [%(default)s]. It has to be provided as a string INDEX ending with k/K/m/M/g/G.")
     redu.add_argument('--noreduction', action='store_false', help="Skip reduction")
     
     scaf = parser.add_argument_group('Short-read scaffolding options')
@@ -602,7 +606,7 @@ def main():
      
     longscaf = parser.add_argument_group('Long-read scaffolding options')
     longscaf.add_argument("-l", "--longreads", nargs="*", default=[], help="FastQ/FastA files with long reads. By default LAST")
-    longscaf.add_argument("-e", "--experimental",action='store_true', help="Run experimental long read scaffolding, else generate an assembly for reference-based scaffolding")
+    longscaf.add_argument("-e", "--experimental",action='store_true', help="Run experimental long read scaffolding, else generate an assembly for reference-based scaffolding. Default False.")
     longscaf.add_argument("--useminimap2", action='store_true', help="Use Minimap2 for aligning long reads. If used for long read experimental scaffolding the preset usage dependant on file name convention (case insensitive): ont, nanopore, pb, pacbio, hifi, hi_fi, hi-fi. ie: s324_nanopore.fq.gz.")
     
     refscaf = parser.add_argument_group('Reference-based scaffolding options')

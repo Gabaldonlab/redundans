@@ -288,43 +288,92 @@ class Graph(object):
 
     ###
     # SCAFFOLDING PART
+    ###
+
+    #Commented the recursive version of the function
+    #def _populate_scaffold(self, links, pend, sid, scaffold, orientations, gaps, porientation):
+    #    """Add links to scaffold representation. Experimental!
+    #    !!!Plenty of work needed here!!!
+    #    """
+    #    # self.links[ref1][end1][(ref2, end2)] = (links, gap)
+    #    #ref, end, links, gap = links
+    #    ## there may be many connections now, but only one is processed so far!!!
+    #    #print links
+    #    links_sorted = sorted(iter(links.items()), key=lambda x: x[1][0], reverse=1)
+    #    if len(links_sorted)>1:
+    #        self.logger(" multi connections: %s %s\n"%(scaffold, links), 0)
+    #    (ref, end), (links, gap) = links_sorted[0]
+    #    #for (ref, end), (links, gap) in links.iteritems(): break
+    #    # skip if already added
+    #    if ref in self.contig2scaffold:
+    #        return scaffold, orientations, gaps, porientation
+    #    # get orientation - get forward/reverse-complement signal by XOR
+    #    ## if previous is 1 (end) & current is (0) start & orientation is 0 (forward) --> keep forward orientation
+    #    orientation = (pend != end) != porientation
+    #    # store at the end if previous contig was F and pend 1
+    #    if porientation != pend:
+    #        scaffold.append(ref)
+    #        orientations.append(not orientation)
+    #        gaps.append(gap)
+    #    else:
+    #        scaffold.insert(0, ref)
+    #        orientations.insert(0, not orientation)
+    #        gaps.insert(0, gap)
+    #    # update contigs2scaffold info
+    #    self.contig2scaffold[ref] = sid
+    #    # populate further connections from another end
+    #    links = self.links[ref][abs(end-1)]
+    #    # skip if not links
+    #    if not links:
+    #        return scaffold, orientations, gaps, orientation
+    #    # populate further connections from another end
+    #    return self._populate_scaffold(links, end, sid, scaffold, orientations, gaps, orientation)
+    
     def _populate_scaffold(self, links, pend, sid, scaffold, orientations, gaps, porientation):
-        """Add links to scaffold representation. Experimental!
-        !!!Plenty of work needed here!!!
+        """Add links to scaffold representation.
+        
+        Iteative version
         """
-        # self.links[ref1][end1][(ref2, end2)] = (links, gap)
-        #ref, end, links, gap = links
-        ## there may be many connections now, but only one is processed so far!!!
-        #print links
+
         links_sorted = sorted(iter(links.items()), key=lambda x: x[1][0], reverse=1)
-        if len(links_sorted)>1:
-            self.logger(" multi connections: %s %s\n"%(scaffold, links), 0)
-        (ref, end), (links, gap) = links_sorted[0]
-        #for (ref, end), (links, gap) in links.iteritems(): break
-        # skip if already added
-        if ref in self.contig2scaffold:
-            return scaffold, orientations, gaps, porientation
-        # get orientation - get forward/reverse-complement signal by XOR
-        ## if previous is 1 (end) & current is (0) start & orientation is 0 (forward) --> keep forward orientation
-        orientation = (pend != end) != porientation
-        # store at the end if previous contig was F and pend 1
-        if porientation != pend:
-            scaffold.append(ref)
-            orientations.append(not orientation)
-            gaps.append(gap)
-        else:
-            scaffold.insert(0, ref)
-            orientations.insert(0, not orientation)
-            gaps.insert(0, gap)
-        # update contigs2scaffold info
-        self.contig2scaffold[ref] = sid
-        # populate further connections from another end
-        links = self.links[ref][abs(end-1)]
-        # skip if not links
-        if not links:
-            return scaffold, orientations, gaps, orientation
-        # populate further connections from another end
-        return self._populate_scaffold(links, end, sid, scaffold, orientations, gaps, orientation)
+
+        while len(links_sorted) > 0:
+            if len(links_sorted) > 1:
+                self.logger(" multi connections: %s %s\n"%(scaffold, links), 0)
+
+            (ref, end), (links, gap) = links_sorted[0]
+
+            # skip if already added
+            if ref in self.contig2scaffold:
+                return scaffold, orientations, gaps, porientation
+
+            # get orientation - get forward/reverse-complement signal by XOR
+            orientation = (pend != end) != porientation
+
+            # store at the end if previous contig was F and pend 1
+            if porientation != pend:
+                scaffold.append(ref)
+                orientations.append(not orientation)
+                gaps.append(gap)
+            else:
+                scaffold.insert(0, ref)
+                orientations.insert(0, not orientation)
+                gaps.insert(0, gap)
+
+            # update contigs2scaffold info
+            self.contig2scaffold[ref] = sid
+
+            # populate further connections from another end
+            links = self.links[ref][abs(end-1)]
+
+            # skip if not links
+            if not links:
+                return scaffold, orientations, gaps, orientation
+
+            links_sorted = sorted(iter(links.items()), key=lambda x: x[1][0], reverse=1)
+
+        return scaffold, orientations, gaps, orientation
+
            
 class SyntenyGraph(Graph):
     """Graph class to represent scaffolds derived from synteny information"""
@@ -407,7 +456,7 @@ class SyntenyGraph(Graph):
         ## consider splitting into two functions
         ## to facilitate more input formats
         t2hits = {}
-        t2size = {}
+        t2size = {} 
         q2hits = {}
         if self.useminimap2:
             handle = self._minimap2(index=self.index)

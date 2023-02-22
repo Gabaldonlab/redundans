@@ -78,7 +78,7 @@ fi
 echo " Everything looks good :) Let's proceed..."
 
 echo `date` "Downloading Redundans..."
-git clone -b $branch --recursive https://github.com/lpryszcz/redundans.git >> /dev/null 2>&1 
+git clone -b $branch --recursive https://github.com/gabaldonlab/redundans.git >> /dev/null 2>&1 
 cd redundans 
 
 # compile dependencies
@@ -98,8 +98,8 @@ echo ""
 echo "To uninstall execute:"
 echo "rm -rI `pwd`"
 echo ""
-echo "#####################################################################################"
-echo "# Redundans depends on several programs (http://bit.ly/redundans_dependencies)      #"
-echo "# Acknowledge their authors, get familiar with licensing and register if necessary. #"
-echo "#####################################################################################"
+echo "##################################################################################################"
+echo "# Redundans depends on several programs (https://github.com/Gabaldonlab/redundans#prerequisites) #"
+echo "# Acknowledge their authors, get familiar with licensing and register if necessary.              #"
+echo "##################################################################################################"
 echo ""
