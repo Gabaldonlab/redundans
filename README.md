@@ -142,8 +142,6 @@ De novo assembly options:
 ```
   -m MEM, --mem MEM     max memory to allocate (in GB) for the Platanus assembler [2]
   --tmp TMP             tmp directory [/tmp]
-  --denovoMode DENOVOMODE
-                        Run the denovo assembly of the FASTQ files using a short read assembler or a long read assembler fine tuned for ont or pb data: "short", "ont", "pb". Default [short]
 ```
 - Reduction options:
 ```
