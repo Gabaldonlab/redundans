@@ -138,6 +138,13 @@ Most of the pipeline parameters can be adjusted manually (default values are giv
   --log LOG             output log to [stderr]
   --nocleaning
 ```
+De novo assembly options:
+```
+  -m MEM, --mem MEM     max memory to allocate (in GB) for the Platanus assembler [2]
+  --tmp TMP             tmp directory [/tmp]
+  --denovoMode DENOVOMODE
+                        Run the denovo assembly of the FASTQ files using a short read assembler or a long read assembler fine tuned for ont or pb data: "short", "ont", "pb". Default [short]
+```
 - Reduction options:
 ```
   --identity IDENTITY   min. identity [0.51]
@@ -165,7 +172,8 @@ Most of the pipeline parameters can be adjusted manually (default values are giv
 ```
   -l LONGREADS, --longreads LONGREADS
                         FastQ/FastA files with long reads
-  -e, --experimental    Run experimental long read scaffolding, else generate an assembly for reference-based scaffolding. Default False.
+  -s, --populateScaffolds
+                        Run populateScaffolds mode for long read scaffolding, else generate an assembly for reference-based scaffolding. Not recommended for highly repetitive genomes. Default False.
   --useminimap2         Use Minimap2 for aligning long reads. Preset usage dependant on file name convention (case insensitive): ont, nanopore, pb, pacbio, hifi, hi_fi, hi-fi. ie: s324_nanopore.fq.gz.
 ```
 - Reference-based scaffolding options:

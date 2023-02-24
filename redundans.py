@@ -290,7 +290,7 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
               threads, mem, resume, identity, overlap, minLength, \
               joins, linkratio, readLimit, iters, sspacebin, refpreset, \
               reduction=1, scaffolding=1, gapclosing=1, usemerqury=1, kmer=21, cleaning=1, \
-              norearrangements=0, verbose=1, usebwa=0, minimap2reduce=0, index="4G", useminimap2=0, experimental=0, log=sys.stderr, tmp="/tmp"):
+              norearrangements=0, verbose=1, usebwa=0, minimap2reduce=0, index="4G", useminimap2=0, populateScaffolds=0, log=sys.stderr, tmp="/tmp"):
     """Launch redundans pipeline."""
     # check resume
     orgresume = resume
@@ -366,9 +366,9 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
         outfn = os.path.join(outdir, "scaffolds.longreads.fa")
         # here maybe sort reads by increasing median read length
         resume += 1
-        if verbose and experimental:
-            log.write("%s[WARNING] Running experimental long read scaffolding mode...\n"%timestamp())
-        elif verbose and not experimental:
+        if verbose and populateScaffolds:
+            log.write("%sUsing populateScaffolds mode for long read scaffolding mode...\n"%timestamp())
+        elif verbose and not populateScaffolds:
             log.write("%sUsing long reads to generate an assembly to use as a reference for scaffolding...\n"%timestamp())
         poutfn = lastOutFn
         for i, fname in enumerate(longreads, 1):
@@ -379,23 +379,23 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
             
             if re.search("ont", fname, flags=re.IGNORECASE) or re.search("nanopore", fname, flags=re.IGNORECASE) or re.search("oxford", fname, flags=re.IGNORECASE):
                 preset = "ava-ont"
-                if experimental:
+                if populateScaffolds:
                     preset = "map-ont"
             elif re.search("pb", fname, flags=re.IGNORECASE) or re.search("pacbio", fname, flags=re.IGNORECASE) or re.search("smrt", fname, flags=re.IGNORECASE):
                 preset = "ava-pb"
-                if experimental:
+                if populateScaffolds:
                     preset = "map-pb"
             elif re.search("hifi", fname, flags=re.IGNORECASE) or re.search("hi_fi", fname, flags=re.IGNORECASE) or re.search("hi-fi", fname, flags=re.IGNORECASE):
                 preset = "ava-pb"
-                if experimental:
+                if populateScaffolds:
                     preset = "map-hifi"
             else:
                 #Added this to default to ONT
                 preset = "ava-ont"
-                if experimental:
+                if populateScaffolds:
                     preset = "map-ont"
 
-            if experimental:
+            if populateScaffolds:
                 if useminimap2 and verbose:
                     log.write("Using minimap2 aligner preset %s for file %s...\n"%(preset, fname))
                 elif verbose:
@@ -407,8 +407,8 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
                     log.write("Using LAST as an aligner...\n")   
 
 
-            #If experimental mode wants to be run: scaffolding based on long read mapping
-            if experimental:
+            #If populateScaffolds mode wants to be run: scaffolding based on long read mapping
+            if populateScaffolds:
                 s = LongReadGraph(lastOutFn, fname, identity, overlap, preset=preset, index=index, useminimap2=useminimap2, maxgap=0, threads=threads, \
                         dotplot="", norearrangements=norearrangements, log=0)
             #Else use long reads to generate an assembly that can be used for reference-based scaffolding
@@ -606,8 +606,8 @@ def main():
      
     longscaf = parser.add_argument_group('Long-read scaffolding options')
     longscaf.add_argument("-l", "--longreads", nargs="*", default=[], help="FastQ/FastA files with long reads. By default LAST")
-    longscaf.add_argument("-e", "--experimental",action='store_true', help="Run experimental long read scaffolding, else generate an assembly for reference-based scaffolding. Default False.")
-    longscaf.add_argument("--useminimap2", action='store_true', help="Use Minimap2 for aligning long reads. If used for long read experimental scaffolding the preset usage dependant on file name convention (case insensitive): ont, nanopore, pb, pacbio, hifi, hi_fi, hi-fi. ie: s324_nanopore.fq.gz.")
+    longscaf.add_argument("-s", "--populateScaffolds",action='store_true', help="Run populateScaffolds mode for long read scaffolding, else generate an assembly for reference-based scaffolding. Not recommended for highly repetitive genomes. Default False.")
+    longscaf.add_argument("--useminimap2", action='store_true', help="Use Minimap2 for aligning long reads. If used alongside the populateScaffolds mode, the preset usage dependant on file name convention (case insensitive): ont, nanopore, pb, pacbio, hifi, hi_fi, hi-fi. ie: s324_nanopore.fq.gz.")
     
     refscaf = parser.add_argument_group('Reference-based scaffolding options')
     refscaf.add_argument("-r", "--reference", default='', help="reference FastA file")
@@ -658,7 +658,7 @@ def main():
               o.threads, o.mem, o.resume, o.identity, o.overlap, o.minLength,  \
               o.joins, o.linkratio, o.limit, o.iters, sspacebin, \
               o.preset, o.noreduction, o.noscaffolding, o.nogapclosing, o.nomerqury, o.kmer, o.nocleaning, \
-              o.norearrangements, o.verbose, o.usebwa, o.minimap2reduce, o.index, o.useminimap2, o.experimental, o.log, o.tmp)
+              o.norearrangements, o.verbose, o.usebwa, o.minimap2reduce, o.index, o.useminimap2, o.populateScaffolds, o.log, o.tmp)
 
 if __name__=='__main__': 
     t0 = datetime.now()
