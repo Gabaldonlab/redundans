@@ -332,7 +332,7 @@ class Graph(object):
     def _populate_scaffold(self, links, pend, sid, scaffold, orientations, gaps, porientation):
         """Add links to scaffold representation.
         
-        Iteative version
+        Iterative version
         """
 
         links_sorted = sorted(iter(links.items()), key=lambda x: x[1][0], reverse=1)
@@ -456,7 +456,7 @@ class SyntenyGraph(Graph):
         ## consider splitting into two functions
         ## to facilitate more input formats
         t2hits = {}
-        t2size = {} 
+        t2size = {}
         q2hits = {}
         if self.useminimap2:
             handle = self._minimap2(index=self.index)
@@ -720,90 +720,25 @@ def _miniasm(outref, longreads, threads, preset = "ava-ont"):
     """Minimap2 for long read alignment using presets"""
 
     if type(longreads) is not str:
-        print(longreads)
         longreads = str(longreads[0])
 
     #Here we define locations to generate intermediate files
     basedir = os.path.dirname(outref)
 
-
-    #tfil = tempfile.TemporaryFile()
-
-    #args1 = ["minimap2", "-x", preset, "-t", str(threads), longreads, longreads, "-"]
-    ##print(args1)
     sam = os.path.join(basedir, "minimap.sam")
     args1 = "minimap2 -x %s -t %s %s %s > %s"%(preset, str(threads), longreads, longreads, sam)
-    #sys.stderr.write(str(args1))
     proc1 = subprocess.call(args1, shell=True, stderr=subprocess.DEVNULL)
-    #proc1 = subprocess.Popen(args1, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
-    #sys.stderr.write(str(args1))
-    #tfil.seek(0)
-    #tfil.read()
-
-    #proc1.communicate()
     time.sleep(10)
     
-    ##print(proc1.stdout)
-    #input1 = overlap(longreads, threads, preset)
-    #print(input1)
-    #args2 = ["bin/miniasm/miniasm", "-e2", "-n2", "-f", longreads, "-"]
+
     gfa= os.path.join(basedir, "miniasm.gfa")
     sys.stderr.write("\nRunning miniasm to generate a primary assembly: %s"%outref)
     args2 = "miniasm -e2 -n2 -f %s %s > %s"%(longreads, sam, gfa)
     proc2 = subprocess.call(args2, shell=True, stderr=subprocess.DEVNULL)
-    ##print(args2)
-    #sys.stderr.write(str(args2))
-    #time.sleep(10)
-    #proc2 = subprocess.Popen(args2, stdout=subprocess.PIPE, stdin=overlap(longreads, threads, preset), stderr=sys.stderr)
-    #with open("miniasm.gfa", "wb") as file:
-    #    proc2 = subprocess.Popen(args2, stdout=file, stdin=proc1.stdout, stderr=subprocess.DEVNULL)
-        #proc2 = subprocess.Popen(args2, stdout=subprocess.PIPE, stdin=proc1.stdout, stderr=subprocess.DEVNULL)
-    #proc2.communicate()
-
-    #Everything here is wonna get commented
-    #args3 = ["awk",  "\"/^S/{print \">\"$2\"\n\"$3}\"", "-"]
-    #sys.stderr.write(str(args3))
-    #proc3 = subprocess.Popen(args3, stdout=subprocess.PIPE, stdin=proc2.stdout, stderr=subprocess.DEVNULL)
-    #proc3.communicate()
-    #args4 = ["fold", "-"]
-    #proc4 =  subprocess.Popen(args4, stdout=subprocess.PIPE, stdin=proc3.stdout, stderr=subprocess.DEVNULL)
-
-    #with open(outref, "wb") as file:
-    #    args4 = ["fold", "-"]
-    #    proc4, _ =  subprocess.Popen(args4, stdout=file, stdin=proc3.stdout, stderr=subprocess.DEVNULL)
-    #    sys.stderr.write(str(args4))
-    #    pid = proc4.pid
-    #    #file.write(proc4.stdout.read())
 
     with open(outref, "wb") as file:
         args3 =  "awk \'/^S/{print \">\"$2\"\\n\"$3}\' %s | fold > %s"%(gfa, outref)
         proc3 = subprocess.call(args3, shell=True, stdout=file)
-        #sys.stderr.write(str(args3))
-        #time.sleep(10)
-    ##if proc4.communicate(): return proc4.stdout
-    #    pid = proc4.pid
-    #    pstatus = get_proc_status(pid)
-    #    time.sleep(1)
-    #    while pstatus is not None and pstatus != "zombie":
-    #        # The allowed set of statuses might differ on your system.
-    #        print("subprocess %s, current process status: %s." % (pid, pstatus))
-    #        #time.sleep(1)  # Wait 1 second.
-    #        pstatus = get_proc_status(pid)
-    #        # Get process status to check in 'while' clause at start of next loop iteration.
-#
-    #    if os.name == 'posix' and pstatus == "zombie":   # Handle zombie processes in Linux (and MacOS?).
-    #        print("subprocess %s, near-final process status: %s." % (pid, pstatus))
-    #        proc4.communicate()
-    #file.write(proc4.stdout.read())
-    #pstatus = get_proc_status(pid)
-    #while pstatus is not None and pstatus != "sleeping":
-    #    print(pstatus)
-    #    pstatus = get_proc_status(pid)
-    #proc4.communicate()
-    #print(pstatus)
-    #with open(outref, "rb") as file:
-    #    for line in file:
-    #        print(line)
 
     return outref
 

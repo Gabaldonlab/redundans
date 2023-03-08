@@ -130,13 +130,13 @@ def _get_snap_proc(fn1, fn2, ref, cores, verbose, log=sys.stderr):
     """
     # create genome index
     idxfn = ref + ".snap"
-    idxcmd = "bin/snap-aligner index %s %s -bSpace" % (ref, idxfn)
+    idxcmd = "snap-aligner index %s %s -bSpace" % (ref, idxfn)
     if not os.path.isdir(idxfn):
         if verbose:
             log.write(" Creating index...\n  %s\n" % idxcmd)
         subprocess.Popen(idxcmd.split(), stdout=log, stderr=log).wait()
     # -d maxEditDist should be set based on readlen and expected divergence
-    args = ['bin/snap-aligner', 'paired', idxfn, fn1, fn2, '-d', '30', '--b', '-t', str(cores), '-o', '-sam', '-']
+    args = ['snap-aligner', 'paired', idxfn, fn1, fn2, '-d', '30', '--b', '-t', str(cores), '-o', '-sam', '-']
     if verbose:
         log.write( "  %s\n" % " ".join(args))
     proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=log)

@@ -490,7 +490,6 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
 
         if verbose:
             log.write("%sGenerating Merqury statistics...\n"%timestamp())
-        print()
         merqury_statistics(outdir, meryldb, lastOutFn, threads, mem, kmer, verbose)
         
     # FASTA STATS
