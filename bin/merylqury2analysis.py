@@ -15,7 +15,7 @@ from traceback import print_list
 
 # update sys.path & environmental PATH
 root = os.path.dirname(os.path.abspath(sys.argv[0]))
-src = ["bin/", "bin/merqury"]
+src = ["bin/", "bin/merqury", "bin/merqury/eval/", "bin/merqury/plot/"]
 paths = [os.path.join(root, p) for p in src]
 sys.path = paths + sys.path
 os.environ["PATH"] = "%s:%s"%(':'.join(paths), os.environ["PATH"])
@@ -101,8 +101,11 @@ def merqury_statistics(outdir, meryldb, outfile, threads, mem, kmer=21, verbose=
     proc0.communicate()
 
     #java -jar -Xmx1g $MERQURY/eval/kmerHistToPloidyDepth.ja
+
+    #We define the filepath to access correctly the jar binaries and the rscripts
+    filepath = os.path.dirname(__file__)
     
-    args1 = "java -jar -Xmx1g bin/merqury/eval/kmerHistToPloidyDepth.jar %s > %s"%(os.path.join(mqout, "filt.hist"), os.path.join(mqout, ".result"))
+    args1 = "java -jar -Xmx1g %s/merqury/eval/kmerHistToPloidyDepth.jar %s > %s"%(filepath, os.path.join(mqout, "filt.hist"), os.path.join(mqout, ".result"))
     proc1 = subprocess.Popen(args1, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, shell=True)
     proc1.communicate()
 
@@ -303,10 +306,10 @@ def merqury_statistics(outdir, meryldb, outfile, threads, mem, kmer=21, verbose=
     if verbose:
         sys.stderr.write("[INFO] Plotting the results in spectra plots here %s\n"%mqout)
 
-    rcommand = "Rscript bin/merqury/plot/plot_spectra_cn.R -f %s -o %s -z %s"%(os.path.join(mqout, "spectra-cn.hist"), os.path.join(mqout, "results.spectra-cn"), os.path.join(mqout, "only.hist"))
+    rcommand = "Rscript %s/merqury/plot/plot_spectra_cn.R -f %s -o %s -z %s"%(filepath, os.path.join(mqout, "spectra-cn.hist"), os.path.join(mqout, "results.spectra-cn"), os.path.join(mqout, "only.hist"))
     rproc = subprocess.Popen(rcommand, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, shell=True)
 
-    rcommand2 = "Rscript bin/merqury/plot/plot_spectra_cn.R -f %s -o %s -z %s"%(histname, os.path.join(mqout, "results.spectra-asm"), hist_only)
+    rcommand2 = "Rscript %s/merqury/plot/plot_spectra_cn.R -f %s -o %s -z %s"%(filepath, histname, os.path.join(mqout, "results.spectra-asm"), hist_only)
     rproc2 = subprocess.Popen(rcommand2, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, shell=True)
 
     rproc.communicate()

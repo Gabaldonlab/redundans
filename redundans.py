@@ -648,6 +648,9 @@ def main():
     #If using merqury, check for R version, else do not bother
     if o.nomerqury:
         dependencies = {'lastal': 800, 'lastdb': 800, 'GapCloser': 0, 'paste': 0, 'tr': 0, 'zcat': 0, 'platanus': 0, 'R' : 360}
+        if not o.fastq:
+            sys.stderr.write("\n[WARNING]:You need to provide a set of illumina reads as input through -i option in order to do a merqury analysis.\nElse use --nomerqury to skip it. Exiting now...\n")
+            sys.exit(1)
     else:
         dependencies = {'lastal': 800, 'lastdb': 800, 'GapCloser': 0, 'paste': 0, 'tr': 0, 'zcat': 0, 'platanus': 0}
     _check_dependencies(dependencies)
