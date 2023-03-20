@@ -20,6 +20,7 @@ from datetime import datetime
 from io import TextIOWrapper, StringIO
 from traceback import print_list
 
+
 # update sys.path & environmental PATH
 root = os.path.dirname(os.path.abspath(sys.argv[0]))
 src = ["bin/", "bin/bwa/", "bin/snap/", "bin/pyScaf/", "bin/last/build/", "/usr/bin/", "bin/gfastats/build/bin",
@@ -504,68 +505,122 @@ def redundans(fastq, longreads, fasta, reference, outdir, mapq,
     if cleaning:
         if verbose:
             log.write("%sCleaning-up...\n"%timestamp())
-        for root, dirs, fnames in os.walk(outdir):
-            #If you want to check meryl data, add '.merylData', '.merylIndex', 'merylIndex'
-            endings = ('.fa', '.fasta', '.fai', '.tsv', '.qv', '.stats', '.png', '.log', '.hist', '.gfa')
-            for i, fn in enumerate([x for x in fnames if not x.endswith(endings)], 1):
-                os.unlink(os.path.join(root, fn))
-            # rmdir of snap index
-            if root.endswith('.snap') and i==len(fnames):
-                os.rmdir(root)
-        #If you want to check meryl data, comment the loop below
-        for root, dirs, fnames in os.walk(outdir):
-            for item in dirs:
-                if os.path.isdir(os.path.join(outdir,item)):
-                    if str(item).endswith('.meryl'):
-                        os.rmdir(os.path.join(root, item))
+        clean_up(outdir, log, verbose)
 
     if orgresume:
         log.write("%sResume report: %s step(s) have been recalculated.\n"%(timestamp(), resume-1))
     
-def _check_executable(cmd):
-    """Check if executable exists."""
-    p = subprocess.Popen("type " + cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    stdout = p.stdout.readlines()[0].decode("utf-8")
-    return "".join(stdout)
 
-def _check_dependencies(dependencies):
-    """Return error if wrong software version"""
-    warning = 0
-    # check dependencies
-    info = "[WARNING] Old version of %s: %s. Update to version %s+!\n"
-    for cmd, version in list(dependencies.items()):
-        #print("Checking %s version %s"%(cmd, version))
-        out = _check_executable(cmd)
-        if "not found" in out:
-            warning = 1
-            sys.stderr.write("[ERROR] %s\n"%out)
-        elif version:
-            p = subprocess.Popen([cmd, '--version'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            if cmd == "R":
-                out = p.stdout.readline().decode("utf-8")
-                _, _, ver, _ = out.split(" ", 3)
-                curver = "".join(ver.split(".", 2))
-                #For clarity in the warning message
-                out = ver
-            else:
-                try:
+def clean_up(directory, log, verbose=False):
+    """
+    Cleans up by deleting all non-essential files and empty directories.
+    """
+    #If you want to keep meryl data, add '.merylData', '.merylIndex', 'merylIndex'
+    endings = ('.fa', '.fasta', '.fai', '.tsv', '.qv', '.stats', '.png', '.log', '.hist', '.gfa')
+    
+    for root, dirs, fnames in os.walk(directory):
+        for i, fn in enumerate([x for x in fnames if not x.endswith(endings)], 1):
+            os.unlink(os.path.join(root, fn))
+        
+        for item in dirs:
+            full_path = os.path.join(root, item)
+            if os.path.isdir(full_path):
+                #If you want to check meryl data, comment the loop below
+                if item.endswith('.meryl'):
+                    # if it's a meryl directory, delete all files in it before removing the directory
+                    for file in os.listdir(full_path):
+                        file_path = os.path.join(full_path, file)
+                        try:
+                            if os.path.isfile(file_path):
+                                os.unlink(file_path)
+                        except Exception as e:
+                            log.write("Failed to delete %s. Reason: %s"%(file_path, e))
+                    
+                    # now remove the directory itself
+                    try:
+                        os.rmdir(full_path)
+                    except Exception as e:
+                        log.write("Failed to delete %s. Reason: %s"%(file_path, e))
+                
+    if verbose:
+        log.write("Finished cleaning up %s"%directory)
+
+
+
+def check_dependency(dependency):
+
+    for cmd, version in list(dependency.items()):
+        try:
+            out = subprocess.check_output(['which', cmd])
+            path = out.decode('utf-8').strip()
+            #If required for locating paths
+            #if path:
+                #print(f"{cmd} found at {path}")
+            #else:
+                #print(f"{cmd} not found in PATH")
+
+            if version:
+                if cmd == "miniasm":
+                    p = subprocess.Popen([cmd, '-V'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                     out = "".join(p.stdout.readlines()[0].decode("utf-8"))
-                    curver = out.split()[-1]
-                except:
-                    warning = 1
-                    sys.stderr.write("[WARNING] Problem checking %s version: %s. Proceed with care.\n"%(cmd, out))
+                    ver, _ = out.split("-", 1)
+                    curver = ("".join(ver.split(".", 2))).rstrip()
+                elif cmd == "minimap2":
+                    p = subprocess.Popen([cmd, '-V'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    out = "".join(p.stdout.readlines()[0].decode("utf-8"))
+                    ver, _ = out.split("-", 1)
+                    curver = ("".join(ver.split(".", 2))).rstrip()
+                elif cmd == "k8":
+                    p = subprocess.Popen([cmd, '-v'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    _= p.stdout.readline().decode("utf-8")
+                    out2 = p.stdout.readline().decode("utf-8")
+                    _, strver = out2.split(" ", 1)
+                    ver, _ = strver.split("-", 1)
+                    curver = ("".join(ver.split(".", 2))).rstrip()
+                elif cmd == "R":
+                    p = subprocess.Popen([cmd, '--version'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    out = p.stdout.readline().decode("utf-8")
+                    _, _, ver, _ = out.split(" ", 3)
+                    curver = ("".join(ver.split(".", 2))).rstrip()
+                elif cmd == "snap-aligner":
+                    p = subprocess.Popen([cmd], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    #Notice that snap-aligner defaults to stderr
+                    out = p.stderr.readline().decode("utf-8")
+                    _, _, _, _, ver = out.split(" ", 4)
+                    curver = ("".join(ver.split(".", 3))).rstrip()
+                elif cmd == "bwa":
+                    p = subprocess.Popen([cmd], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    _ = p.stderr.readline().decode("utf-8")
+                    _ = p.stderr.readline().decode("utf-8")
+                    out = p.stderr.readline().decode("utf-8")
+                    _, strver = out.split(" ", 1)
+                    ver, _ = strver.split("-", 1)
+                    curver = ("".join(ver.split(".", 2))).rstrip()
+                elif cmd == "meryl":
+                    p = subprocess.Popen([cmd, '--version'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    #Note that meryl defaults to stderr
+                    out = p.stderr.readline().decode("utf-8")
+                    _, ver = out.split(" ", 1)
+                    curver = ("".join(ver.split(".", 1))).rstrip()
+                elif cmd =="gfastats":
+                    p = subprocess.Popen([cmd, '--version'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    out = p.stdout.readline().decode("utf-8")
+                    _, ver = out.split(" ", 1)
+                    ver = re.sub("v", "", ver)
+                    curver = ("".join(ver.split(".", 2))).rstrip()
+                else:
+                    p = subprocess.Popen([cmd, '--version'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    out = "".join(p.stdout.readlines()[0].decode("utf-8"))
+                    curver = out.split()[-1].rstrip()
             if not curver.isdigit():
-                warning = 1
                 sys.stderr.write("[WARNING] Problem checking %s version: %s. Proceed with care.\n"%(cmd, out))
             elif int(curver)<version:
-                warning = 1
+                info = "[WARNING] Old version of %s: %s. Update to version %s+!\n"
                 sys.stderr.write(info%(cmd, curver, version))
-                
-    message = "Make sure you have installed all necessary dependencies from https://github.com/Gabaldonlab/redundans#manual-installation !\n [INFO] R dependencies can be ignored by using --nomerqury option"
-    if warning:
-        sys.stderr.write("\n%s\n\n"%message)
-        sys.exit(1)
-    
+        except subprocess.CalledProcessError:
+            sys.stderr.write("[ERROR] CalledProcessError while checking %s. Is it correctly installed?\nMake sure you have installed all necessary dependencies from https://github.com/Gabaldonlab/redundans#manual-installation !\n[INFO] R dependencies can be ignored by ignoring --runmerqury option\n"%cmd)
+            sys.exit(-1)
+
 def main():
     import argparse
     usage   = "%(prog)s -v"
@@ -606,7 +661,7 @@ def main():
     longscaf = parser.add_argument_group('Long-read scaffolding options')
     longscaf.add_argument("-l", "--longreads", nargs="*", default=[], help="FastQ/FastA files with long reads. By default LAST")
     longscaf.add_argument("-s", "--populateScaffolds",action='store_true', help="Run populateScaffolds mode for long read scaffolding, else generate an assembly for reference-based scaffolding. Not recommended for highly repetitive genomes. Default False.")
-    longscaf.add_argument("--useminimap2", action='store_true', help="Use Minimap2 for aligning long reads. If used alongside the populateScaffolds mode, the preset usage dependant on file name convention (case insensitive): ont, nanopore, pb, pacbio, hifi, hi_fi, hi-fi. ie: s324_nanopore.fq.gz.")
+    longscaf.add_argument("--minimap2scaffold", action='store_true', help="Use Minimap2 for aligning long reads. If used alongside the populateScaffolds mode, the preset usage dependant on file name convention (case insensitive): ont, nanopore, pb, pacbio, hifi, hi_fi, hi-fi. ie: s324_nanopore.fq.gz.")
     
     refscaf = parser.add_argument_group('Reference-based scaffolding options')
     refscaf.add_argument("-r", "--reference", default='', help="reference FastA file")
@@ -618,7 +673,7 @@ def main():
     gaps.add_argument('--nogapclosing',  action='store_false', default=True)
 
     stats = parser.add_argument_group('Meryl and Merqury options')
-    stats.add_argument('--nomerqury',  action='store_false', default=True, help="Skip meryldb and merqury assembly stats.")
+    stats.add_argument('--runmerqury',  action='store_true', default=False, help="Run meryldb and merqury for assembly kmer multiplicity stats.")
     stats.add_argument('-k', "--kmer",  default=21, type=int, help="K-mer size for meryl [%(default)s]")    
         
     # print help if no parameters
@@ -646,21 +701,25 @@ def main():
 
     # check if all executables exists & in correct versions
     #If using merqury, check for R version, else do not bother
-    if o.nomerqury:
-        dependencies = {'lastal': 800, 'lastdb': 800, 'GapCloser': 0, 'paste': 0, 'tr': 0, 'zcat': 0, 'platanus': 0, 'R' : 360}
+    if o.runmerqury:
+        dependencies = {'lastal': 800, 'lastdb': 800, 'GapCloser': 0, 'paste': 0, 'tr': 0, 'zcat': 0, 'platanus': 0, 'R' : 360, "minimap2" : 224, "miniasm" : 3, "gfastats" : 136, "meryl" : 13, "bwa" : 717, "snap-aligner" : 201, "k8" : 24 }
         if not o.fastq:
             sys.stderr.write("\n[WARNING]:You need to provide a set of illumina reads as input through -i option in order to do a merqury analysis.\nElse use --nomerqury to skip it. Exiting now...\n")
             sys.exit(1)
     else:
-        dependencies = {'lastal': 800, 'lastdb': 800, 'GapCloser': 0, 'paste': 0, 'tr': 0, 'zcat': 0, 'platanus': 0}
-    _check_dependencies(dependencies)
+        dependencies = {'lastal': 800, 'lastdb': 800, 'GapCloser': 0, 'paste': 0, 'tr': 0, 'zcat': 0, 'platanus': 0, "minimap2" : 224, "miniasm" : 3, "gfastats" : 136, "meryl" : 13, "bwa" : 717, "snap-aligner" : 201, "k8" : 24 }
+
+    #for dependency in dependencies:
+    check_dependency(dependencies)
+
+    #_check_dependencies(dependencies)
     
     # initialise pipeline
     redundans(o.fastq, o.longreads, o.fasta, o.reference, o.outdir, o.mapq, \
               o.threads, o.mem, o.resume, o.identity, o.overlap, o.minLength,  \
               o.joins, o.linkratio, o.limit, o.iters, sspacebin, \
-              o.preset, o.noreduction, o.noscaffolding, o.nogapclosing, o.nomerqury, o.kmer, o.nocleaning, \
-              o.norearrangements, o.verbose, o.usebwa, o.minimap2reduce, o.index, o.useminimap2, o.populateScaffolds, o.log, o.tmp)
+              o.preset, o.noreduction, o.noscaffolding, o.nogapclosing, o.runmerqury, o.kmer, o.nocleaning, \
+              o.norearrangements, o.verbose, o.usebwa, o.minimap2reduce, o.index, o.minimap2scaffold, o.populateScaffolds, o.log, o.tmp)
 
 if __name__=='__main__': 
     t0 = datetime.now()

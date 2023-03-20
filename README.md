@@ -39,6 +39,7 @@ Redundans uses several programs (all except the interpreters are provided within
 | [Python](https://www.python.org/downloads) | Language interpreter | ≥ 3.0 |
 | [Platanus](http://platanus.bio.titech.ac.jp/?page_id=14) | Genome assembler | v1.2.4 |
 | [Miniasm](https://github.com/lh3/miniasm) | Genome assembler | ≥ v0.3 (r179) |
+| [Minimap2](https://github.com/lh3/minimap2) | Sequence aligner | ≥ v2.2.4 (r1122) |
 | [LAST](http://last.cbrc.jp/) | Sequence aligner | ≥ v800 |
 | [BWA](http://bio-bwa.sourceforge.net/) | Sequence aligner | ≥ v0.7.12 |
 | [SNAP aligner](https://github.com/amplab/snap) | Sequence aligner | v2.0.1 |
@@ -172,7 +173,7 @@ De novo assembly options:
                         FastQ/FastA files with long reads
   -s, --populateScaffolds
                         Run populateScaffolds mode for long read scaffolding, else generate an assembly for reference-based scaffolding. Not recommended for highly repetitive genomes. Default False.
-  --useminimap2         Use Minimap2 for aligning long reads. Preset usage dependant on file name convention (case insensitive): ont, nanopore, pb, pacbio, hifi, hi_fi, hi-fi. ie: s324_nanopore.fq.gz.
+  --minimap2scaffold         Use Minimap2 for aligning long reads. Preset usage dependant on file name convention (case insensitive): ont, nanopore, pb, pacbio, hifi, hi_fi, hi-fi. ie: s324_nanopore.fq.gz.
 ```
 - Reference-based scaffolding options:
 ```
