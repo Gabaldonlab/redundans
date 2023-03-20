@@ -570,11 +570,11 @@ def check_dependency(dependency):
                     out = "".join(p.stdout.readlines()[0].decode("utf-8"))
                     ver, _ = out.split("-", 1)
                     curver = ("".join(ver.split(".", 2))).rstrip()
-                elif cmd == "k8":
+                elif cmd == "k8-Linux":
                     p = subprocess.Popen([cmd, '-v'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                     _= p.stdout.readline().decode("utf-8")
-                    out2 = p.stdout.readline().decode("utf-8")
-                    _, strver = out2.split(" ", 1)
+                    out = p.stdout.readline().decode("utf-8")
+                    _, strver = out.split(" ", 1)
                     ver, _ = strver.split("-", 1)
                     curver = ("".join(ver.split(".", 2))).rstrip()
                 elif cmd == "R":
@@ -702,12 +702,12 @@ def main():
     # check if all executables exists & in correct versions
     #If using merqury, check for R version, else do not bother
     if o.runmerqury:
-        dependencies = {'lastal': 800, 'lastdb': 800, 'GapCloser': 0, 'paste': 0, 'tr': 0, 'zcat': 0, 'platanus': 0, 'R' : 360, "minimap2" : 224, "miniasm" : 3, "gfastats" : 136, "meryl" : 13, "bwa" : 717, "snap-aligner" : 201, "k8" : 24 }
+        dependencies = {'lastal': 800, 'lastdb': 800, 'GapCloser': 0, 'paste': 0, 'tr': 0, 'zcat': 0, 'platanus': 0, 'R' : 360, "minimap2" : 224, "miniasm" : 3, "gfastats" : 136, "meryl" : 13, "bwa" : 717, "snap-aligner" : 201, "k8-Linux" : 24 }
         if not o.fastq:
             sys.stderr.write("\n[WARNING]:You need to provide a set of illumina reads as input through -i option in order to do a merqury analysis.\nElse use --nomerqury to skip it. Exiting now...\n")
             sys.exit(1)
     else:
-        dependencies = {'lastal': 800, 'lastdb': 800, 'GapCloser': 0, 'paste': 0, 'tr': 0, 'zcat': 0, 'platanus': 0, "minimap2" : 224, "miniasm" : 3, "gfastats" : 136, "meryl" : 13, "bwa" : 717, "snap-aligner" : 201, "k8" : 24 }
+        dependencies = {'lastal': 800, 'lastdb': 800, 'GapCloser': 0, 'paste': 0, 'tr': 0, 'zcat': 0, 'platanus': 0, "minimap2" : 224, "miniasm" : 3, "gfastats" : 136, "meryl" : 13, "bwa" : 717, "snap-aligner" : 201, "k8-Linux" : 24 }
 
     #for dependency in dependencies:
     check_dependency(dependencies)
