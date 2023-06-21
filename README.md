@@ -32,7 +32,7 @@ so it can be run even on the laptop for small-to-medium size genomes
 For more information have a look at the [documentation](/docs), [poster](/docs/poster.pdf), [publication](http://nar.oxfordjournals.org/content/44/12/e113), [test dataset](/test) or [manual](http://bit.ly/redundans_manual). 
 
 ## Prerequisites
-Redundans uses several programs (all except the interpreters are provided within this repository):
+Redundans uses several programs (all except the interpreters and its submodules are provided within this repository):
 
 | Resource | Type | Version |
 | :--- | :--- | :--- |
@@ -87,7 +87,7 @@ Note, this is unofficial channel and may not be completely up-to-date with this 
 UNIX installer will automatically fetch, compile and configure Redundans together with all dependencies.
 It should work on all modern Linux systems, given Python >= 3, commonly used programmes (ie. wget, make, curl, git, perl, gcc, g++, ldconfig) and libraries (zlib including zlib.h) are installed. 
 ```bash
-source <(curl -Ls https://raw.githubusercontent.com/gabaldonlab/redundans/master/INSTALL.sh)
+source <(curl -Ls https://github.com/Dfupa/redundans/raw/master/INSTALL.sh)
 ```
 
 ### Docker image
@@ -109,17 +109,17 @@ docker run -v `pwd`/test:/test:rw -it cgenomics/redundans:latest /root/src/redun
 Redundans input consists of any combination of:
 - **assembled contigs** (FastA)
 - **paired-end and/or mate pairs reads** (FastQ*)
-- **long reads** (FastQ/FastA*) - both PacBio and Nanopore are supported
+- **long reads** (FastQ/FastA*) - both PacBio and Nanopore are supported for the scaffolding
 - and/or **reference chromosomes/contigs** (FastA). 
 * gzipped files are also accepted.
 
-Redundans will return **homozygous genome assembly** in `scaffolds.filled.fa` (FastA).  
+Redundans will return **homozygous genome assembly** in `scaffolds.filled.fa` (FastA). It will also report the heterozygous contigs that were not discarded during the reduction step.
 In addition, the program reports [statistics for every pipeline step](/test#summary-statistics), including number of contigs that were removed, GC content, N50, N90 and size of gap regions. 
 
 ### Parameters
 For the user convenience, Redundans is equipped with a wrapper that **automatically estimates run parameters** and executes all steps/modules.
 You should specify some sequencing libraries (FastA/FastQ) or reference sequence (FastA) in order to perform scaffolding. 
-If you don't specify `-f` **contigs** (FastA), Redundans will assemble contigs *de novo*, but you'll have to provide **paired-end and/or mate pairs reads** (FastQ). 
+If you don't specify `-f` **contigs** (FastA), Redundans will assemble contigs *de novo*, but you'll have to provide **paired-end and/or mate pairs reads** (FastQ).
 Most of the pipeline parameters can be adjusted manually (default values are given in square brackets []):  
 **HINT**: If you run fails, you may try to resume it, by adding `--resume` parameter. 
 - General options:
@@ -150,7 +150,7 @@ De novo assembly options:
   --overlap OVERLAP     min. overlap  [0.80]
   --minLength MINLENGTH
                         min. contig length [200]
-  --minimap2reduce      Use minimap2 for the initial and final Reduction step. Recommended for input assembled contigs from long reads using --preset[asm5] by default. By default LASTal is used for Reduction.
+  --minimap2reduce      Use minimap2 for the initial and final Reduction step. Recommended for input assembled contigs from long reads or larger contigs using --preset[asm5] by default. By default LASTal is used for Reduction.
   -x INDEX, --index INDEX
                         Minimap2 parameter -i used to load at most INDEX target bases into RAM for indexing [4G]. It has to be provided as a string INDEX ending with k/K/m/M/g/G.
   --noreduction         Skip reduction
@@ -172,8 +172,8 @@ De novo assembly options:
   -l LONGREADS, --longreads LONGREADS
                         FastQ/FastA files with long reads
   -s, --populateScaffolds
-                        Run populateScaffolds mode for long read scaffolding, else generate an assembly for reference-based scaffolding. Not recommended for highly repetitive genomes. Default False.
-  --minimap2scaffold         Use Minimap2 for aligning long reads. Preset usage dependant on file name convention (case insensitive): ont, nanopore, pb, pacbio, hifi, hi_fi, hi-fi. ie: s324_nanopore.fq.gz.
+                        Run populateScaffolds mode for long read scaffolding, else generate a dirty assembly for reference-based scaffolding. Not recommended for highly repetitive genomes. Default False.
+  --minimap2scaffold         Use Minimap2 for aligning long reads. Preset usage dependant on file name convention (case insensitive): ont, nanopore, pb, pacbio, hifi, hi_fi, hi-fi. ie: s324_nanopore.fq.gz. Else use LASTal.
 ```
 - Reference-based scaffolding options:
 ```
