@@ -31,6 +31,7 @@ echo `date` " LASTal"
 retcode=$?; if [ $retcode -gt 0 ]; then exit $retcode; fi
 
 echo `date` " SNAP-aligner"
+
 #Had issues while compiling SNAP-aligner so download directly the binary from git, keep track of the file
 (cd bin && wget -nc https://github.com/amplab/snap/releases/download/v2.0.1/snap-aligner && chmod +x snap-aligner)  >> $log 2>&1
 retcode=$?; if [ $retcode -gt 0 ]; then exit $retcode; fi
@@ -49,6 +50,7 @@ retcode=$?; if [ $retcode -gt 0 ]; then exit $retcode; fi
 
 echo `date` " gfastats"
 (cd bin/gfastats && make -j) >> $log 2>&1
+
 retcode=$?; if [ $retcode -gt 0 ]; then exit $retcode; fi
 
 echo `date` "Done!"
