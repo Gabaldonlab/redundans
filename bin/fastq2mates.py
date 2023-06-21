@@ -13,6 +13,9 @@ epilog="""Author:
 l.p.pryszcz@gmail.com
 
 Warsaw, 26/02/2016
+
+Updated to Python3 and new functionality/tools by Diego Fuentes Palacios
+Barcelona 08/18/2022
 """
 
 import os, sys, gzip
@@ -26,7 +29,7 @@ def read2mates(out, r, readlen=50, window=25, minLen=400, i=0):
     """Write mates from given read."""
     name = r.name
     r.description = ""
-    for i, s in enumerate(xrange(0, len(r)-minLen-readlen, window), 1):
+    for i, s in enumerate(range(0, len(r)-minLen-readlen, window), 1):
         r.id = "%s.r%s/1"%(name, i)
         # FR
         out[0].write(r[s:s+readlen].format('fastq'))

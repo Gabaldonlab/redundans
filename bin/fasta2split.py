@@ -3,6 +3,10 @@ desc="""Separate heterozygous contigs into two files based on identity to homozy
 """
 epilog="""Author: l.p.pryszcz+git@gmail.com
 Warsaw, 20/04/2017
+
+Updated to Python3 and new functionality/tools by Diego Fuentes Palacios
+diegofupa@gmail.com
+Barcelona 08/18/2022
 """
 
 import gzip, math, os, sys, subprocess, tempfile
@@ -38,7 +42,7 @@ def get_matches(ref, fasta, threads, verbose):
             continue
         # unpack
         (score, t, tstart, talg, tstrand, tsize, q, qstart, qalg, qstrand, qsize, blocks) = l.split()[:12]
-        (score, qstart, qalg, qsize, tstart, talg, tsize) = map(int, (score, qstart, qalg, qsize, tstart, talg, tsize))
+        (score, qstart, qalg, qsize, tstart, talg, tsize) = list(map(int, (score, qstart, qalg, qsize, tstart, talg, tsize)))
         if q not in q2matches:
             q2matches[q] = [0, 0, qsize]
         # count score and qalg
@@ -131,7 +135,7 @@ def fasta2split(outs, ref, fasta, identity, overlap, minLength, threads, verbose
     q2matches = get_matches(ref, fasta, threads, verbose)
 
     identities, algsizes, qsizes, gcs = [], [], [], []
-    for q, (score, algsize, qsize) in q2matches.iteritems():
+    for q, (score, algsize, qsize) in q2matches.items():
         _identity = 1.0 * (score+(algsize-score)/2) / algsize
         if 1.*algsize/qsize>=overlap:
             identities.append(_identity)

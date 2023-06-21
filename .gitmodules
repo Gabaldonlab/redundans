@@ -5,15 +5,21 @@
 [submodule "bin/snap"]
     path = bin/snap
     url = https://github.com/amplab/snap
-
-[submodule "bin/pyScaf"]
-    path = bin/pyScaf
-    url = https://github.com/lpryszcz/pyScaf.git
-
-[submodule "bin/pyScaf/FastaIndex"]
-    path = bin/pyScaf/FastaIndex
-    url = https://github.com/lpryszcz/FastaIndex.git
     
 [submodule "bin/last"]
 	path = bin/last
-	url = https://github.com/lpryszcz/last
+	url = https://github.com/Gabaldonlab/last
+    
+[submodule "bin/minimap2"]
+	path = bin/minimap2
+	url = https://github.com/lh3/minimap2
+
+[submodule "bin/merqury"]
+	path = bin/merqury
+	url = https://github.com/marbl/merqury.git
+[submodule "bin/miniasm"]
+	path = bin/miniasm
+	url = https://github.com/lh3/miniasm.git
+[submodule "bin/gfastats"]
+	path = bin/gfastats
+	url = https://github.com/vgl-hub/gfastats.git

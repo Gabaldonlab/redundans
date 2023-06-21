@@ -8,6 +8,9 @@ epilog="""Author:
 l.p.pryszcz@gmail.com
 
 Mizerow, 10/04/2015
+
+Updated to Python3 by Diego Fuentes Palacios
+Barcelona 08/18/2022
 """
 
 import math, os, sys, subprocess
@@ -98,8 +101,8 @@ def get_isize_stats(fq1, fq2, fasta, mapqTh=10, threads=1, limit=1e5, verbose=0,
     if os.path.isfile(fq2+".is.txt") and os.path.getmtime(fq2) < os.path.getmtime(fq2+".is.txt"):
         ldata = open(fq2+".is.txt").readline().split("\t")
         if len(ldata) == 8:
-            readlen, ismedian, ismean, isstd = map(float, ldata[:4])
-            pairs = map(int, ldata[-4:])
+            readlen, ismedian, ismean, isstd = list(map(float, ldata[:4]))
+            pairs = list(map(int, ldata[-4:]))
             # select major orientation
             reads, orientation = sorted(zip(pairs, orientations), reverse=1)[0]
             # skip insert size estimation only if satisfactory previous estimate
@@ -115,14 +118,15 @@ def get_isize_stats(fq1, fq2, fasta, mapqTh=10, threads=1, limit=1e5, verbose=0,
     isizes = [[], [], [], []] 
     readlen = 0
     #read from stdin
-    for i, sam in enumerate(aligner.stdout, 1):
+    for i, bam in enumerate(aligner.stdout, 1):
+        sam = bam.decode('utf-8')
         if sam.startswith("@"):
             continue
         if verbose and not i%1000:
             sys.stderr.write(' %s %s \r'%(i, sum(map(len, isizes))))
         # read sam entry
         rname, flag, chrom, pos, mapq, cigar, mchrom, mpos, isize, seq = sam.split('\t')[:10]
-        flag, pos, mapq, mpos, isize = map(int, (flag, pos, mapq, mpos, isize))
+        flag, pos, mapq, mpos, isize = list(map(int, (flag, pos, mapq, mpos, isize)))
         # take only reads with good alg quality and one read per pair
         # ignore not primary and supplementary alignments
         if mapq < mapqTh or isize < 1 or flag&256 or flag&2048: 
@@ -137,7 +141,7 @@ def get_isize_stats(fq1, fq2, fasta, mapqTh=10, threads=1, limit=1e5, verbose=0,
     aligner.terminate()
     alignerlog.close()
     # catch cases with very few reads aligned
-    pairs = map(len, isizes)
+    pairs = list(map(len, isizes))
     if sum(pairs) < 100:
         return 0, 0, 0, 0, [], ''
     readlen = int(round(1.*readlen/sum(pairs)))
