@@ -173,7 +173,7 @@ De novo assembly options:
                         FastQ/FastA files with long reads
   -s, --populateScaffolds
                         Run populateScaffolds mode for long read scaffolding, else generate a dirty assembly for reference-based scaffolding. Not recommended for highly repetitive genomes. Default False.
-  --minimap2scaffold         Use Minimap2 for aligning long reads. Preset usage dependant on file name convention (case insensitive): ont, nanopore, pb, pacbio, hifi, hi_fi, hi-fi. ie: s324_nanopore.fq.gz. Else use LASTal.
+  --minimap2scaffold         Use Minimap2 for aligning long reads. Preset usage dependant on file name convention (case insensitive): ont, nanopore, pb, pacbio, hifi, hi_fi, hi-fi. ie: s324_nanopore.fq.gz. Else it uses LASTal.
 ```
 - Reference-based scaffolding options:
 ```
@@ -189,7 +189,7 @@ De novo assembly options:
 ```
 - Meryl and Merqury options:
 ```
-  --nomerqury           Skip meryldb and merqury assembly stats.
+  --runmerqury           Run meryldb and merqury for assembly kmer multiplicity stats. [False] by default.
   -k KMER, --kmer KMER  K-mer size for meryl [21]
 ```
 
@@ -214,13 +214,13 @@ rm test/run1/_sspace.2.1.filled.fa
 Note, the **order of libraries (`-i/--input`) is not important**, as long as `read1` and `read2` from each library are given one after another 
 i.e. `-i 600_1.fq.gz 600_2.fq.gz 5000_1.fq.gz 5000_2.fq.gz` would be interpreted the same as `-i 5000_1.fq.gz 5000_2.fq.gz 600_1.fq.gz 600_2.fq.gz`.
 
-You can play with **any combination of inputs** ie. paired-end, mate pairs, long reads and / or reference-based scaffolding, for example:
+You can play with **any combination of inputs** ie. paired-end, mate pairs, long reads and / or reference-based scaffolding as well as selecting minimap2 for each step or default to LASTal, for example:
 ```bash
 # reduction, scaffolding with paired-end, mate pairs and long reads used to generate a miniasm assembly to do reference-based scaffolding, and gap closing with paired-end and mate pairs using as an aligner minimap2
-./redundans.py -v -i test/*_?.fq.gz -e -l test/nanopore.fa.gz -f test/contigs.fa -o test/run_short_long_ref --useminimap2
+./redundans.py -v -i test/*_?.fq.gz -l test/nanopore.fa.gz -f test/contigs.fa -o test/run_short_long_ref --minimap2scaffold
 
-# reduction, scaffolding with paired-end, mate pairs and long reads, and gap closing with paired-end and mate pairs using experimental long read scaffolder
-./redundans.py -v -i test/*_?.fq.gz -e -l test/pacbio.fq.gz test/nanopore.fa.gz -f test/contigs.fa -o test/run_short_long_experimental
+# reduction, scaffolding with paired-end, mate pairs and long reads, and gap closing with paired-end and mate pairs using populateScaffolds method using as aligner minimap2
+./redundans.py -v -i test/*_?.fq.gz -l test/pacbio.fq.gz test/nanopore.fa.gz -f test/contigs.fa -o test/run_short_long_populatescaffold --minimap2scaffold --populateScaffolds
 
 # scaffolding and gap closing with paired-end and mate pairs (no reduction)
 ./redundans.py -v -i test/*_?.fq.gz -f test/contigs.fa -o test/run_short-scaffolding-closing --noreduction
