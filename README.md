@@ -57,7 +57,7 @@ Redundans uses several programs (all except the interpreters and its submodules 
 
 On most Linux distros, the installation should be as easy as:
 ```
-git clone --recursive https://github.com/Dfupa/redundans/
+git clone --recursive https://github.com/Gabaldonlab/redundans/
 cd redundans && bin/.compile.sh
 ```
 
@@ -87,7 +87,7 @@ Note, this is unofficial channel and may not be completely up-to-date with this 
 UNIX installer will automatically fetch, compile and configure Redundans together with all dependencies.
 It should work on all modern Linux systems, given Python >= 3, commonly used programmes (ie. wget, make, curl, git, perl, gcc, g++, ldconfig) and libraries (zlib including zlib.h) are installed. 
 ```bash
-source <(curl -Ls https://github.com/Dfupa/redundans/raw/master/INSTALL.sh)
+source <(curl -Ls https://github.com/Gabaldonlab/redundans/raw/master/INSTALL.sh)
 ```
 
 ### Docker image
