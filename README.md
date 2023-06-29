@@ -1,3 +1,6 @@
+![Latest Version](https://img.shields.io/github/v/tag/gabaldonlab/redundans?label=Latest%20Version)
+[![GitHub Clones](https://img.shields.io/badge/dynamic/json?color=success&label=Clone&query=count&url=https://gist.githubusercontent.com/Dfupa/0fc9a42bb90e0b6c38767174bce725db/raw/clone.json&logo=github)](https://github.com/MShawon/github-clone-count-badge)
+![Docker Pulls](https://img.shields.io/docker/pulls/cgenomics/redundans)
 ### Table of Contents
 - **[Redundans](#redundans)**  
   - **[Prerequisites](#prerequisites)**  
