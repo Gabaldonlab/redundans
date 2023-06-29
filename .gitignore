@@ -2,6 +2,9 @@
 __pycache__/
 *.py[cod]
 
+#gitclone file from actions
+CLONE.md
+
 #bak extensions
 *.bak
 
