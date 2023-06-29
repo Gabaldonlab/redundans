@@ -2,6 +2,7 @@ name: Stale Issues and Pull Requests
 on:
   schedule:
     - cron: '0 0 * * *' # Runs every day at midnight
+  workflow_dispatch:
 
 jobs:
   stale:
