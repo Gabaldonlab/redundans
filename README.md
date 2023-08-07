@@ -2,6 +2,7 @@
 [![GitHub Clones](https://img.shields.io/badge/dynamic/json?color=success&label=Clone&query=count&url=https://gist.githubusercontent.com/Dfupa/0fc9a42bb90e0b6c38767174bce725db/raw/clone.json&logo=github)](https://github.com/MShawon/github-clone-count-badge)
 ![Docker Pulls](https://img.shields.io/docker/pulls/cgenomics/redundans)
 [![run with docker](https://img.shields.io/badge/run%20with-docker-0db7ed?labelColor=000000&logo=docker)](https://hub.docker.com/repository/docker/cgenomics/redundans)
+[![run with singularity](https://img.shields.io/badge/run%20with-singularity-1d355c.svg?labelColor=000000)](https://sylabs.io/docs/)
 ### Table of Contents
 - **[Redundans](#redundans)**  
   - **[Prerequisites](#prerequisites)**  
@@ -108,6 +109,20 @@ docker run -it -w /root/src/redundans cgenomics/redundans:latest ./redundans.py 
 ## make sure you are in redundans repo directory (containing test/ directory)
 docker run -v `pwd`/test:/test:rw -it cgenomics/redundans:latest /root/src/redundans/redundans.py -v -i test/*.fq.gz -f test/contigs.fa -o test/run1
 ```
+### Singularity image
+Redundans is also supported by singularity. First install [singularity](https://docs.sylabs.io/guides/3.1/user-guide/quick_start.html#quick-installation-steps).
+
+You can either use our singularity repository to build the image or to build the image out of the docker image. Then run the first example:
+```
+#Pull from the singularity repo
+singularity pull library://cgenomics/redundans/redundans
+
+#Build the image based on the docker repo
+singularity build redundans.sif docker://cgenomics/redundans
+
+#Use exec instead of run to account for shell-based wildcarsds * and ?
+singularity exec redundans.sif bash -c "/root/src/redundans/redundans.py -v -i /root/src/redundans/test/*_?.fq.gz -f /root/src/redundans/test/contigs.fa -o /tmp/run1"
+```
 
 ## Running the pipeline
 Redundans input consists of any combination of:
@@ -197,7 +212,7 @@ De novo assembly options:
   -k KMER, --kmer KMER  K-mer size for meryl [21]
 ```
 
-Redundans is **extremely flexible**. All steps of the pipeline can be ommited using: `--noreduction`, `--noscaffolding`, `--nogapclosing` and/or `--nomerqury` parameters. 
+Redundans is **extremely flexible**. All steps of the pipeline can be ommited using: `--noreduction`, `--noscaffolding`, `--nogapclosing` and/or `--runmerqury` parameters. 
 
 ### Test run
 To run the test example, execute: 
