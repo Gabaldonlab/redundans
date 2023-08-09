@@ -2,7 +2,7 @@
 [![GitHub Clones](https://img.shields.io/badge/dynamic/json?color=success&label=Clone&query=count&url=https://gist.githubusercontent.com/Dfupa/0fc9a42bb90e0b6c38767174bce725db/raw/clone.json&logo=github)](https://github.com/MShawon/github-clone-count-badge)
 ![Docker Pulls](https://img.shields.io/docker/pulls/cgenomics/redundans)
 [![run with docker](https://img.shields.io/badge/run%20with-docker-0db7ed?labelColor=000000&logo=docker)](https://hub.docker.com/repository/docker/cgenomics/redundans)
-[![run with singularity](https://img.shields.io/badge/run%20with-singularity-1d355c.svg?labelColor=000000)](https://sylabs.io/docs/)
+[![run with singularity](https://img.shields.io/badge/run%20with-singularity-1d355c.svg?labelColor=000000)](https://cloud.sylabs.io/library/cgenomics/redundans/redundans)
 ### Table of Contents
 - **[Redundans](#redundans)**  
   - **[Prerequisites](#prerequisites)**  
