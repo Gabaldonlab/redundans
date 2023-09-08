@@ -9,11 +9,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check for stale issues and pull requests
-        uses: actions/stale@v3
+        uses: actions/stale@v8
         with:
           repo-token: ${{ secrets.SECRET_TOKEN }}
           stale-issue-message: 'This issue is marked as stale by the stale_bot.'
           stale-pr-message: 'This pull request is marked as stale by the stale_bot.'
+          close-issue-message: 'This issue was closed by the stale_bot because it has been stalled for 7 days with no activity.'
+          close-pr-message: 'This PR was closed by the stale_bot because it has been stalled for 7 days with no activity.'
           days-before-stale: 30
           days-before-close: 7
           stale-issue-label: stale
