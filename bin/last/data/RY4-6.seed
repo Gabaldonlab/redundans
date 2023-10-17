@@ -1,0 +1,25 @@
+# This DNA seeding scheme reduces run time and memory use, by only
+# seeking seeds at ~1/4 of positions in each sequence [from Table 3 of
+# MC Frith, L Noé, G Kucherov].
+
+#lastal -m2 -r6 -q18 -a21 -b9
+
+R  A G
+Y  C T
+
+RRRRRY
+RRYRRY
+RRYRYY
+RYRRRR
+RYRRRY
+RYRYRY
+RYYRRR
+RYYRRY
+RYYRYR
+RYYRYY
+RYYYRY
+RYYYYY
+YRYRRY
+YYYRRR
+YYYRRY
+YYYYRY

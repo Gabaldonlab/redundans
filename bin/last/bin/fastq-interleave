@@ -1,0 +1,22 @@
+#! /bin/bash
+
+test $# = 2 || {
+    cat <<EOF
+Usage: $0 x.fastq y.fastq
+or:    $0 x.fastq.gz y.fastq.gz
+
+Read 2 fastq files, and write them interleaved.  Keep just the first
+word of header lines, and append "/1" and "/2" if they are otherwise
+identical.  Assumes 1 fastq per 4 lines, i.e. no line wrapping.
+EOF
+    exit
+}
+
+fastqTab () {
+    gzip -cdf "$@" |
+	sed -e 's/^@  */@/' -e 's/ .*//' |
+	paste - - - -
+}
+
+paste <(fastqTab "$1") <(fastqTab "$2") |
+    awk '$1 == $5 {$1 = $1 "/1"; $5 = $5 "/2"} $1 = $1' OFS="\n"

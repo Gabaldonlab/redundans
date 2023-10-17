@@ -1,0 +1,11 @@
+# This scoring scheme is for strongly-similar AT-rich DNA (~4%
+# substitutions and ~76% A+T).  It is also suitable for sequences with
+# more than 4% substitution errors, if the excess error rate is
+# explained by quality scores.
+
+#last -a24 -b6
+    A   C   G   T
+A   4 -12 -12 -12
+C -12   9 -12 -12
+G -12 -12   9 -12
+T -12 -12 -12   4
