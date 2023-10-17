@@ -21,6 +21,8 @@ from FastaIndex import FastaIndex
 
 # update sys.path & environmental PATH
 root = os.path.dirname(os.path.abspath(sys.argv[0]))
+paths = [os.path.join(root, "bin/minimap2/misc/")]
+sys.path = paths + sys.path
 os.environ["PATH"] = "%s:%s"%(root, os.environ["PATH"])
 
 def run_last(fasta, identity, threads, verbose=1):
@@ -76,7 +78,7 @@ def run_minimap2(fasta, threads, preset, index="4G", winsize=19, chain_penalty=2
     args1 = ["minimap2", "-x", preset, "-PD", windowsize, penalty, "-t", str(threads), "-I", index, "--cs=long", ref, fasta]
     #sys.stderr.write(" %s\n"%args1)
     proc1 = subprocess.Popen(args1, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
-    args2 = ["k8-Linux", "bin/minimap2/misc/paftools.js", "view", "-f", "maf", "-"]
+    args2 = ["k8-Linux", "paftools.js", "view", "-f", "maf", "-"]
     proc2 = subprocess.Popen(args2, stdout=subprocess.PIPE, stdin=proc1.stdout, stderr=subprocess.DEVNULL)
     #Added maf converter from LAST to keep same format
     args3 = ["maf-convert", "tab", "-"]

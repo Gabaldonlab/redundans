@@ -20,6 +20,11 @@ import subprocess, resource, subprocess
 from datetime import datetime
 from FastaIndex import FastaIndex
 
+# update sys.path & environmental PATH
+root = os.path.dirname(os.path.abspath(sys.argv[0]))
+paths = [os.path.join(root, "bin/minimap2/misc/")]
+sys.path = paths + sys.path
+os.environ["PATH"] = "%s:%s"%(root, os.environ["PATH"])
 
 def percentile(N, percent, key=lambda x:x):
     """
@@ -228,7 +233,7 @@ class Graph(object):
         proc0 = subprocess.Popen(args0, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
         args1 = ["minimap2", "-x", str(self.preset), "-t", str(self.threads),  "-I", index, "--cs=long", self.ref, "-"]
         proc1 = subprocess.Popen(args1, stdout=subprocess.PIPE, stdin=proc0.stdout, stderr=subprocess.DEVNULL)
-        args2 = ["k8-Linux", "bin/minimap2/misc/paftools.js", "view", "-f", "maf", "-"]
+        args2 = ["k8-Linux", "paftools.js", "view", "-f", "maf", "-"]
         proc2 = subprocess.Popen(args2, stdout=subprocess.PIPE, stdin=proc1.stdout, stderr=subprocess.DEVNULL)
         #Added maf converter from LAST to keep same format
         args3 = ["maf-convert", "tab", "-"]
