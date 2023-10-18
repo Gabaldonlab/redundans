@@ -1,4 +1,5 @@
 ![Latest Version](https://img.shields.io/github/v/tag/gabaldonlab/redundans?label=Latest%20Version)
+[![BioConda Install](https://img.shields.io/conda/dn/bioconda/redundans.svg?style=flag&label=BioConda%20install)](https://anaconda.org/bioconda/redundans/)
 [![GitHub Clones](https://img.shields.io/badge/dynamic/json?color=success&label=Clone&query=count&url=https://gist.githubusercontent.com/Dfupa/0fc9a42bb90e0b6c38767174bce725db/raw/clone.json&logo=github)](https://github.com/MShawon/github-clone-count-badge)
 ![Docker Pulls](https://img.shields.io/docker/pulls/cgenomics/redundans)
 [![run with docker](https://img.shields.io/badge/run%20with-docker-0db7ed?labelColor=000000&logo=docker)](https://hub.docker.com/repository/docker/cgenomics/redundans)
@@ -6,7 +7,8 @@
 ### Table of Contents
 - **[Redundans](#redundans)**  
   - **[Prerequisites](#prerequisites)**  
-    - **[UNIX installer](#unix-installer)**  
+    - **[Official conda package](#official-conda-package)**
+    - **[UNIX installer](#unix-installer)**    
     - **[Docker image](#docker-image)** 
   - **[Running the pipeline](#running-the-pipeline)**  
     - **[Parameters](#parameters)**  
@@ -75,15 +77,15 @@ If it fails, make sure you have below dependencies installed:
 
 For user convenience, we provide [UNIX installer](#unix-installer) and [Docker image](#docker-image), that can be used instead of manually installation.  
 
-### Unofficial conda package
+## Official conda package
 If you are familiar with conda, this will be by far the easiest way of installing redundans: 
 ```bash
-# create new Python2 environment
-conda create -n redundans python=2.7
+# create new Python3 >=3.8 environment
+conda create -n redundans python=3.8
 # activate it
 conda activate redundans
 # and install redundans
-conda install -c genomedk redundans 
+conda install -c bioconda redundans 
 ```
 
 Note, this is unofficial channel and may not be completely up-to-date with this repo. 
