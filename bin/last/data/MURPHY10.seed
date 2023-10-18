@@ -1,0 +1,8 @@
+# This protein seeding scheme is popular for finding long-and-weak
+# similarities (LR Murphy et al. Protein Eng. 2000 13:149).
+
+#lastdb -p
+
+1  ILMV FWY A C G H P KR ST DENQ
+
+1

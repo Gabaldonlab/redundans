@@ -1,0 +1,10 @@
+# This scoring scheme is often used for weak DNA similarities (F
+# Chiaromonte, VB Yap, W Miller, PSB 2002:115-126).
+
+#last -a400 -b30
+     A    C    G    T    N
+A   91 -114  -31 -123 -100
+C -114  100 -125  -31 -100
+G  -31 -125  100 -114 -100
+T -123  -31 -114   91 -100
+N -100 -100 -100 -100 -100

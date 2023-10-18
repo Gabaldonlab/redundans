@@ -1,0 +1,12 @@
+# This subset seed is the default for protein UBLAST v8
+# (http://drive5.com/usearch/).  According to the UBLAST website, it
+# is good for typical medium- to low-identity protein searches.
+
+# (The final position of UBLAST's pattern is omitted here, because it
+# is the same as the first position, and LAST cyclically repeats the
+# pattern.)
+
+1  ILMV FWY A C G H P KR ST DENQ
+0  ILMVFWYACGHPKRSTDENQ
+
+1011101

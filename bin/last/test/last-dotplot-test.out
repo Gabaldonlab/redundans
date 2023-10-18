@@ -1,0 +1,421 @@
+TEST 102.maf
+3396982345 3177
+
+TEST -v -x600 -c orange -r teal --sort1=2 --border-color=brown 102.maf
+last-dotplot: reading alignments...
+last-dotplot: cutting...
+last-dotplot: reading secondary alignments...
+last-dotplot: cutting...
+last-dotplot: sorting...
+last-dotplot: chr19	1383883	1383969
+last-dotplot: chr19	1387780	1388965
+last-dotplot: chr19	1390828	1391190
+last-dotplot: chr19	1393213	1393358
+last-dotplot: chr19	1395360	1395511
+last-dotplot: chr19	17615403	17615478
+last-dotplot: chr19	18430532	18430615
+last-dotplot: chr19	47072174	47072264
+last-dotplot: chr3	23607529	23607606
+last-dotplot: chr3	33026597	33026675
+last-dotplot: chr3	37588349	37588441
+last-dotplot: chr3	89815452	89815525
+last-dotplot: chr3	127741348	127741429
+last-dotplot: chr3	130609381	130609461
+last-dotplot: chr3	152862866	152862947
+last-dotplot: chr3	186865624	186865699
+last-dotplot: chr5	4867398	4867471
+last-dotplot: chr5	74376550	74376623
+last-dotplot: chr5	93489515	93489591
+last-dotplot: chr5	169763588	169763671
+last-dotplot: chr5	171574427	171574500
+last-dotplot: chr5	173701172	173701249
+last-dotplot: chr5	177958514	177958591
+last-dotplot: chr17	19079582	19079655
+last-dotplot: chr17	19172423	19172496
+last-dotplot: chr17	19205764	19205837
+last-dotplot: chr17	27793612	27793685
+last-dotplot: chr17	28925902	28925982
+last-dotplot: chr17	29190042	29190115
+last-dotplot: chr17	58670463	58670536
+last-dotplot: chr7	65260279	65260354
+last-dotplot: chr7	100370569	100370642
+last-dotplot: chr7	101590352	101590447
+last-dotplot: chr7	101723218	101723313
+last-dotplot: chr7	157969496	157969572
+last-dotplot: chr1	21590603	21590709
+last-dotplot: chr1	145869990	145870063
+last-dotplot: chr1	155997846	155997940
+last-dotplot: chr1	161050878	161050970
+last-dotplot: chr10	122813007	122813087
+last-dotplot: chr10	124281367	124281441
+last-dotplot: chr10	126932842	126932937
+last-dotplot: chr22	20726561	20726644
+last-dotplot: chr22	23657463	23657536
+last-dotplot: chr22	46458773	46458849
+last-dotplot: chr6	1842804	1842877
+last-dotplot: chr6	65786074	65786151
+last-dotplot: chr6	170257674	170257754
+last-dotplot: chr8	76840831	76840936
+last-dotplot: chr8	98433234	98433318
+last-dotplot: chr12	19357508	19357581
+last-dotplot: chr12	71544959	71545052
+last-dotplot: chr14	80332102	80332183
+last-dotplot: chr14	104715645	104715730
+last-dotplot: chr18	8561181	8561272
+last-dotplot: chr18	55335065	55335140
+last-dotplot: chr4	3839035	3839110
+last-dotplot: chr4	54783677	54783767
+last-dotplot: chr2	192414435	192414516
+last-dotplot: chr2	240456604	240456683
+last-dotplot: chr15	45614722	45614800
+last-dotplot: chr15	78230458	78230537
+last-dotplot: chr21	14291153	14291236
+last-dotplot: chr21	43027907	43027980
+last-dotplot: chr20	4034120	4034195
+last-dotplot: chr20	17684717	17684790
+last-dotplot: chrX	39928389	39928462
+last-dotplot: chrX	83302574	83302647
+last-dotplot: chr16	722456	722540
+last-dotplot: chr11	67464119	67464196
+last-dotplot: chr13	113342188	113342261
+last-dotplot: 
+last-dotplot: 102	0	699
+last-dotplot: 
+last-dotplot: choosing bp per pixel...
+last-dotplot: choosing bp per pixel...
+last-dotplot: bp per pixel = 15
+last-dotplot: width:  581
+last-dotplot: height: 47
+last-dotplot: processing alignments...
+last-dotplot: reading annotations...
+last-dotplot: drawing...
+2981739013 1818
+
+TEST -v -y30 --max-gap1=0 --pad=0.08 --border-pixels=2 --sort1=3 102.maf
+last-dotplot: reading alignments...
+last-dotplot: cutting...
+last-dotplot: reading secondary alignments...
+last-dotplot: cutting...
+last-dotplot: sorting...
+last-dotplot: chr16	722428	722568
+last-dotplot: chr19	1383855	1383997
+last-dotplot: chr19	1387752	1387902
+last-dotplot: chr19	1388468	1388648
+last-dotplot: chr19	1388774	1388993
+last-dotplot: chr19	1390800	1391218
+last-dotplot: chr19	1393185	1393386
+last-dotplot: chr19	1395332	1395539
+last-dotplot: chr19	17615375	17615506
+last-dotplot: chr19	18430504	18430643
+last-dotplot: chr19	47072146	47072292
+last-dotplot: chr8	76840803	76840964
+last-dotplot: chr8	98433206	98433346
+last-dotplot: chr20	4034092	4034223
+last-dotplot: chr20	17684689	17684818
+last-dotplot: chr4	3839007	3839138
+last-dotplot: chr4	54783649	54783795
+last-dotplot: chr12	19357480	19357609
+last-dotplot: chr12	71544931	71545080
+last-dotplot: chr18	8561153	8561300
+last-dotplot: chr18	55335037	55335168
+last-dotplot: chr7	65260251	65260382
+last-dotplot: chr7	100370541	100370670
+last-dotplot: chr7	101590324	101590475
+last-dotplot: chr7	101723190	101723341
+last-dotplot: chr7	157969468	157969600
+last-dotplot: chr13	113342160	113342289
+last-dotplot: chr17	19079554	19079683
+last-dotplot: chr17	19172395	19172524
+last-dotplot: chr17	19205736	19205865
+last-dotplot: chr17	27793584	27793713
+last-dotplot: chr17	28925874	28926010
+last-dotplot: chr17	29190014	29190143
+last-dotplot: chr17	58670435	58670564
+last-dotplot: chr22	20726533	20726672
+last-dotplot: chr22	23657435	23657564
+last-dotplot: chr22	46458745	46458877
+last-dotplot: chr6	1842776	1842905
+last-dotplot: chr6	65786046	65786179
+last-dotplot: chr6	170257646	170257782
+last-dotplot: chr5	4867370	4867499
+last-dotplot: chr5	74376522	74376651
+last-dotplot: chr5	93489487	93489619
+last-dotplot: chr5	169763560	169763699
+last-dotplot: chr5	171574399	171574528
+last-dotplot: chr5	173701144	173701277
+last-dotplot: chr5	177958486	177958619
+last-dotplot: chr1	21590575	21590737
+last-dotplot: chr1	145869962	145870091
+last-dotplot: chr1	155997818	155997968
+last-dotplot: chr1	161050850	161050998
+last-dotplot: chr11	67464091	67464224
+last-dotplot: chr14	80332074	80332211
+last-dotplot: chr14	104715617	104715758
+last-dotplot: chr3	23607501	23607634
+last-dotplot: chr3	33026569	33026703
+last-dotplot: chr3	37588321	37588469
+last-dotplot: chr3	89815424	89815553
+last-dotplot: chr3	127741320	127741457
+last-dotplot: chr3	130609353	130609489
+last-dotplot: chr3	152862838	152862975
+last-dotplot: chr3	186865596	186865727
+last-dotplot: chr2	192414407	192414544
+last-dotplot: chr2	240456576	240456711
+last-dotplot: chr15	45614694	45614828
+last-dotplot: chr15	78230430	78230565
+last-dotplot: chr10	122812979	122813115
+last-dotplot: chr10	124281339	124281469
+last-dotplot: chr10	126932814	126932965
+last-dotplot: chr21	14291125	14291264
+last-dotplot: chr21	43027879	43028008
+last-dotplot: chrX	39928361	39928490
+last-dotplot: chrX	83302546	83302675
+last-dotplot: 
+last-dotplot: 102	0	699
+last-dotplot: 
+last-dotplot: choosing bp per pixel...
+last-dotplot: choosing bp per pixel...
+last-dotplot: bp per pixel = 24
+last-dotplot: width:  619
+last-dotplot: height: 30
+last-dotplot: processing alignments...
+last-dotplot: reading annotations...
+last-dotplot: drawing...
+3953352818 1272
+
+TEST -v --strands1=1 102.maf
+last-dotplot: reading alignments...
+last-dotplot: cutting...
+last-dotplot: reading secondary alignments...
+last-dotplot: cutting...
+last-dotplot: sorting...
+last-dotplot: chr1	21590603	21590709	+
+last-dotplot: chr1	145869990	145870063	+
+last-dotplot: chr1	155997846	155997940	+
+last-dotplot: chr1	161050878	161050970	+
+last-dotplot: chr2	240456604	240456683	-
+last-dotplot: chr2	192414435	192414516	-
+last-dotplot: chr3	186865624	186865699	-
+last-dotplot: chr3	152862866	152862947	-
+last-dotplot: chr3	130609381	130609461	-
+last-dotplot: chr3	127741348	127741429	-
+last-dotplot: chr3	89815452	89815525	-
+last-dotplot: chr3	37588349	37588441	-
+last-dotplot: chr3	33026597	33026675	-
+last-dotplot: chr3	23607529	23607606	-
+last-dotplot: chr4	54783677	54783767	-
+last-dotplot: chr4	3839035	3839110	-
+last-dotplot: chr5	4867398	4867471	+
+last-dotplot: chr5	74376550	74376623	+
+last-dotplot: chr5	93489515	93489591	+
+last-dotplot: chr5	169763588	169763671	+
+last-dotplot: chr5	171574427	171574500	+
+last-dotplot: chr5	173701172	173701249	+
+last-dotplot: chr5	177958514	177958591	+
+last-dotplot: chr6	170257674	170257754	-
+last-dotplot: chr6	65786074	65786151	-
+last-dotplot: chr6	1842804	1842877	-
+last-dotplot: chr7	157969496	157969572	-
+last-dotplot: chr7	101723218	101723313	-
+last-dotplot: chr7	101590352	101590447	-
+last-dotplot: chr7	100370569	100370642	-
+last-dotplot: chr7	65260279	65260354	-
+last-dotplot: chr8	76840831	76840936	+
+last-dotplot: chr8	98433234	98433318	+
+last-dotplot: chr10	122813007	122813087	+
+last-dotplot: chr10	124281367	124281441	+
+last-dotplot: chr10	126932842	126932937	+
+last-dotplot: chr11	67464119	67464196	+
+last-dotplot: chr12	71544959	71545052	-
+last-dotplot: chr12	19357508	19357581	-
+last-dotplot: chr13	113342188	113342261	+
+last-dotplot: chr14	80332102	80332183	+
+last-dotplot: chr14	104715645	104715730	+
+last-dotplot: chr15	45614722	45614800	+
+last-dotplot: chr15	78230458	78230537	+
+last-dotplot: chr16	722456	722540	-
+last-dotplot: chr17	19079582	19079655	+
+last-dotplot: chr17	19172423	19172496	+
+last-dotplot: chr17	19205764	19205837	+
+last-dotplot: chr17	27793612	27793685	+
+last-dotplot: chr17	28925902	28925982	+
+last-dotplot: chr17	29190042	29190115	+
+last-dotplot: chr17	58670463	58670536	+
+last-dotplot: chr18	8561181	8561272	+
+last-dotplot: chr18	55335065	55335140	+
+last-dotplot: chr19	47072174	47072264	-
+last-dotplot: chr19	18430532	18430615	-
+last-dotplot: chr19	17615403	17615478	-
+last-dotplot: chr19	1395360	1395511	-
+last-dotplot: chr19	1393213	1393358	-
+last-dotplot: chr19	1390828	1391190	-
+last-dotplot: chr19	1387780	1388965	-
+last-dotplot: chr19	1383883	1383969	-
+last-dotplot: chr20	4034120	4034195	+
+last-dotplot: chr20	17684717	17684790	+
+last-dotplot: chr21	14291153	14291236	+
+last-dotplot: chr21	43027907	43027980	+
+last-dotplot: chr22	46458773	46458849	-
+last-dotplot: chr22	23657463	23657536	-
+last-dotplot: chr22	20726561	20726644	-
+last-dotplot: chrX	39928389	39928462	+
+last-dotplot: chrX	83302574	83302647	+
+last-dotplot: 
+last-dotplot: 102	0	699
+last-dotplot: 
+last-dotplot: choosing bp per pixel...
+last-dotplot: choosing bp per pixel...
+last-dotplot: bp per pixel = 9
+last-dotplot: width:  912
+last-dotplot: height: 78
+last-dotplot: processing alignments...
+last-dotplot: reading annotations...
+last-dotplot: drawing...
+3966603009 3171
+
+TEST -v --sort2=3 bs100.maf
+last-dotplot: reading alignments...
+last-dotplot: cutting...
+last-dotplot: reading secondary alignments...
+last-dotplot: cutting...
+last-dotplot: sorting...
+last-dotplot: chrM	0	16571
+last-dotplot: 
+last-dotplot: 55	0	87
+last-dotplot: 21	0	87
+last-dotplot: 95	0	87
+last-dotplot: 7	0	87
+last-dotplot: 16	0	87
+last-dotplot: 97	0	87
+last-dotplot: 88	0	87
+last-dotplot: 28	0	87
+last-dotplot: 25	0	87
+last-dotplot: 13	0	87
+last-dotplot: 1	0	87
+last-dotplot: 90	0	87
+last-dotplot: 83	0	87
+last-dotplot: 31	0	87
+last-dotplot: 23	0	87
+last-dotplot: 12	0	87
+last-dotplot: 34	0	87
+last-dotplot: 10	0	87
+last-dotplot: 38	0	87
+last-dotplot: 91	0	87
+last-dotplot: 93	0	87
+last-dotplot: 96	0	87
+last-dotplot: 76	0	87
+last-dotplot: 74	0	87
+last-dotplot: 26	0	87
+last-dotplot: 29	0	87
+last-dotplot: 35	0	87
+last-dotplot: 8	0	87
+last-dotplot: 40	0	87
+last-dotplot: 42	0	87
+last-dotplot: 69	0	87
+last-dotplot: 4	0	87
+last-dotplot: 20	0	87
+last-dotplot: 92	0	87
+last-dotplot: 50	0	87
+last-dotplot: 30	0	87
+last-dotplot: 5	0	87
+last-dotplot: 48	0	87
+last-dotplot: 47	0	87
+last-dotplot: 75	0	87
+last-dotplot: 54	0	87
+last-dotplot: 44	0	87
+last-dotplot: 14	0	87
+last-dotplot: 98	0	87
+last-dotplot: 70	0	87
+last-dotplot: 39	0	87
+last-dotplot: 9	0	87
+last-dotplot: 32	0	87
+last-dotplot: 81	0	87
+last-dotplot: 89	0	87
+last-dotplot: 99	0	87
+last-dotplot: 86	0	87
+last-dotplot: 67	0	87
+last-dotplot: 56	0	87
+last-dotplot: 51	0	87
+last-dotplot: 45	0	87
+last-dotplot: 82	0	87
+last-dotplot: 59	0	87
+last-dotplot: 24	0	87
+last-dotplot: 37	0	87
+last-dotplot: 41	0	87
+last-dotplot: 52	0	87
+last-dotplot: 18	0	87
+last-dotplot: 77	0	87
+last-dotplot: 79	0	87
+last-dotplot: 72	0	87
+last-dotplot: 6	0	87
+last-dotplot: 57	0	87
+last-dotplot: 85	0	87
+last-dotplot: 78	0	87
+last-dotplot: 65	0	87
+last-dotplot: 94	0	87
+last-dotplot: 2	0	87
+last-dotplot: 3	0	87
+last-dotplot: 46	0	87
+last-dotplot: 60	0	87
+last-dotplot: 58	0	87
+last-dotplot: 33	0	87
+last-dotplot: 15	0	87
+last-dotplot: 49	0	87
+last-dotplot: 64	0	87
+last-dotplot: 0	0	87
+last-dotplot: 27	0	87
+last-dotplot: 19	0	87
+last-dotplot: 43	0	87
+last-dotplot: 53	0	87
+last-dotplot: 36	0	87
+last-dotplot: 73	0	87
+last-dotplot: 66	0	87
+last-dotplot: 87	0	87
+last-dotplot: 22	0	87
+last-dotplot: 71	0	87
+last-dotplot: 68	0	87
+last-dotplot: 11	0	87
+last-dotplot: 63	0	87
+last-dotplot: 
+last-dotplot: choosing bp per pixel...
+last-dotplot: choosing bp per pixel...
+last-dotplot: bp per pixel = 17
+last-dotplot: width:  975
+last-dotplot: height: 664
+last-dotplot: processing alignments...
+last-dotplot: reading annotations...
+last-dotplot: drawing...
+833292477 18662
+
+TEST -v -2? --sort2=0 --strands2=1 bs100.maf
+last-dotplot: reading alignments...
+last-dotplot: cutting...
+last-dotplot: reading secondary alignments...
+last-dotplot: cutting...
+last-dotplot: sorting...
+last-dotplot: chrM	0	1663
+last-dotplot: chrM	4973	6206
+last-dotplot: chrM	7868	8021
+last-dotplot: chrM	11073	14033
+last-dotplot: 
+last-dotplot: 0	0	87	-
+last-dotplot: 1	0	87	+
+last-dotplot: 2	0	87	+
+last-dotplot: 3	0	87	-
+last-dotplot: 4	0	87	+
+last-dotplot: 5	0	87	-
+last-dotplot: 6	0	87	+
+last-dotplot: 7	0	87	-
+last-dotplot: 8	0	87	+
+last-dotplot: 9	0	87	+
+last-dotplot: 
+last-dotplot: choosing bp per pixel...
+last-dotplot: choosing bp per pixel...
+last-dotplot: bp per pixel = 7
+last-dotplot: width:  863
+last-dotplot: height: 139
+last-dotplot: processing alignments...
+last-dotplot: reading annotations...
+last-dotplot: drawing...
+2996486939 3971
+

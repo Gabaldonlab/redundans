@@ -1,0 +1,18 @@
+# This matrix is completely made up, for testing only.  It is derived
+# from these joint probabilities:
+#    a    c    g    t
+# a .17  .015 .015 .05 | .25
+# c .09  .06  .01  .09 | .25
+# g .09  .01  .06  .09 | .25
+# t .05  .015 .015 .17 | .25
+#   -------------------
+#   .4   .1   .1   .4
+#
+# Some gap costs:
+#last -a500 -b50
+
+    a   c   g   t
+a  53 -51 -51 -69
+c -11  88 -92 -11
+g -11 -92  88 -11
+t -69 -51 -51  53

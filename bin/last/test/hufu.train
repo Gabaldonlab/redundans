@@ -1,0 +1,545 @@
+# lastal version: 1205
+# maximum percent identity: 100
+# scale of score parameters: 4.5512
+# scale used while training: 91.024
+
+# lastal -j7 -S1 -r5 -q5 -a15 -b3 humdb /tmp/tmp5ircmrpk
+
+# aligned letter pairs: 14938.4
+# deletes: 665.59
+# inserts: 840.72
+# delOpens: 345.03
+# insOpens: 405.04
+# alignments: 3
+# mean delete size: 1.92908
+# mean insert size: 2.07565
+# matchProb: 0.951947
+# delOpenProb: 0.021987
+# insOpenProb: 0.0258111
+# delExtendProb: 0.481618
+# insExtendProb: 0.518222
+
+# substitution percent identity: 71.9237
+
+# count matrix (query letters = columns, reference letters = rows):
+#   A              C              G              T             
+# A 3296.3         533.242        387.82         392.36        
+# C 553.59         3241.5         182.49         687.33        
+# G 232.64         102.401        1565.4         84.93         
+# T 335.274        558.781        147.17         2651          
+
+# probability matrix (query letters = columns, reference letters = rows):
+#   A              C              G              T             
+# A 0.220455       0.035663       0.0259373      0.0262409     
+# C 0.0370239      0.21679        0.0122049      0.0459684     
+# G 0.0155589      0.00684854     0.104693       0.00568009    
+# T 0.022423       0.0373711      0.00984268     0.177298      
+
+# delExistCost: 343
+# insExistCost: 341
+# delExtendCost: 64
+# insExtendCost: 58
+
+# score matrix (query letters = columns, reference letters = rows):
+#        A      C      G      T
+# A     76    -90    -59   -104
+# C    -87     73   -128    -54
+# G    -89   -164    145   -167
+# T   -112    -66   -127     90
+
+# lastal -j7 -S1 -t91.5874 -p- humdb /tmp/tmp5ircmrpk
+
+# aligned letter pairs: 14479.8
+# deletes: 338.86
+# inserts: 501.52
+# delOpens: 172.85
+# insOpens: 227.36
+# alignments: 9
+# mean delete size: 1.96043
+# mean insert size: 2.20584
+# matchProb: 0.972451
+# delOpenProb: 0.0116085
+# insOpenProb: 0.0152693
+# delExtendProb: 0.489907
+# insExtendProb: 0.546658
+
+# substitution percent identity: 70.4621
+
+# count matrix (query letters = columns, reference letters = rows):
+#   A              C              G              T             
+# A 3101.7         554.101        417.81         373.57        
+# C 571.29         3015.1         151.841        749.24        
+# G 246.97         82.718         1568.6         67.434        
+# T 332.138        614.7          122.77         2535.4        
+
+# probability matrix (query letters = columns, reference letters = rows):
+#   A              C              G              T             
+# A 0.213831       0.0381997      0.0288038      0.0257539     
+# C 0.0393847      0.207861       0.0104679      0.0516526     
+# G 0.0170261      0.00570257     0.108139       0.0046489     
+# T 0.0228976      0.0423774      0.00846376     0.17479       
+
+# delExistCost: 403
+# insExistCost: 399
+# delExtendCost: 64
+# insExtendCost: 54
+
+# score matrix (query letters = columns, reference letters = rows):
+#        A      C      G      T
+# A     76    -81    -49   -104
+# C    -78     73   -142    -42
+# G    -80   -179    146   -186
+# T   -108    -52   -141     89
+
+# lastal -j7 -S1 -t90.5835 -p- humdb /tmp/tmp5ircmrpk
+
+# aligned letter pairs: 14566.6
+# deletes: 214.4
+# inserts: 373.36
+# delOpens: 100.28
+# insOpens: 148.387
+# alignments: 9
+# mean delete size: 2.13801
+# mean insert size: 2.51612
+# matchProb: 0.982552
+# delOpenProb: 0.00676413
+# insOpenProb: 0.0100091
+# delExtendProb: 0.532276
+# insExtendProb: 0.602563
+
+# substitution percent identity: 69.3877
+
+# count matrix (query letters = columns, reference letters = rows):
+#   A              C              G              T             
+# A 3067.3         584.317        432.3          388.15        
+# C 603.96         2975.5         154.1078       777.11        
+# G 260.14         83.648         1562.19        66.9531       
+# T 347.114        641.92         123.838        2512.4        
+
+# probability matrix (query letters = columns, reference letters = rows):
+#   A              C              G              T             
+# A 0.210364       0.040074       0.0296483      0.0266204     
+# C 0.0414212      0.204068       0.0105691      0.0532963     
+# G 0.0178411      0.0057368      0.107139       0.00459182    
+# T 0.023806       0.0440246      0.00849314     0.172307      
+
+# delExistCost: 467
+# insExistCost: 458
+# delExtendCost: 57
+# insExtendCost: 45
+
+# score matrix (query letters = columns, reference letters = rows):
+#        A      C      G      T
+# A     76    -75    -45   -100
+# C    -73     72   -140    -38
+# G    -74   -178    146   -186
+# T   -103    -48   -140     89
+
+# lastal -j7 -S1 -t91.1628 -p- humdb /tmp/tmp5ircmrpk
+
+# aligned letter pairs: 14624.3
+# deletes: 173.726
+# inserts: 335.704
+# delOpens: 72.291
+# insOpens: 116.713
+# alignments: 8
+# mean delete size: 2.40315
+# mean insert size: 2.87632
+# matchProb: 0.986641
+# delOpenProb: 0.00487718
+# insOpenProb: 0.00787415
+# delExtendProb: 0.583879
+# insExtendProb: 0.652334
+
+# substitution percent identity: 68.8592
+
+# count matrix (query letters = columns, reference letters = rows):
+#   A              C              G              T             
+# A 3056           603.529        435.41         399.71        
+# C 620.77         2961.2         159.312        789.82        
+# G 265.7          86.778         1557.14        68.4159       
+# T 353.922        649.95         125.901        2507.1        
+
+# probability matrix (query letters = columns, reference letters = rows):
+#   A              C              G              T             
+# A 0.208734       0.0412228      0.0297398      0.0273014     
+# C 0.0424004      0.202259       0.0108815      0.053947      
+# G 0.0181481      0.00592719     0.106357       0.00467301    
+# T 0.0241739      0.0443935      0.00859941     0.171242      
+
+# delExistCost: 515
+# insExistCost: 499
+# delExtendCost: 49
+# insExtendCost: 38
+
+# score matrix (query letters = columns, reference letters = rows):
+#        A      C      G      T
+# A     75    -72    -44    -98
+# C    -71     72   -137    -37
+# G    -72   -174    146   -184
+# T   -102    -46   -138     89
+
+# lastal -j7 -S1 -t91.1351 -p- humdb /tmp/tmp5ircmrpk
+
+# aligned letter pairs: 14886.3
+# deletes: 182.323
+# inserts: 349.073
+# delOpens: 65.159
+# insOpens: 109.379
+# alignments: 5
+# mean delete size: 2.79812
+# mean insert size: 3.19141
+# matchProb: 0.988018
+# delOpenProb: 0.00432466
+# insOpenProb: 0.00725959
+# delExtendProb: 0.642618
+# insExtendProb: 0.686659
+
+# substitution percent identity: 68.2947
+
+# count matrix (query letters = columns, reference letters = rows):
+#   A              C              G              T             
+# A 3086.6         631.357        445.21         419.66        
+# C 644.56         2999.3         167.42         815.18        
+# G 273.01         92.787         1563.4         71.2          
+# T 363.437        671.4          131.472        2532.2        
+
+# probability matrix (query letters = columns, reference letters = rows):
+#   A              C              G              T             
+# A 0.207041       0.0423497      0.0298634      0.0281496     
+# C 0.0432353      0.201185       0.0112301      0.05468       
+# G 0.0183127      0.00622389     0.104869       0.0047759     
+# T 0.0243783      0.0450356      0.00881878     0.169853      
+
+# delExistCost: 549
+# insExistCost: 520
+# delExtendCost: 40
+# insExtendCost: 34
+
+# score matrix (query letters = columns, reference letters = rows):
+#        A      C      G      T
+# A     75    -70    -43    -95
+# C    -69     71   -133    -36
+# G    -71   -169    146   -181
+# T   -100    -45   -135     88
+
+# lastal -j7 -S1 -t91.3621 -p- humdb /tmp/tmp5ircmrpk
+
+# aligned letter pairs: 14897
+# deletes: 183.571
+# inserts: 350.801
+# delOpens: 60.124
+# insOpens: 104.107
+# alignments: 5
+# mean delete size: 3.05321
+# mean insert size: 3.36962
+# matchProb: 0.988702
+# delOpenProb: 0.00399038
+# insOpenProb: 0.0069095
+# delExtendProb: 0.672475
+# insExtendProb: 0.703231
+
+# substitution percent identity: 68.2057
+
+# count matrix (query letters = columns, reference letters = rows):
+#   A              C              G              T             
+# A 3083.6         633.942        445.61         422.34        
+# C 648.71         2998.2         168.94         816.17        
+# G 272.64         93.718         1562.4         71.72         
+# T 365.263        672.85         131.913        2532.3        
+
+# probability matrix (query letters = columns, reference letters = rows):
+#   A              C              G              T             
+# A 0.206671       0.0424885      0.029866       0.0283064     
+# C 0.0434783      0.200947       0.0113228      0.0547019     
+# G 0.0182731      0.00628123     0.104716       0.00480687    
+# T 0.0244809      0.0450962      0.00884117     0.169722      
+
+# delExistCost: 568
+# insExistCost: 531
+# delExtendCost: 36
+# insExtendCost: 32
+
+# score matrix (query letters = columns, reference letters = rows):
+#        A      C      G      T
+# A     75    -70    -43    -95
+# C    -68     71   -133    -36
+# G    -71   -168    146   -180
+# T   -100    -45   -135     88
+
+# lastal -j7 -S1 -t91.3352 -p- humdb /tmp/tmp5ircmrpk
+
+# aligned letter pairs: 14967.1
+# deletes: 185.752
+# inserts: 372.972
+# delOpens: 58.256
+# insOpens: 105.122
+# alignments: 4
+# mean delete size: 3.18855
+# mean insert size: 3.54799
+# matchProb: 0.988875
+# delOpenProb: 0.00384897
+# insOpenProb: 0.0069454
+# delExtendProb: 0.686378
+# insExtendProb: 0.71815
+
+# substitution percent identity: 68.102
+
+# count matrix (query letters = columns, reference letters = rows):
+#   A              C              G              T             
+# A 3091.6         638.033        448.01         426.26        
+# C 653.34         2996.2         170.26         818.07        
+# G 274.44         95.215         1565.4         72.06         
+# T 370.264        675.56         132.509        2539.3        
+
+# probability matrix (query letters = columns, reference letters = rows):
+#   A              C              G              T             
+# A 0.206568       0.0426307      0.0299341      0.0284809     
+# C 0.0436534      0.200193       0.0113761      0.05466       
+# G 0.0183369      0.00636187     0.104593       0.00481475    
+# T 0.0247395      0.0451381      0.00885369     0.169665      
+
+# delExistCost: 578
+# insExistCost: 538
+# delExtendCost: 34
+# insExtendCost: 30
+
+# score matrix (query letters = columns, reference letters = rows):
+#        A      C      G      T
+# A     74    -70    -43    -94
+# C    -68     71   -132    -35
+# G    -70   -167    146   -180
+# T    -99    -45   -135     88
+
+# lastal -j7 -S1 -t91.0999 -p- humdb /tmp/tmp5ircmrpk
+
+# aligned letter pairs: 15057.3
+# deletes: 194.943
+# inserts: 382.869
+# delOpens: 58.823
+# insOpens: 105.571
+# alignments: 3
+# mean delete size: 3.31406
+# mean insert size: 3.62665
+# matchProb: 0.98894
+# delOpenProb: 0.0038634
+# insOpenProb: 0.00693374
+# delExtendProb: 0.698255
+# insExtendProb: 0.724263
+
+# substitution percent identity: 67.9727
+
+# count matrix (query letters = columns, reference letters = rows):
+#   A              C              G              T             
+# A 3106.6         648.933        452.21         431.57        
+# C 659.28         3019.2         172.09         824.1         
+# G 276.05         96.623         1564.4         72.56         
+# T 373.074        680.67         136.581        2547.4        
+
+# probability matrix (query letters = columns, reference letters = rows):
+#   A              C              G              T             
+# A 0.206263       0.043086       0.0300246      0.0286542     
+# C 0.043773       0.20046        0.0114259      0.0547162     
+# G 0.0183284      0.0064153      0.103869       0.00481763    
+# T 0.0247703      0.0451932      0.00906832     0.169135      
+
+# delExistCost: 582
+# insExistCost: 541
+# delExtendCost: 33
+# insExtendCost: 29
+
+# score matrix (query letters = columns, reference letters = rows):
+#        A      C      G      T
+# A     74    -69    -43    -94
+# C    -68     70   -131    -35
+# G    -70   -166    146   -180
+# T    -99    -45   -132     88
+
+# lastal -j7 -S1 -t90.764 -p- humdb /tmp/tmp5ircmrpk
+
+# aligned letter pairs: 15057.4
+# deletes: 194.936
+# inserts: 382.863
+# delOpens: 57.9657
+# insOpens: 104.505
+# alignments: 3
+# mean delete size: 3.36295
+# mean insert size: 3.66359
+# matchProb: 0.989065
+# delOpenProb: 0.00380755
+# insOpenProb: 0.00686455
+# delExtendProb: 0.702642
+# insExtendProb: 0.727043
+
+# substitution percent identity: 67.9379
+
+# count matrix (query letters = columns, reference letters = rows):
+#   A              C              G              T             
+# A 3106.6         650.032        452.11         431.48        
+# C 660.29         3009.2         172.11         824.11        
+# G 276.06         96.717         1564.4         72.66         
+# T 372.977        680.57         137.623        2547.4        
+
+# probability matrix (query letters = columns, reference letters = rows):
+#   A              C              G              T             
+# A 0.206359       0.043179       0.0300319      0.0286615     
+# C 0.0438604      0.199889       0.0114326      0.0547424     
+# G 0.0183376      0.00642453     0.103917       0.00482652    
+# T 0.0247754      0.0452076      0.00914175     0.169214      
+
+# delExistCost: 585
+# insExistCost: 543
+# delExtendCost: 32
+# insExtendCost: 29
+
+# score matrix (query letters = columns, reference letters = rows):
+#        A      C      G      T
+# A     74    -69    -43    -94
+# C    -67     70   -131    -35
+# G    -70   -166    146   -180
+# T    -99    -45   -132     88
+
+# lastal -j7 -S1 -t90.8593 -p- humdb /tmp/tmp5ircmrpk
+
+# aligned letter pairs: 15057.5
+# deletes: 195.043
+# inserts: 383.859
+# delOpens: 57.6345
+# insOpens: 104.182
+# alignments: 3
+# mean delete size: 3.38414
+# mean insert size: 3.6845
+# matchProb: 0.989108
+# delOpenProb: 0.00378594
+# insOpenProb: 0.00684358
+# delExtendProb: 0.704504
+# insExtendProb: 0.728593
+
+# substitution percent identity: 67.9413
+
+# count matrix (query letters = columns, reference letters = rows):
+#   A              C              G              T             
+# A 3106.6         650.034        452.11         431.58        
+# C 660.41         3009.2         172.12         824.12        
+# G 276.06         96.709         1564.4         72.66         
+# T 372.982        680.57         136.623        2547.4        
+
+# probability matrix (query letters = columns, reference letters = rows):
+#   A              C              G              T             
+# A 0.20637        0.0431814      0.0300334      0.0286696     
+# C 0.0438706      0.199899       0.0114338      0.0547458     
+# G 0.0183385      0.00642432     0.103922       0.00482676    
+# T 0.024777       0.0452098      0.00907578     0.169222      
+
+# delExistCost: 587
+# insExistCost: 543
+# delExtendCost: 32
+# insExtendCost: 29
+
+# score matrix (query letters = columns, reference letters = rows):
+#        A      C      G      T
+# A     74    -69    -43    -94
+# C    -67     70   -131    -35
+# G    -70   -166    146   -180
+# T    -99    -45   -132     88
+
+# lastal -j7 -S1 -t90.8367 -p- humdb /tmp/tmp5ircmrpk
+
+# aligned letter pairs: 15057.5
+# deletes: 193.937
+# inserts: 382.756
+# delOpens: 57.312
+# insOpens: 103.971
+# alignments: 3
+# mean delete size: 3.38388
+# mean insert size: 3.68137
+# matchProb: 0.989142
+# delOpenProb: 0.00376488
+# insOpenProb: 0.00682996
+# delExtendProb: 0.704481
+# insExtendProb: 0.728362
+
+# substitution percent identity: 67.9308
+
+# count matrix (query letters = columns, reference letters = rows):
+#   A              C              G              T             
+# A 3106.6         650.033        452.21         431.58        
+# C 661.41         3009.2         172.12         824.12        
+# G 276.06         96.81          1564.4         72.76         
+# T 372.982        680.58         137.634        2547.4        
+
+# probability matrix (query letters = columns, reference letters = rows):
+#   A              C              G              T             
+# A 0.206338       0.0431746      0.0300354      0.0286652     
+# C 0.0439303      0.199869       0.0114321      0.0547373     
+# G 0.0183357      0.00643004     0.103906       0.00483266    
+# T 0.0247731      0.0452035      0.00914153     0.169196      
+
+# delExistCost: 587
+# insExistCost: 544
+# delExtendCost: 32
+# insExtendCost: 29
+
+# score matrix (query letters = columns, reference letters = rows):
+#        A      C      G      T
+# A     74    -69    -43    -94
+# C    -67     70   -131    -35
+# G    -70   -166    146   -180
+# T    -99    -45   -132     88
+
+# lastal -j7 -S1 -t90.8167 -p- humdb /tmp/tmp5ircmrpk
+
+# aligned letter pairs: 15057.5
+# deletes: 193.836
+# inserts: 382.651
+# delOpens: 57.2013
+# insOpens: 103.729
+# alignments: 3
+# mean delete size: 3.38866
+# mean insert size: 3.68895
+# matchProb: 0.989165
+# delOpenProb: 0.0037577
+# insOpenProb: 0.00681422
+# delExtendProb: 0.704898
+# insExtendProb: 0.72892
+
+# substitution percent identity: 67.9259
+
+# count matrix (query letters = columns, reference letters = rows):
+#   A              C              G              T             
+# A 3106.6         650.132        452.21         431.58        
+# C 661.41         3009.2         172.12         824.12        
+# G 276.06         96.81          1564.4         72.76         
+# T 373.982        680.58         137.634        2547.4        
+
+# probability matrix (query letters = columns, reference letters = rows):
+#   A              C              G              T             
+# A 0.206323       0.0431781      0.0300332      0.0286631     
+# C 0.0439271      0.199854       0.0114312      0.0547334     
+# G 0.0183343      0.00642957     0.103899       0.0048323     
+# T 0.0248378      0.0452002      0.00914087     0.169184      
+
+# delExistCost: 587
+# insExistCost: 544
+# delExtendCost: 32
+# insExtendCost: 29
+
+# score matrix (query letters = columns, reference letters = rows):
+#        A      C      G      T
+# A     74    -69    -43    -94
+# C    -67     70   -131    -35
+# G    -70   -166    146   -180
+# T    -99    -45   -132     88
+
+#last -t4.72795
+#last -a 29
+#last -A 28
+#last -b 2
+#last -B 1
+#last -S 1
+# score matrix (query letters = columns, reference letters = rows):
+       A      C      G      T
+A      4     -3     -2     -5
+C     -3      4     -7     -2
+G     -4     -8      7     -9
+T     -5     -2     -7      4
