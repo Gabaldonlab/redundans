@@ -88,7 +88,6 @@ conda activate redundans
 conda install -c bioconda redundans 
 ```
 
-Note, this is unofficial channel and may not be completely up-to-date with this repo. 
 
 ## UNIX installer
 UNIX installer will automatically fetch, compile and configure Redundans together with all dependencies.
