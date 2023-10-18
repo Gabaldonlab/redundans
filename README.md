@@ -52,8 +52,8 @@ Redundans uses several programs (all except the interpreters and its submodules 
 | [GapCloser](http://sourceforge.net/projects/soapdenovo2/files/GapCloser/) | Gapclosing software | v1.12 |
 | [GFAstats](https://github.com/vgl-hub/gfastats) | Stats software | ≥ v1.3.6 |
 | [Meryl](https://github.com/marbl/meryl) | K-mer counter software | ≥ v1.3 |
-| [Merqury](https://github.com/marbl/merqury) | Assembly evaluation software | ≥ v1.3 |
-| [k8](https://github.com/attractivechaos/k8/) | Javascript shell based on V8 | ≥ v0.2.4 |
+| [Merqury](https://github.com/marbl/merqury) | Assembly evaluation software | v1.3 |
+| [k8](https://github.com/attractivechaos/k8/) | Javascript shell based on V8 | v0.2.4 |
 | [R](https://cran.r-project.org/) | Language interpreter | ≥ 3.6 |
 | [ggplot2](https://ggplot2.tidyverse.org)| R package | ≥ 3.3.2 |
 | [scales](https://cran.r-project.org/web/packages/scales/) | R package | ≥ 3.3.2 |
