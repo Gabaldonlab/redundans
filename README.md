@@ -116,7 +116,7 @@ Redundans is also supported by singularity. First install [singularity](https://
 You can either use our singularity repository to build the image or to build the image out of the docker image. Then run the first example:
 ```
 #Pull from the singularity repo
-singularity pull library://cgenomics/redundans/redundans
+singularity pull --arch amd64 library://cgenomics/redundans/redundans:2.0
 
 #Build the image based on the docker repo
 singularity build redundans.sif docker://cgenomics/redundans
