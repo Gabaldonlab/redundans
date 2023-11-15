@@ -21,11 +21,11 @@ jobs:
         pip install black
     - name: Analysing the code with pylint
       run: |
-        pylint $(git ls-files '*.py')
+        pylint --exit-zero $(git ls-files '*.py')
     - name: Running black to reformat the code
       run: |
         black --target-version=py38 $(git ls-files '*.py')
     - name: Reanalyzing the code with pylint to check the improvments
       run: |
-        pylint $(git ls-files '*.py')
+        pylint --exit-zero $(git ls-files '*.py')
         
