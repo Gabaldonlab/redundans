@@ -143,10 +143,15 @@ def rawtrimmer(infile, minlen, maxlen, limit, minqual, qual64offset, qseq, strip
             continue
         name, seq, quals = read
 
-        #Reformat to string instead of byte
-        name = name.decode('utf-8')
-        seq = seq.decode('utf-8')
-        quals = quals.decode('utf-8')
+        #Reformat to string instead of byte. Add exception in case it is fq instead of fq.gz
+        try:
+            name = name.decode('utf-8')
+            seq = seq.decode('utf-8')
+            quals = quals.decode('utf-8')
+        except:
+            name = name
+            seq = seq
+            quals = quals
         
 
         ## Clip seq & quals @ N ( unknown base )
