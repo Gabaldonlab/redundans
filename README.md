@@ -43,7 +43,7 @@ Redundans uses several programs (all except the interpreters and its submodules 
 
 | Resource | Type | Version |
 | :--- | :--- | :--- |
-| [Python](https://www.python.org/downloads) | Language interpreter | ≥ 3.0 |
+| [Python](https://www.python.org/downloads) | Language interpreter | <3.11, ≥ 3.8 |
 | [Platanus](http://platanus.bio.titech.ac.jp/?page_id=14) | Genome assembler | v1.2.4 |
 | [Miniasm](https://github.com/lh3/miniasm) | Genome assembler | ≥ v0.3 (r179) |
 | [Minimap2](https://github.com/lh3/minimap2) | Sequence aligner | ≥ v2.2.4 (r1122) |
@@ -80,8 +80,8 @@ For user convenience, we provide [UNIX installer](#unix-installer) and [Docker i
 ## Official conda package
 If you are familiar with conda, this will be by far the easiest way of installing redundans: 
 ```bash
-# create new Python3 >=3.8 environment
-conda create -n redundans python=3.8
+# create new Python3 >=3.8,<3.11 environment
+conda create -n redundans python=3.10
 # activate it
 conda activate redundans
 # and install redundans
