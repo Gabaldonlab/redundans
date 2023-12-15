@@ -334,7 +334,7 @@ def main():
   
     parser.add_argument('--version', action='version', version='1.01d')   
     parser.add_argument("-v", "--verbose", default=False, action="store_true", help="verbose")    
-    parser.add_argument("-i", "-f", "--fasta", nargs="+", type=argparse.FileType('w'), help="FASTA file(s)")
+    parser.add_argument("-i", "-f", "--fasta", nargs="+", type=argparse.FileType('r+'), help="FASTA file(s)")
     parser.add_argument("-t", "--threads", default=4, type=int, help="max threads to run [%(default)s]")
     parser.add_argument("--identity", default=0.51, type=float, help="min. identity [%(default)s]")
     parser.add_argument("--overlap", default=0.8, type=float, help="min. overlap [%(default)s]")
@@ -342,16 +342,22 @@ def main():
     parser.add_argument("--useminimap2", action='store_true', help="Use Minimap2 for aligning reads. Preset for ref vs ref: -PD -m200 -w 19")
     parser.add_argument("--preset", default='asm10', help="Preset option for minimap2. Possible options: asm5 (5 percent sequence divergence), asm10 (10 percent sequence divergence) and asm20(20 percent sequence divergence). Default [%(default)s]")
     
-    
+    #If executed as a single program: 
+    src = ["bwa/", "snap/", "last/build/", "minimap2/misc/",
+    "last/bin/", "last/src/", "minimap2/", "miniasm/"]
+    paths = [os.path.join(root, p) for p in src]
+    os.environ["PATH"] = os.pathsep.join(paths + [os.environ["PATH"]])
+
+
     o = parser.parse_args()
     if o.verbose:
         sys.stderr.write("Options: %s\n"%str(o))
 
     #process fasta
-    sys.stderr.write("Homozygous assembly/ies will be written with input name + '.homozygous.fa.gz'\n")
+    sys.stderr.write("Homozygous assembly/ies will be written with input name + '.homozygous.fa'\n")
     sys.stderr.write("#file name\tgenome size\tcontigs\theterozygous size\t[%]\theterozygous contigs\t[%]\tidentity [%]\tpossible joins\thomozygous size\t[%]\thomozygous contigs\t[%]\n")
     for fasta in o.fasta:
-        out = gzip.open(fasta.name+".homozygous.fa.gz", "w")
+        out = open(fasta.name+".homozygous.fa", "w")
         fasta2homozygous(out, fasta, o.identity, o.overlap, o.minLength, o.threads, o.verbose, o.useminimap2, o.preset)
         out.close()
 
