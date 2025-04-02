@@ -61,6 +61,7 @@ Redundans uses several programs (all except the interpreters and its submodules 
 | [scales](https://cran.r-project.org/web/packages/scales/) | R package | ≥ 3.3.2 |
 | [argparser](https://cran.r-project.org/web/packages/argparser/) | R package | ≥ 3.6 |
 
+#### WARNING: Some of the third-party requirements are provided precompiled in x86_64 and not readily available for other architectures.
 
 On most Linux distros, the installation should be as easy as:
 ```
