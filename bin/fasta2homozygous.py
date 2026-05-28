@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-desc="""Align genome onto itself (LAST) and keep only the longest
+desc = """Align genome onto itself (LAST) and keep only the longest
 from heterozygous (redundant) contigs/scaffolds.
 
 TO ADD:
@@ -8,14 +8,14 @@ TO ADD:
 - recognise heterozygous contigs with translocations - DONE
 - guess which identity cutoff will be the best - WIP
 """
-epilog="""Author: l.p.pryszcz@gmail.com
+epilog = """Author: l.p.pryszcz@gmail.com
 Mizerow, 26/08/2014
 
 Updated to Python3 and new functionality/tools by Diego Fuentes Palacios
 Barcelona 08/18/2022
 """
 
-import gzip, os, sys, subprocess
+import gzip, os, sys, subprocess, shutil
 from datetime import datetime
 from FastaIndex import FastaIndex
 
@@ -23,7 +23,8 @@ from FastaIndex import FastaIndex
 root = os.path.dirname(os.path.abspath(sys.argv[0]))
 paths = [os.path.join(root, "bin/minimap2/misc/")]
 sys.path = paths + sys.path
-os.environ["PATH"] = "%s:%s"%(root, os.environ["PATH"])
+os.environ["PATH"] = "%s:%s" % (root, os.environ["PATH"])
+
 
 def run_last(fasta, identity, threads, verbose=1):
     """Start LAST with multi-threads"""
@@ -31,20 +32,29 @@ def run_last(fasta, identity, threads, verbose=1):
         sys.stderr.write(" Running LAST...\n")
     # build db
     ref = fasta
-    if not os.path.isfile(ref+".suf"):
+    if not os.path.isfile(ref + ".suf"):
         os.system("lastdb -P %s -W 11 %s %s" % (threads, ref, fasta))
     # run LAST
-    args1 = ["lastal", "-P", str(threads), "-f", "TAB", ref, fasta]#; print " ".join(args1)
+    args1 = [
+        "lastal",
+        "-P",
+        str(threads),
+        "-f",
+        "TAB",
+        ref,
+        fasta,
+    ]  # ; print " ".join(args1)
     proc1 = subprocess.Popen(args1, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
     return proc1
-    
+
+
 def run_last_q2best(fasta, identity, threads, verbose=0):
     """Start LAST with multi-threads returning best match for each query"""
     if verbose:
         sys.stderr.write(" Running LAST...\n")
     # build db
     ref = fasta
-    if not os.path.isfile(ref+".suf"):
+    if not os.path.isfile(ref + ".suf"):
         os.system("lastdb -W 11 %s %s" % (ref, fasta))
     # run LAST
     args1 = ["lastal", "-P", str(threads), ref, fasta]
@@ -52,50 +62,166 @@ def run_last_q2best(fasta, identity, threads, verbose=0):
     args3 = ["last-split"]
     args4 = ["maf-convert", "tab"]
     proc1 = subprocess.Popen(args1, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
-    proc2 = subprocess.Popen(args2, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, stdin=proc1.stdout)
-    proc3 = subprocess.Popen(args3, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, stdin=proc2.stdout)
-    proc4 = subprocess.Popen(args4, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, stdin=proc3.stdout)
+    proc2 = subprocess.Popen(
+        args2, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, stdin=proc1.stdout
+    )
+    proc3 = subprocess.Popen(
+        args3, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, stdin=proc2.stdout
+    )
+    proc4 = subprocess.Popen(
+        args4, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, stdin=proc3.stdout
+    )
     return proc4
 
 
-def run_minimap2(fasta, threads, preset, index="4G", winsize=19, chain_penalty=200, verbose=1):
+### Caching abs paths to k8 and paftools.js to avoid errors in the reduction for conda envs
+_PAFTOOLS_CACHE = None
+
+
+def _find_paftools():
+    """
+    Resolve absolute paths for k8 and paftools.js across different installation modes.
+
+    Search order for paftools.js:
+      1. On PATH (shutil.which)
+      2. Same directory as k8
+      3. $CONDA_PREFIX/share/minimap2/ or $CONDA_PREFIX/bin/ (if CONDA_PREFIX is set)
+      4. bin/minimap2/misc/ relative to this script (git-submodule layout, as originally intended)
+    """
+    global _PAFTOOLS_CACHE
+    if _PAFTOOLS_CACHE is not None:
+        return _PAFTOOLS_CACHE
+
+    # Resolve k8 runtime
+    k8 = shutil.which("k8-Linux") or shutil.which("k8")
+    if k8 is None:
+        raise RuntimeError(
+            "[ERROR] Cannot find k8 or k8-Linux in PATH. "
+            "Ensure minimap2 is correctly installed (conda or source) and k8 is on PATH."
+        )
+
+    # Resolve paftools.js
+    paftools = shutil.which("paftools.js")
+    candidates = []
+
+    # Next to k8
+    candidates.append(os.path.join(os.path.dirname(k8), "paftools.js"))
+
+    # Conda usual layouts
+    conda_prefix = os.environ.get("CONDA_PREFIX", "")
+    if conda_prefix:
+        candidates.append(
+            os.path.join(conda_prefix, "share", "minimap2", "paftools.js")
+        )
+        candidates.append(os.path.join(conda_prefix, "bin", "paftools.js"))
+
+    # Git-submodule layout as it was originally intended
+    candidates.append(os.path.join(root, "bin", "minimap2", "misc", "paftools.js"))
+
+    if paftools is None:
+        for c in candidates:
+            if os.path.isfile(c):
+                paftools = c
+                break
+
+    if paftools is None:
+        raise RuntimeError(
+            "[ERROR] Cannot find paftools.js. "
+            "Searched the following candidate locations: %s\n"
+            "Make sure minimap2 is installed (e.g. bioconda::minimap2) or "
+            "a local misc/paftools.js is available. Else check the k8 and paftools.js locations and if necessary hardcode the path"
+            % candidates
+        )
+
+    _PAFTOOLS_CACHE = (k8, paftools)
+    return _PAFTOOLS_CACHE
+
+
+def run_minimap2(
+    fasta, threads, preset, index="4G", winsize=19, chain_penalty=200, verbose=1
+):
     """Run Minimap2 multi_threaded"""
 
-    #Default params
-    windowsize = "-w%s"%winsize
-    penalty = "-m%s"%chain_penalty
-    
-    #Check index is solid, else use default
+    # Default params
+    windowsize = "-w%s" % winsize
+    penalty = "-m%s" % chain_penalty
+
+    # Check index is solid, else use default
 
     if verbose:
         sys.stderr.write(" Running Minimap2...\n")
     ref = fasta
 
-    #Default asm5 if preset is messy
+    # Default asm5 if preset is messy
     if not preset.startswith("asm"):
         preset = "asm5"
 
-    args1 = ["minimap2", "-x", preset, "-PD", windowsize, penalty, "-t", str(threads), "-I", index, "--cs=long", ref, fasta]
-    #sys.stderr.write(" %s\n"%args1)
+    args1 = [
+        "minimap2",
+        "-x",
+        preset,
+        "-PD",
+        windowsize,
+        penalty,
+        "-t",
+        str(threads),
+        "-I",
+        index,
+        "--cs=long",
+        ref,
+        fasta,
+    ]
+    # sys.stderr.write(" %s\n"%args1)
     proc1 = subprocess.Popen(args1, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
-    args2 = ["k8-Linux", "paftools.js", "view", "-f", "maf", "-"]
-    proc2 = subprocess.Popen(args2, stdout=subprocess.PIPE, stdin=proc1.stdout, stderr=subprocess.DEVNULL)
-    #Added maf converter from LAST to keep same format
+
+    # Resolve k8 and paftools.js to absolute paths to avoid PATH issues
+    k8, paftools = _find_paftools()
+
+    args2 = [
+        k8,
+        paftools,
+        "view",
+        "-f",
+        "maf",
+        "-",
+    ]
+    proc2 = subprocess.Popen(
+        args2, stdout=subprocess.PIPE, stdin=proc1.stdout, stderr=subprocess.DEVNULL
+    )
+    # Added maf converter from LAST to keep same format
     args3 = ["maf-convert", "tab", "-"]
-    proc3 = subprocess.Popen(args3, stdout=subprocess.PIPE, stdin=proc2.stdout, stderr=subprocess.DEVNULL)
+    proc3 = subprocess.Popen(
+        args3, stdout=subprocess.PIPE, stdin=proc2.stdout, stderr=subprocess.DEVNULL
+    )
     return proc3
 
+
 def _qhits_generator(handle, minLength):
-    pq, pqsize, hits = '', 0, {}
+    pq, pqsize, hits = "", 0, {}
     for line in handle:
         l = line.decode("utf-8")
-        if l.startswith('#'): 
+        if l.startswith("#"):
             continue
         # unpack
-        (score, t, tstart, talg, tstrand, tsize, q, qstart, qalg, qstrand, qsize, blocks) = l.split()[:12]
-        (score, qstart, qalg, qsize, tstart, talg, tsize) = list(map(int, (score, qstart, qalg, qsize, tstart, talg, tsize)))
+        (
+            score,
+            t,
+            tstart,
+            talg,
+            tstrand,
+            tsize,
+            q,
+            qstart,
+            qalg,
+            qstrand,
+            qsize,
+            blocks,
+        ) = l.split()[:12]
+        score, qstart, qalg, qsize, tstart, talg, tsize = list(
+            map(int, (score, qstart, qalg, qsize, tstart, talg, tsize))
+        )
         # skip reverse matches
-        if t==q or tsize<qsize or qsize<minLength or tsize==qsize and t<q: 
+        if t == q or tsize < qsize or qsize < minLength or tsize == qsize and t < q:
             continue
         # report previous query
         if pq != q:
@@ -104,7 +230,7 @@ def _qhits_generator(handle, minLength):
             pq, pqsize, hits = q, qsize, {}
         if t not in hits:
             hits[t] = []
-        if qstrand=="+":
+        if qstrand == "+":
             s = qstart
             e = s + qalg
         else:
@@ -114,38 +240,61 @@ def _qhits_generator(handle, minLength):
     # make sure to report last bit
     if hits:
         yield pq, pqsize, hits
-        
+
+
 def _overlap(s, e, score, hits, maxfrac=0.1):
     """Return True if at least 10% overlap with existing hit"""
-    maxoverlap = maxfrac*(e-s)
-    selection = lambda x: x[0]<s<x[1] and s+maxoverlap<x[1] or x[0]<e<x[1] and e-maxoverlap>x[0] or \
-                          s<x[0]<e and x[0]+maxoverlap<e or s<x[1]<e and x[1]-maxoverlap>s
+    maxoverlap = maxfrac * (e - s)
+    selection = (
+        lambda x: x[0] < s < x[1]
+        and s + maxoverlap < x[1]
+        or x[0] < e < x[1]
+        and e - maxoverlap > x[0]
+        or s < x[0] < e
+        and x[0] + maxoverlap < e
+        or s < x[1] < e
+        and x[1] - maxoverlap > s
+    )
     if list(filter(selection, hits)):
         return True
-            
+
+
 def hits2valid(hits, q, qsize, identityTh, overlapTh):
     """Return valid matches for particular query"""
     for t, (score, qalg, se) in hits.items():
-        identity = (1.0 * (score+(qalg-score)/2)) / qalg
-        if qalg>qsize: qalg = qsize
-        overlap  = (1.0 * qalg) / qsize
-        # filter by identity and overlap. 
+        identity = (1.0 * (score + (qalg - score) / 2)) / qalg
+        if qalg > qsize:
+            qalg = qsize
+        overlap = (1.0 * qalg) / qsize
+        # filter by identity and overlap.
         if identity >= identityTh and overlap >= overlapTh:
             yield score, t, q, qalg, identity, overlap
 
-def fasta2hits(fasta, threads, identityTh, overlapTh, minLength, verbose, preset, index="4G", useminimap2=0):
+
+def fasta2hits(
+    fasta,
+    threads,
+    identityTh,
+    overlapTh,
+    minLength,
+    verbose,
+    preset,
+    index="4G",
+    useminimap2=0,
+):
     """Return LASTal hits passing identity and overlap thresholds for LASTal and presets for minimap2
-    
+
     Best identity cutoff is infered here by averaging all hits' identity"""
 
-
-    identities = algLengths= overlaps = 0
+    identities = algLengths = overlaps = 0
 
     # execute last or minimap
     if useminimap2:
-        handle = run_minimap2(fasta.name, threads, preset, index, verbose=verbose) #_q2best
+        handle = run_minimap2(
+            fasta.name, threads, preset, index, verbose=verbose
+        )  # _q2best
     else:
-        handle = run_last(fasta.name, identityTh, threads, verbose) #_q2best
+        handle = run_last(fasta.name, identityTh, threads, verbose)  # _q2best
     for q, qsize, qhits in _qhits_generator(handle.stdout, minLength):
         hits = {}
         for t in qhits:
@@ -154,35 +303,59 @@ def fasta2hits(fasta, threads, identityTh, overlapTh, minLength, verbose, preset
                 if _overlap(s, e, score, hits[t][2]):
                     continue
                 hits[t][0] += score
-                hits[t][1] += e-s
+                hits[t][1] += e - s
                 hits[t][2].append((s, e, score))
 
-        #Here we start computing identity and alignments length per hit in order to estimate average identity cutoff
-                qalg = (e-s)
-                identity = (1.0 * (score+(qalg-score)/2) / qalg)
-                if qalg>qsize: qalg = qsize  
-                identities += (identity*qalg)
+                # Here we start computing identity and alignments length per hit in order to estimate average identity cutoff
+                qalg = e - s
+                identity = 1.0 * (score + (qalg - score) / 2) / qalg
+                if qalg > qsize:
+                    qalg = qsize
+                identities += identity * qalg
                 algLengths += qalg
-                overlaps  += (1.0 * qalg) / qsize
+                overlaps += (1.0 * qalg) / qsize
 
-        #avgIdentity = ((100.0 * identities) / (algLengths))  
-        #if avgIdentity < float(identityTh): avgIdentity = identityTh
+        # avgIdentity = ((100.0 * identities) / (algLengths))
+        # if avgIdentity < float(identityTh): avgIdentity = identityTh
         for d in hits2valid(hits, q, qsize, identityTh, overlapTh):
             yield d
     try:
-        avgIdentity = ((100.0 * identities) / (algLengths))
-        avgOverlap = ((100.0 * overlaps) / (algLengths))
-        #print("[INFO] The average identity cutoff is %.2f"%avgIdentity)
-        #print("[INFO] The average overlap cutoff is %.2f"%avgOverlap)
+        avgIdentity = (100.0 * identities) / (algLengths)
+        avgOverlap = (100.0 * overlaps) / (algLengths)
+        # print("[INFO] The average identity cutoff is %.2f"%avgIdentity)
+        # print("[INFO] The average overlap cutoff is %.2f"%avgOverlap)
     except:
-        #print("[WARNING] Nothing reduced!")
+        # print("[WARNING] Nothing reduced!")
         pass
-               
-def fasta2skip(out, fasta, faidx, threads, identityTh, overlapTh, minLength, useminimap2, index, preset, verbose):
+
+
+def fasta2skip(
+    out,
+    fasta,
+    faidx,
+    threads,
+    identityTh,
+    overlapTh,
+    minLength,
+    useminimap2,
+    index,
+    preset,
+    verbose,
+):
     """Return dictionary with redundant contigs and their best alignments"""
     # get hits generator
 
-    hits = fasta2hits(fasta, threads, identityTh, overlapTh, minLength, verbose, preset, index, useminimap2)
+    hits = fasta2hits(
+        fasta,
+        threads,
+        identityTh,
+        overlapTh,
+        minLength,
+        verbose,
+        preset,
+        index,
+        useminimap2,
+    )
     # iterate through hits
     identities, sizes = [], []
     contig2skip = {c: 0 for c in faidx}
@@ -197,49 +370,52 @@ def fasta2skip(out, fasta, faidx, threads, identityTh, overlapTh, minLength, use
     plot_histograms(out.name, contig2skip, identities, sizes)
     return contig2skip
 
+
 def plot_histograms(fname, contig2skip, identities, algsizes):
     """Plot histogram for matches"""
     try:
         import numpy as np
-        import matplotlib 
-        matplotlib.use('Agg') # Force matplotlib to not use any Xwindows backend
+        import matplotlib
+
+        matplotlib.use("Agg")  # Force matplotlib to not use any Xwindows backend
         import matplotlib.pyplot as plt
     except:
-        sys.stderr.write("[WARNING] numpy or matplotlib missing! Cannot plot histogram\n")
+        sys.stderr.write(
+            "[WARNING] numpy or matplotlib missing! Cannot plot histogram\n"
+        )
         return
 
-        
     contigs = list(contig2skip.keys())
     best = [contig2skip[c][3] for c in contigs if contig2skip[c]]
     bestalgsizes = [contig2skip[c][2] for c in contigs if contig2skip[c]]
     # get bins
-    bins = np.arange(.5, 1.01, 0.01)
-    
+    bins = np.arange(0.5, 1.01, 0.01)
+
     # safecheck for https://github.com/lpryszcz/redundans/issues/43
     # due to error in old versions of numpy https://github.com/numpy/numpy/pull/4219
     if not best:
         sys.stderr.write("[WARNING] Nothing reduced!\n")
         return
-        
+
     # get counts
-    bestcounts = [0]*len(bins)
-    bestsizes = [0]*len(bins)
+    bestcounts = [0] * len(bins)
+    bestsizes = [0] * len(bins)
     for i, isize in zip(np.digitize(best, bins, right=1), bestalgsizes):
         bestcounts[i] += 1
         bestsizes[i] += isize
-            
-    counts = [0]*len(bins)
-    sizes = [0]*len(bins)
+
+    counts = [0] * len(bins)
+    sizes = [0] * len(bins)
     for i, isize in zip(np.digitize(identities, bins, right=1), algsizes):
         counts[i] += 1
         sizes[i] += isize
-        
+
     bins -= 0.01
     fig = plt.figure()
     # plot no. of contigs at give identity
     plt.subplot(211)
-    plt.bar(bins*100, bestcounts, color="red", label="best", alpha=1.0)
-    plt.bar(bins*100, counts, color="grey", label="all", alpha=0.33)
+    plt.bar(bins * 100, bestcounts, color="red", label="best", alpha=1.0)
+    plt.bar(bins * 100, counts, color="grey", label="all", alpha=0.33)
     plt.xlim(50, 100)
     plt.legend(loc=2)
     plt.title("Identity between contigs")
@@ -247,70 +423,118 @@ def plot_histograms(fname, contig2skip, identities, algsizes):
 
     # plot cumulative alignment size at give identity
     plt.subplot(212)
-    plt.bar(bins*100, np.array(bestsizes)/1e6, color="blue", label="best", alpha=1.0)
-    plt.bar(bins*100, np.array(sizes)/1e6, color="grey", label="all", alpha=0.33)
+    plt.bar(
+        bins * 100, np.array(bestsizes) / 1e6, color="blue", label="best", alpha=1.0
+    )
+    plt.bar(bins * 100, np.array(sizes) / 1e6, color="grey", label="all", alpha=0.33)
     plt.xlim(50, 100)
     plt.legend(loc=2)
     plt.xlabel("Identity [%]")
     plt.ylabel("Cumulative alignment size [Mb]")
-    fig.savefig(fname+".hist.png", dpi=300)
-    
-def fasta2homozygous(out, fasta, identity, overlap, minLength, threads=1, verbose=0, useminimap2=0, index="4G", preset="asm10", log=sys.stderr):
+    fig.savefig(fname + ".hist.png", dpi=300)
+
+
+def fasta2homozygous(
+    out,
+    fasta,
+    identity,
+    overlap,
+    minLength,
+    threads=1,
+    verbose=0,
+    useminimap2=0,
+    index="4G",
+    preset="asm10",
+    log=sys.stderr,
+):
     """Parse alignments and report homozygous contigs.
-    
+
     Return genomeSize, no. of contigs, removed contigs size & number
     and average identity between reduced contigs.
     """
     merged = []
-    
-    #create/load fasta index
+
+    # create/load fasta index
     if verbose:
         log.write("Indexing fasta...\n")
     faidx = FastaIndex(fasta)
     genomeSize = faidx.genomeSize
-    
+
     # filter alignments & remove redundant
     if verbose:
         log.write("Parsing alignments...\n")
-    contig2skip = fasta2skip(out, fasta, faidx, threads, identity, overlap, minLength, useminimap2, index, preset, verbose)
-    
-    #report homozygous fasta
-    nsize, k, skipped, ssize, avgIdentity = save_homozygous(out, faidx, contig2skip, minLength, verbose)
-    
-    #summary
-    # 
+    contig2skip = fasta2skip(
+        out,
+        fasta,
+        faidx,
+        threads,
+        identity,
+        overlap,
+        minLength,
+        useminimap2,
+        index,
+        preset,
+        verbose,
+    )
+
+    # report homozygous fasta
+    nsize, k, skipped, ssize, avgIdentity = save_homozygous(
+        out, faidx, contig2skip, minLength, verbose
+    )
+
+    # summary
     #
-    
+    #
+
     info = "%s\t%s\t%s\t%s\t%.2f\t%s\t%.2f\t%.3f\t%s\t%s\t%.2f\t%s\t%.2f\n"
-    log.write(info%(fasta.name, genomeSize, len(faidx), ssize, 100.0*ssize/genomeSize, \
-                skipped, 100.0*skipped/len(faidx), avgIdentity, len(merged), \
-                nsize, 100.0*nsize/genomeSize, k, 100.0*k/len(faidx)))
+    log.write(
+        info
+        % (
+            fasta.name,
+            genomeSize,
+            len(faidx),
+            ssize,
+            100.0 * ssize / genomeSize,
+            skipped,
+            100.0 * skipped / len(faidx),
+            avgIdentity,
+            len(merged),
+            nsize,
+            100.0 * nsize / genomeSize,
+            k,
+            100.0 * k / len(faidx),
+        )
+    )
     return genomeSize, len(faidx), ssize, skipped, avgIdentity
+
 
 def save_homozygous(out, faidx, contig2skip, minLength, verbose):
     """Save homozygous contigs to out stream, save heterozygous contigs with translocations to tabular outfile ending in *.hetero.tsv
 
     Here you could learn from distibution of identities,
-    what really is the reasonable identity cut-off. 
+    what really is the reasonable identity cut-off.
     """
     k = skipped = ssize = nsize = identities = algLengths = 0
     # store skipped hetero contigs stats
-    out2 = open(out.name+".hetero.tsv", "w")
+    out2 = open(out.name + ".hetero.tsv", "w")
     out2.write("#contig\tsize\ttarget\titentity\toverlap\n")
     # process contigs starting from the largest
     for i, c in enumerate(faidx, 1):
         # skip short
         if faidx.id2stats[c][0] < minLength:
             skipped += 1
-            ssize   += faidx.id2stats[c][0]
+            ssize += faidx.id2stats[c][0]
         # skip hetero and report heterozygous contigs with translocations
-        elif contig2skip[c]: 
+        elif contig2skip[c]:
             skipped += 1
-            ssize   += faidx.id2stats[c][0]
+            ssize += faidx.id2stats[c][0]
             score, t, algLen, identity, overlap = contig2skip[c]
-            out2.write("%s\t%s\t%s\t%.3f\t%.3f\n"%(c, faidx.id2stats[c][0], t, identity, overlap))
+            out2.write(
+                "%s\t%s\t%s\t%.3f\t%.3f\n"
+                % (c, faidx.id2stats[c][0], t, identity, overlap)
+            )
             # update identities and lengths
-            identities += identity*algLen
+            identities += identity * algLen
             algLengths += algLen
         # save sequence
         else:
@@ -320,48 +544,98 @@ def save_homozygous(out, faidx, contig2skip, minLength, verbose):
             nsize += faidx.id2stats[c][0]
     # close out2
     out2.close()
-    # calculate average identity        
+    # calculate average identity
     avgIdentity = 0
     if algLengths:
         avgIdentity = (100.0 * identities) / algLengths
     return nsize, k, skipped, ssize, avgIdentity
-        
+
+
 def main():
     import argparse
-    usage   = "%(prog)s -v" #usage=usage, 
-    parser  = argparse.ArgumentParser(description=desc, epilog=epilog, \
-                                      formatter_class=argparse.RawTextHelpFormatter)
-  
-    parser.add_argument('--version', action='version', version='1.01d')   
-    parser.add_argument("-v", "--verbose", default=False, action="store_true", help="verbose")    
-    parser.add_argument("-i", "-f", "--fasta", nargs="+", type=argparse.FileType('r+'), help="FASTA file(s)")
-    parser.add_argument("-t", "--threads", default=4, type=int, help="max threads to run [%(default)s]")
-    parser.add_argument("--identity", default=0.51, type=float, help="min. identity [%(default)s]")
-    parser.add_argument("--overlap", default=0.8, type=float, help="min. overlap [%(default)s]")
-    parser.add_argument("--minLength", default=200, type=int, help="min. contig length [%(default)s]")
-    parser.add_argument("--useminimap2", action='store_true', help="Use Minimap2 for aligning reads. Preset for ref vs ref: -PD -m200 -w 19")
-    parser.add_argument("--preset", default='asm10', help="Preset option for minimap2. Possible options: asm5 (5 percent sequence divergence), asm10 (10 percent sequence divergence) and asm20(20 percent sequence divergence). Default [%(default)s]")
-    
-    #If executed as a single program: 
-    src = ["bwa/", "snap/", "last/build/", "minimap2/misc/",
-    "last/bin/", "last/src/", "minimap2/", "miniasm/"]
+
+    usage = "%(prog)s -v"  # usage=usage,
+    parser = argparse.ArgumentParser(
+        description=desc, epilog=epilog, formatter_class=argparse.RawTextHelpFormatter
+    )
+
+    parser.add_argument("--version", action="version", version="1.01d")
+    parser.add_argument(
+        "-v", "--verbose", default=False, action="store_true", help="verbose"
+    )
+    parser.add_argument(
+        "-i",
+        "-f",
+        "--fasta",
+        nargs="+",
+        type=argparse.FileType("r+"),
+        help="FASTA file(s)",
+    )
+    parser.add_argument(
+        "-t", "--threads", default=4, type=int, help="max threads to run [%(default)s]"
+    )
+    parser.add_argument(
+        "--identity", default=0.51, type=float, help="min. identity [%(default)s]"
+    )
+    parser.add_argument(
+        "--overlap", default=0.8, type=float, help="min. overlap [%(default)s]"
+    )
+    parser.add_argument(
+        "--minLength", default=200, type=int, help="min. contig length [%(default)s]"
+    )
+    parser.add_argument(
+        "--useminimap2",
+        action="store_true",
+        help="Use Minimap2 for aligning reads. Preset for ref vs ref: -PD -m200 -w 19",
+    )
+    parser.add_argument(
+        "--preset",
+        default="asm10",
+        help="Preset option for minimap2. Possible options: asm5 (5 percent sequence divergence), asm10 (10 percent sequence divergence) and asm20(20 percent sequence divergence). Default [%(default)s]",
+    )
+
+    # If executed as a single program:
+    src = [
+        "bwa/",
+        "snap/",
+        "last/build/",
+        "minimap2/misc/",
+        "last/bin/",
+        "last/src/",
+        "minimap2/",
+        "miniasm/",
+    ]
     paths = [os.path.join(root, p) for p in src]
     os.environ["PATH"] = os.pathsep.join(paths + [os.environ["PATH"]])
 
-
     o = parser.parse_args()
     if o.verbose:
-        sys.stderr.write("Options: %s\n"%str(o))
+        sys.stderr.write("Options: %s\n" % str(o))
 
-    #process fasta
-    sys.stderr.write("Homozygous assembly/ies will be written with input name + '.homozygous.fa'\n")
-    sys.stderr.write("#file name\tgenome size\tcontigs\theterozygous size\t[%]\theterozygous contigs\t[%]\tidentity [%]\tpossible joins\thomozygous size\t[%]\thomozygous contigs\t[%]\n")
+    # process fasta
+    sys.stderr.write(
+        "Homozygous assembly/ies will be written with input name + '.homozygous.fa'\n"
+    )
+    sys.stderr.write(
+        "#file name\tgenome size\tcontigs\theterozygous size\t[%]\theterozygous contigs\t[%]\tidentity [%]\tpossible joins\thomozygous size\t[%]\thomozygous contigs\t[%]\n"
+    )
     for fasta in o.fasta:
-        out = open(fasta.name+".homozygous.fa", "w")
-        fasta2homozygous(out, fasta, o.identity, o.overlap, o.minLength, o.threads, o.verbose, o.useminimap2, o.preset)
+        out = open(fasta.name + ".homozygous.fa", "w")
+        fasta2homozygous(
+            out,
+            fasta,
+            o.identity,
+            o.overlap,
+            o.minLength,
+            o.threads,
+            o.verbose,
+            o.useminimap2,
+            o.preset,
+        )
         out.close()
 
-if __name__=='__main__': 
+
+if __name__ == "__main__":
     t0 = datetime.now()
     try:
         main()
@@ -369,5 +643,5 @@ if __name__=='__main__':
         sys.stderr.write("\nCtrl-C pressed!      \n")
     except IOError as e:
         sys.stderr.write("I/O error({0}): {1}\n".format(e.errno, e.strerror))
-    dt = datetime.now()-t0
-    sys.stderr.write("#Time elapsed: %s\n"%dt)
+    dt = datetime.now() - t0
+    sys.stderr.write("#Time elapsed: %s\n" % dt)
