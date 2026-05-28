@@ -5,11 +5,14 @@ reduction, scaffolding and gap closing.
 More info at: http://bit.ly/Redundans
 
 """
-epilog = """Author:
+epilog = """Authors:
+
+Original code by:
 l.p.pryszcz+git@gmail.com
 Mizerow/Warsaw/Bratislava/Barcelona, 17/10/2014
 
-Updated to Python3 and new functionality/tools by Diego Fuentes Palacios
+Version 2 of the pipeline, with new functionality/tools and update to Python3 by:
+diegofupa@gmail.com
 Barcelona 08/18/2022
 """
 
@@ -19,7 +22,6 @@ import glob, subprocess, time
 from datetime import datetime
 from io import TextIOWrapper, StringIO
 from traceback import print_list
-
 
 # update sys.path & environmental PATH
 root = os.path.dirname(os.path.abspath(sys.argv[0]))
