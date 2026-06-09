@@ -1,14 +1,14 @@
 FROM python:3.9.1
 #Image in buster flavor
+ARG SOFTWARE_VERSION=2.0
+ARG IMAGE_VERSION=2
 # metadata
 LABEL base.image="python:3.9.1"
-LABEL version="2"
 LABEL software="Redundans"
-LABEL software.version="2.0"
 LABEL description="Redundans pipeline assists an assembly of heterozygous genomes.Program takes as input assembled contigs, sequencing libraries and/or reference sequence and returns scaffolded homozygous genome assembly. Final assembly should be less fragmented and with total size smaller than the input contigs. In addition, Redundans will automatically close the gaps resulting from genome assembly or scaffolding."
 LABEL website="https://github.com/Gabaldonlab/redundans"
 LABEL license="GNU General Public License"
-LABEL maintainer="Diego Fuentes (BSC)"
+LABEL maintainer="Diego Fuentes <diegofupa@gmail.es>(ex-BSC)"
 ##Set up bash and install basic dependencies
 SHELL ["/bin/bash", "-c"]
 RUN apt-get update -qq && apt-get install -y perl python3-pip git make nano automake wget g++ zlib1g-dev curl && python3 -m pip install --upgrade pip && pip3 install --upgrade matplotlib Pillow
