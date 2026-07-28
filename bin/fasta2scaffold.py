@@ -16,7 +16,7 @@ Barcelona 08/18/2022
 import math, os, sys
 from re import T
 import time
-import subprocess, resource, subprocess
+import subprocess, resource, shutil
 from datetime import datetime
 from FastaIndex import FastaIndex
 
@@ -72,6 +72,69 @@ def pstdev(data):
     ss = _ss(data)
     pvar = ss/n # the population variance
     return pvar**0.5
+
+### Caching abs paths to k8 and paftools.js to avoid errors in the reduction for conda envs
+_PAFTOOLS_CACHE = None
+
+
+def _find_paftools():
+    """
+    Resolve absolute paths for k8 and paftools.js across different installation modes.
+
+    Search order for paftools.js:
+      1. On PATH (shutil.which)
+      2. Same directory as k8
+      3. $CONDA_PREFIX/share/minimap2/ or $CONDA_PREFIX/bin/ (if CONDA_PREFIX is set)
+      4. bin/minimap2/misc/ relative to this script (git-submodule layout, as originally intended)
+    """
+    global _PAFTOOLS_CACHE
+    if _PAFTOOLS_CACHE is not None:
+        return _PAFTOOLS_CACHE
+
+    # Resolve k8 runtime
+    k8 = shutil.which("k8-Linux") or shutil.which("k8")
+    if k8 is None:
+        raise RuntimeError(
+            "[ERROR] Cannot find k8 or k8-Linux in PATH. "
+            "Ensure minimap2 is correctly installed (conda or source) and k8 is on PATH."
+        )
+
+    # Resolve paftools.js
+    paftools = shutil.which("paftools.js")
+    candidates = []
+
+    # Next to k8
+    candidates.append(os.path.join(os.path.dirname(k8), "paftools.js"))
+
+    # Conda usual layouts
+    conda_prefix = os.environ.get("CONDA_PREFIX", "")
+    if conda_prefix:
+        candidates.append(
+            os.path.join(conda_prefix, "share", "minimap2", "paftools.js")
+        )
+        candidates.append(os.path.join(conda_prefix, "bin", "paftools.js"))
+
+    # Git-submodule layout as it was originally intended
+    candidates.append(os.path.join(root, "bin", "minimap2", "misc", "paftools.js"))
+
+    if paftools is None:
+        for c in candidates:
+            if os.path.isfile(c):
+                paftools = c
+                break
+
+    if paftools is None:
+        raise RuntimeError(
+            "[ERROR] Cannot find paftools.js. "
+            "Searched the following candidate locations: %s\n"
+            "Make sure minimap2 is installed (e.g. bioconda::minimap2) or "
+            "a local misc/paftools.js is available. Else check the k8 and paftools.js locations and if necessary hardcode the path"
+            % candidates
+        )
+
+    _PAFTOOLS_CACHE = (k8, paftools)
+    return _PAFTOOLS_CACHE
+
 
 class Graph(object):
     """Graph class to represent scaffolds. It shouldn't be invoked directly,
@@ -233,7 +296,8 @@ class Graph(object):
         proc0 = subprocess.Popen(args0, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
         args1 = ["minimap2", "-x", str(self.preset), "-t", str(self.threads),  "-I", index, "--cs=long", self.ref, "-"]
         proc1 = subprocess.Popen(args1, stdout=subprocess.PIPE, stdin=proc0.stdout, stderr=subprocess.DEVNULL)
-        args2 = ["k8-Linux", "paftools.js", "view", "-f", "maf", "-"]
+        k8, paftools = _find_paftools()
+        args2 = [k8, paftools, "view", "-f", "maf", "-"]
         proc2 = subprocess.Popen(args2, stdout=subprocess.PIPE, stdin=proc1.stdout, stderr=subprocess.DEVNULL)
         #Added maf converter from LAST to keep same format
         args3 = ["maf-convert", "tab", "-"]
